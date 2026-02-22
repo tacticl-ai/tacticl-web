@@ -11,38 +11,18 @@ import { formatDistanceToNow } from 'date-fns';
 import TopBar from '../components/layout/TopBar';
 import DeviceStatusIndicator from '../components/devices/DeviceStatusIndicator';
 import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
 import { useDevice, useUpdateDevicePreferences } from '../hooks/useDevices';
-import type { Device, SparkType } from '../api/types';
+import type { SparkType } from '../api/types';
 
 const SPARK_TYPES: SparkType[] = ['code', 'social', 'research', 'devops'];
 
-// Mock for development
-const MOCK_DEVICE: Device = {
-  id: 'd1',
-  userId: 'u1',
-  name: 'MacBook Pro - Office',
-  deviceType: 'COMPUTER',
-  platform: 'MACOS',
-  specs: { cpuCores: 10, ramGb: 32, diskFreeGb: 128 },
-  state: 'ONLINE',
-  lastSeenAt: new Date(Date.now() - 30000).toISOString(),
-  capabilities: { git: true, docker: true, gcloud: true },
-  clonedRepos: ['strategiz-core', 'strategiz-ui', 'tacticl-core'],
-  activeDaemons: 2,
-  daemonVersion: '0.1.0',
-  sparkPreferences: { code: true, devops: true, research: true, social: false },
-  createdAt: new Date(Date.now() - 2592000000).toISOString(),
-  updatedAt: new Date(Date.now() - 30000).toISOString(),
-};
-
 export default function DeviceDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: device, isLoading } = useDevice(id!);
+  const { data: device, isLoading, isError, refetch } = useDevice(id!);
   const updatePrefs = useUpdateDevicePreferences(id!);
 
-  const d = device ?? MOCK_DEVICE;
-
-  if (isLoading && !device) {
+  if (isLoading) {
     return (
       <>
         <TopBar title="Device" />
@@ -51,17 +31,26 @@ export default function DeviceDetailPage() {
     );
   }
 
+  if (isError || !device) {
+    return (
+      <>
+        <TopBar title="Device" />
+        <ErrorState message="Failed to load device details." onRetry={refetch} />
+      </>
+    );
+  }
+
   const handleTogglePref = (type: SparkType) => {
     const newPrefs = {
-      ...d.sparkPreferences,
-      [type]: !d.sparkPreferences[type],
+      ...device.sparkPreferences,
+      [type]: !device.sparkPreferences[type],
     };
     updatePrefs.mutate(newPrefs);
   };
 
   return (
     <>
-      <TopBar title={d.name} />
+      <TopBar title={device.name} />
 
       {/* Device Info */}
       <Card sx={{ mb: 3 }}>
@@ -70,52 +59,52 @@ export default function DeviceDetailPage() {
             <ComputerIcon sx={{ fontSize: 40, color: 'text.secondary' }} />
             <Box>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="h5">{d.name}</Typography>
-                <DeviceStatusIndicator state={d.state} size={12} />
-                <Chip label={d.state} size="small" />
+                <Typography variant="h5">{device.name}</Typography>
+                <DeviceStatusIndicator state={device.state} size={12} />
+                <Chip label={device.state} size="small" />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {d.platform} &middot; {d.deviceType.toLowerCase()}
-                {d.daemonVersion && ` &middot; v${d.daemonVersion}`}
+                {device.platform} &middot; {device.deviceType.toLowerCase()}
+                {device.daemonVersion && ` &middot; v${device.daemonVersion}`}
               </Typography>
             </Box>
           </Box>
 
-          {d.specs && (
+          {device.specs && (
             <Box sx={{ display: 'flex', gap: 3, mb: 2 }}>
               <Box>
                 <Typography variant="caption" color="text.secondary">
                   CPU
                 </Typography>
-                <Typography variant="body2">{d.specs.cpuCores} cores</Typography>
+                <Typography variant="body2">{device.specs.cpuCores} cores</Typography>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
                   RAM
                 </Typography>
-                <Typography variant="body2">{d.specs.ramGb} GB</Typography>
+                <Typography variant="body2">{device.specs.ramGb} GB</Typography>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
                   Disk Free
                 </Typography>
-                <Typography variant="body2">{d.specs.diskFreeGb} GB</Typography>
+                <Typography variant="body2">{device.specs.diskFreeGb} GB</Typography>
               </Box>
               <Box>
                 <Typography variant="caption" color="text.secondary">
                   Active Daemons
                 </Typography>
-                <Typography variant="body2">{d.activeDaemons}</Typography>
+                <Typography variant="body2">{device.activeDaemons}</Typography>
               </Box>
             </Box>
           )}
 
           <Typography variant="caption" color="text.secondary">
             Registered{' '}
-            {formatDistanceToNow(new Date(d.createdAt), { addSuffix: true })}
+            {formatDistanceToNow(new Date(device.createdAt), { addSuffix: true })}
             {' &middot; '}
             Last seen{' '}
-            {formatDistanceToNow(new Date(d.lastSeenAt), { addSuffix: true })}
+            {formatDistanceToNow(new Date(device.lastSeenAt), { addSuffix: true })}
           </Typography>
         </CardContent>
       </Card>
@@ -134,7 +123,7 @@ export default function DeviceDetailPage() {
               key={type}
               control={
                 <Switch
-                  checked={!!d.sparkPreferences[type]}
+                  checked={!!device.sparkPreferences[type]}
                   onChange={() => handleTogglePref(type)}
                 />
               }
@@ -151,13 +140,13 @@ export default function DeviceDetailPage() {
           <Typography variant="h6" sx={{ mb: 1.5 }}>
             Cloned Repositories
           </Typography>
-          {d.clonedRepos.length === 0 ? (
+          {device.clonedRepos.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No repos cloned on this device.
             </Typography>
           ) : (
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {d.clonedRepos.map((repo) => (
+              {device.clonedRepos.map((repo) => (
                 <Chip key={repo} label={repo} variant="outlined" />
               ))}
             </Box>
@@ -171,13 +160,13 @@ export default function DeviceDetailPage() {
           <Typography variant="h6" sx={{ mb: 1.5 }}>
             Capabilities
           </Typography>
-          {Object.keys(d.capabilities).length === 0 ? (
+          {Object.keys(device.capabilities).length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No capabilities reported.
             </Typography>
           ) : (
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {Object.entries(d.capabilities).map(([key, val]) => (
+              {Object.entries(device.capabilities).map(([key, val]) => (
                 <Chip
                   key={key}
                   label={key}

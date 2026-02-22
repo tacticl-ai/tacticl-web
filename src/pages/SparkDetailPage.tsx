@@ -21,124 +21,26 @@ import TopBar from '../components/layout/TopBar';
 import SparkTimeline from '../components/sparks/SparkTimeline';
 import SparkStatusBadge from '../components/sparks/SparkStatusBadge';
 import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
 import { useSpark, useSparkTactics, useSparkLogs, useCancelSpark } from '../hooks/useSparks';
-import { useDecideCheckpoint } from '../hooks/useCheckpoints';
-import type { Tactic, Checkpoint, ExecutionLog } from '../api/types';
-
-// Mock data for development
-const MOCK_TACTICS: Tactic[] = [
-  {
-    id: 't1',
-    sparkId: '1',
-    deviceId: 'd1',
-    description: 'Analyze Cloud Run memory/CPU configs in strategiz-core',
-    status: 'COMPLETED',
-    repos: ['strategiz-core'],
-    result: {
-      findings: ['API service over-provisioned: 2 CPU / 1GB, only uses 0.3 CPU avg'],
-      changes: ['Reduced API service to 1 CPU / 512MB'],
-      metrics: { estimatedSavings: '$12/mo' },
-    },
-    tokenUsage: 18400,
-    createdAt: new Date(Date.now() - 1500000).toISOString(),
-    updatedAt: new Date(Date.now() - 900000).toISOString(),
-  },
-  {
-    id: 't2',
-    sparkId: '1',
-    deviceId: 'd1',
-    description: 'Review idle scaling and min-instances settings',
-    status: 'EXECUTING',
-    repos: ['strategiz-core'],
-    result: null,
-    tokenUsage: 8200,
-    createdAt: new Date(Date.now() - 1200000).toISOString(),
-    updatedAt: new Date(Date.now() - 120000).toISOString(),
-  },
-  {
-    id: 't3',
-    sparkId: '1',
-    deviceId: 'd1',
-    description: 'Check GCP billing trends via gcloud CLI',
-    status: 'PENDING',
-    repos: [],
-    result: null,
-    tokenUsage: 0,
-    createdAt: new Date(Date.now() - 1200000).toISOString(),
-    updatedAt: new Date(Date.now() - 1200000).toISOString(),
-  },
-];
-
-const MOCK_CHECKPOINTS: Checkpoint[] = [
-  {
-    id: 'cp1',
-    sparkId: '1',
-    tacticId: 't1',
-    title: 'Found 3 cost-saving opportunities',
-    description:
-      'Analysis complete. Ready to create PRs with optimized Cloud Run configurations.',
-    findings: [
-      {
-        type: 'optimization',
-        severity: 'medium',
-        description: 'API service over-provisioned: 2 CPU / 1GB, only uses 0.3 CPU avg',
-        suggestedAction: 'Reduce to 1 CPU / 512MB',
-      },
-      {
-        type: 'optimization',
-        severity: 'low',
-        description: 'Auth service min-instances=1 but only gets 2 req/min off-peak',
-        suggestedAction: 'Set min-instances=0, use startup CPU boost',
-      },
-    ],
-    options: ['approve_all', 'approve_partial', 'reject', 'modify'],
-    userDecision: null,
-    userFeedback: null,
-    decidedAt: null,
-    createdAt: new Date(Date.now() - 600000).toISOString(),
-  },
-];
-
-const MOCK_LOGS: ExecutionLog[] = [
-  {
-    id: 'l1',
-    sparkId: '1',
-    tacticId: 't1',
-    toolName: 'run_command',
-    toolInput: { command: 'gcloud run services describe strategiz-api --region=us-east1 --format=json' },
-    toolOutput: { exitCode: 0, stdout: '{ "spec": { "template": { ... } } }' },
-    tokenUsage: { input: 1200, output: 450 },
-    durationMs: 3200,
-    timestamp: new Date(Date.now() - 1400000).toISOString(),
-  },
-  {
-    id: 'l2',
-    sparkId: '1',
-    tacticId: 't1',
-    toolName: 'read_file',
-    toolInput: { path: 'deployment/cloudbuild/cloudbuild-qa.yaml' },
-    toolOutput: { exitCode: 0, stdout: '...(file content)...' },
-    tokenUsage: { input: 800, output: 2100 },
-    durationMs: 120,
-    timestamp: new Date(Date.now() - 1300000).toISOString(),
-  },
-];
+import { useCheckpoints, useDecideCheckpoint } from '../hooks/useCheckpoints';
 
 export default function SparkDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: spark, isLoading } = useSpark(id!);
+  const { data: spark, isLoading, isError, refetch } = useSpark(id!);
   const { data: tactics } = useSparkTactics(id!);
   const { data: logs } = useSparkLogs(id!);
+  const { data: allCheckpoints } = useCheckpoints();
   const cancelSpark = useCancelSpark();
   const decideCheckpoint = useDecideCheckpoint();
 
-  // Use mock data when API is not ready
-  const displaySpark = spark;
-  const displayTactics = tactics ?? MOCK_TACTICS;
-  const displayCheckpoints = MOCK_CHECKPOINTS;
-  const displayLogs = logs ?? MOCK_LOGS;
+  const displayTactics = tactics ?? [];
+  const displayCheckpoints = (allCheckpoints ?? []).filter(
+    (cp) => cp.sparkId === id,
+  );
+  const displayLogs = logs ?? [];
 
-  if (isLoading && !displaySpark) {
+  if (isLoading) {
     return (
       <>
         <TopBar title="Spark Detail" />
@@ -147,43 +49,34 @@ export default function SparkDetailPage() {
     );
   }
 
-  const sparkData = displaySpark ?? {
-    id: id!,
-    title: 'Reduce Cloud Run costs',
-    description: 'Analyzing Cloud Run configurations...',
-    status: 'EXECUTING' as const,
-    priority: 'HIGH' as const,
-    type: 'devops' as const,
-    checkpointPolicy: 'CHECKPOINT_MAJOR' as const,
-    totalTokens: 45200,
-    estimatedCost: 0.32,
-    repoAccess: ['strategiz-core'],
-    deviceId: 'd1',
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    schedule: null,
-    nextRunAt: null,
-    result: null,
-    parentSparkId: null,
-    userId: 'u1',
-  };
+  if (isError || !spark) {
+    return (
+      <>
+        <TopBar title="Spark Detail" />
+        <ErrorState
+          message="Failed to load spark details."
+          onRetry={refetch}
+        />
+      </>
+    );
+  }
 
   const isActive =
-    sparkData.status === 'EXECUTING' ||
-    sparkData.status === 'ROUTING' ||
-    sparkData.status === 'CHECKPOINT';
+    spark.status === 'EXECUTING' ||
+    spark.status === 'ROUTING' ||
+    spark.status === 'CHECKPOINT';
 
   return (
     <>
       <TopBar
-        title={sparkData.title}
+        title={spark.title}
         actions={
           isActive ? (
             <Button
               variant="outlined"
               color="error"
               size="small"
-              onClick={() => cancelSpark.mutate(sparkData.id)}
+              onClick={() => cancelSpark.mutate(spark.id)}
             >
               Cancel
             </Button>
@@ -194,7 +87,7 @@ export default function SparkDetailPage() {
       {/* Status Timeline */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
-          <SparkTimeline status={sparkData.status} />
+          <SparkTimeline status={spark.status} />
         </CardContent>
       </Card>
 
@@ -202,24 +95,24 @@ export default function SparkDetailPage() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-            <SparkStatusBadge status={sparkData.status} />
-            {sparkData.type && <Chip label={sparkData.type} size="small" variant="outlined" />}
-            <Chip label={sparkData.priority} size="small" variant="outlined" />
-            <Chip label={sparkData.checkpointPolicy} size="small" variant="outlined" />
+            <SparkStatusBadge status={spark.status} />
+            {spark.type && <Chip label={spark.type} size="small" variant="outlined" />}
+            <Chip label={spark.priority} size="small" variant="outlined" />
+            <Chip label={spark.checkpointPolicy} size="small" variant="outlined" />
           </Box>
           <Typography variant="body1" sx={{ mb: 2 }}>
-            {sparkData.description}
+            {spark.description}
           </Typography>
           <Box sx={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
             <Typography variant="body2" color="text.secondary">
-              Tokens: {sparkData.totalTokens.toLocaleString()}
+              Tokens: {spark.totalTokens.toLocaleString()}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Cost: ${sparkData.estimatedCost.toFixed(2)}
+              Cost: ${spark.estimatedCost.toFixed(2)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               Created{' '}
-              {formatDistanceToNow(new Date(sparkData.createdAt), {
+              {formatDistanceToNow(new Date(spark.createdAt), {
                 addSuffix: true,
               })}
             </Typography>
@@ -229,56 +122,62 @@ export default function SparkDetailPage() {
 
       {/* Tactics */}
       <Typography variant="h6" sx={{ mb: 1.5 }}>
-        Tactics
+        Tactics ({displayTactics.length})
       </Typography>
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
-        {displayTactics.map((tactic) => (
-          <Card key={tactic.id}>
-            <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <Chip
-                  label={tactic.status}
-                  size="small"
-                  color={
-                    tactic.status === 'COMPLETED'
-                      ? 'success'
-                      : tactic.status === 'EXECUTING'
-                        ? 'primary'
-                        : tactic.status === 'FAILED'
-                          ? 'error'
-                          : 'default'
-                  }
-                />
-                <Typography variant="body2" sx={{ flex: 1 }}>
-                  {tactic.description}
-                </Typography>
-              </Box>
-              {tactic.repos.length > 0 && (
-                <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
-                  {tactic.repos.map((repo) => (
-                    <Chip
-                      key={repo}
-                      label={repo}
-                      size="small"
-                      variant="outlined"
-                      sx={{ fontSize: '0.7rem' }}
-                    />
-                  ))}
+      {displayTactics.length === 0 ? (
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+          No tactics created yet.
+        </Typography>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
+          {displayTactics.map((tactic) => (
+            <Card key={tactic.id}>
+              <CardContent sx={{ py: 1.5, '&:last-child': { pb: 1.5 } }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                  <Chip
+                    label={tactic.status}
+                    size="small"
+                    color={
+                      tactic.status === 'COMPLETED'
+                        ? 'success'
+                        : tactic.status === 'EXECUTING'
+                          ? 'primary'
+                          : tactic.status === 'FAILED'
+                            ? 'error'
+                            : 'default'
+                    }
+                  />
+                  <Typography variant="body2" sx={{ flex: 1 }}>
+                    {tactic.description}
+                  </Typography>
                 </Box>
-              )}
-              {tactic.result && (
-                <Box sx={{ mt: 1 }}>
-                  {tactic.result.findings.map((f, i) => (
-                    <Typography key={i} variant="caption" color="text.secondary" display="block">
-                      &bull; {f}
-                    </Typography>
-                  ))}
-                </Box>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
+                {tactic.repos.length > 0 && (
+                  <Box sx={{ display: 'flex', gap: 0.5, mt: 0.5 }}>
+                    {tactic.repos.map((repo) => (
+                      <Chip
+                        key={repo}
+                        label={repo}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: '0.7rem' }}
+                      />
+                    ))}
+                  </Box>
+                )}
+                {tactic.result && (
+                  <Box sx={{ mt: 1 }}>
+                    {tactic.result.findings.map((f, i) => (
+                      <Typography key={i} variant="caption" color="text.secondary" display="block">
+                        &bull; {f}
+                      </Typography>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </Box>
+      )}
 
       {/* Checkpoints */}
       {displayCheckpoints.length > 0 && (
@@ -367,7 +266,7 @@ export default function SparkDetailPage() {
       )}
 
       {/* Results */}
-      {sparkData.result && (
+      {spark.result && (
         <>
           <Typography variant="h6" sx={{ mb: 1.5 }}>
             Results
@@ -375,14 +274,14 @@ export default function SparkDetailPage() {
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Typography variant="body1" sx={{ mb: 2 }}>
-                {sparkData.result.summary}
+                {spark.result.summary}
               </Typography>
-              {sparkData.result.findings.length > 0 && (
+              {spark.result.findings.length > 0 && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                     Findings
                   </Typography>
-                  {sparkData.result.findings.map((f, i) => (
+                  {spark.result.findings.map((f, i) => (
                     <Typography key={i} variant="body2" color="text.secondary">
                       &bull; {f}
                     </Typography>
@@ -391,7 +290,7 @@ export default function SparkDetailPage() {
               )}
               <Divider sx={{ my: 1.5 }} />
               <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                {sparkData.result.prs.map((pr, i) => (
+                {spark.result.prs.map((pr, i) => (
                   <Chip
                     key={i}
                     icon={<LinkIcon />}
@@ -403,7 +302,7 @@ export default function SparkDetailPage() {
                     size="small"
                   />
                 ))}
-                {sparkData.result.issues.map((issue, i) => (
+                {spark.result.issues.map((issue, i) => (
                   <Chip
                     key={i}
                     icon={<LinkIcon />}
@@ -430,28 +329,34 @@ export default function SparkDetailPage() {
           </Typography>
         </AccordionSummary>
         <AccordionDetails>
-          {displayLogs.map((log) => (
-            <Box
-              key={log.id}
-              sx={{
-                mb: 1.5,
-                p: 1.5,
-                bgcolor: 'background.default',
-                borderRadius: 1,
-                fontFamily: 'monospace',
-                fontSize: '0.8rem',
-              }}
-            >
-              <Box sx={{ display: 'flex', gap: 2, mb: 0.5, color: 'text.secondary' }}>
-                <span>{format(new Date(log.timestamp), 'HH:mm:ss')}</span>
-                <Chip label={log.toolName} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
-                <span>{log.durationMs}ms</span>
+          {displayLogs.length === 0 ? (
+            <Typography variant="body2" color="text.secondary">
+              No execution logs yet.
+            </Typography>
+          ) : (
+            displayLogs.map((log) => (
+              <Box
+                key={log.id}
+                sx={{
+                  mb: 1.5,
+                  p: 1.5,
+                  bgcolor: 'background.default',
+                  borderRadius: 1,
+                  fontFamily: 'monospace',
+                  fontSize: '0.8rem',
+                }}
+              >
+                <Box sx={{ display: 'flex', gap: 2, mb: 0.5, color: 'text.secondary' }}>
+                  <span>{format(new Date(log.timestamp), 'HH:mm:ss')}</span>
+                  <Chip label={log.toolName} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
+                  <span>{log.durationMs}ms</span>
+                </Box>
+                <Typography variant="caption" component="pre" sx={{ whiteSpace: 'pre-wrap', color: 'text.secondary' }}>
+                  {JSON.stringify(log.toolInput, null, 2)}
+                </Typography>
               </Box>
-              <Typography variant="caption" component="pre" sx={{ whiteSpace: 'pre-wrap', color: 'text.secondary' }}>
-                {JSON.stringify(log.toolInput, null, 2)}
-              </Typography>
-            </Box>
-          ))}
+            ))
+          )}
         </AccordionDetails>
       </Accordion>
     </>

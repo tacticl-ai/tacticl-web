@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -11,32 +10,16 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import KeyIcon from '@mui/icons-material/Key';
 import TopBar from '../components/layout/TopBar';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
-import type { AgentToken } from '../api/types';
-
-const MOCK_TOKENS: AgentToken[] = [
-  {
-    id: 'tk1',
-    userId: 'u1',
-    provider: 'ANTHROPIC',
-    label: 'Main Anthropic Key',
-    usageLimits: { dailyTokens: 5000000, monthlyTokens: 100000000, maxPerRequest: 200000 },
-    currentUsage: { todayTokens: 1250000, monthTokens: 34500000 },
-    createdAt: new Date(Date.now() - 2592000000).toISOString(),
-  },
-  {
-    id: 'tk2',
-    userId: 'u1',
-    provider: 'GITHUB',
-    label: 'GitHub PAT (repos)',
-    usageLimits: { dailyTokens: 0, monthlyTokens: 0, maxPerRequest: 0 },
-    currentUsage: { todayTokens: 0, monthTokens: 0 },
-    createdAt: new Date(Date.now() - 604800000).toISOString(),
-  },
-];
+import { useTokens, useRemoveToken } from '../hooks/useTokens';
 
 export default function TokenListPage() {
-  const [tokens] = useState<AgentToken[]>(MOCK_TOKENS);
+  const { data: tokens, isLoading, isError, refetch } = useTokens();
+  const removeToken = useRemoveToken();
+
+  const displayTokens = tokens ?? [];
 
   return (
     <>
@@ -49,7 +32,11 @@ export default function TokenListPage() {
         }
       />
 
-      {tokens.length === 0 ? (
+      {isLoading ? (
+        <LoadingState message="Loading tokens..." />
+      ) : isError ? (
+        <ErrorState message="Failed to load tokens." onRetry={refetch} />
+      ) : displayTokens.length === 0 ? (
         <EmptyState
           icon={KeyIcon}
           title="No tokens configured"
@@ -59,7 +46,7 @@ export default function TokenListPage() {
         />
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {tokens.map((token) => {
+          {displayTokens.map((token) => {
             const dailyPct =
               token.usageLimits.dailyTokens > 0
                 ? (token.currentUsage.todayTokens /
@@ -95,7 +82,11 @@ export default function TokenListPage() {
                       size="small"
                       variant="outlined"
                     />
-                    <IconButton size="small" title="Remove token">
+                    <IconButton
+                      size="small"
+                      title="Remove token"
+                      onClick={() => removeToken.mutate(token.id)}
+                    >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Box>

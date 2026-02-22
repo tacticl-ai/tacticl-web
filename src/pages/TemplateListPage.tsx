@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -10,51 +9,16 @@ import AddIcon from '@mui/icons-material/Add';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import { useNavigate } from 'react-router-dom';
 import TopBar from '../components/layout/TopBar';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
-import type { SparkTemplate } from '../api/types';
-
-const MOCK_TEMPLATES: SparkTemplate[] = [
-  {
-    id: 'tmpl1',
-    userId: 'u1',
-    name: 'Weekly Cost Audit',
-    description:
-      'Analyze Cloud Run, ClickHouse, and Firebase costs. Suggest optimizations.',
-    defaultRepos: ['strategiz-core'],
-    defaultSchedule: '0 9 * * 1',
-    defaultCheckpointPolicy: 'CHECKPOINT_MAJOR',
-    tags: ['cost', 'infra', 'weekly'],
-    createdAt: new Date(Date.now() - 604800000).toISOString(),
-  },
-  {
-    id: 'tmpl2',
-    userId: 'u1',
-    name: 'Dead Code Cleanup',
-    description:
-      'Find unused exports, components, and utilities. Remove them and verify build.',
-    defaultRepos: ['strategiz-ui'],
-    defaultSchedule: null,
-    defaultCheckpointPolicy: 'CHECKPOINT_ALL',
-    tags: ['code', 'cleanup'],
-    createdAt: new Date(Date.now() - 1209600000).toISOString(),
-  },
-  {
-    id: 'tmpl3',
-    userId: 'u1',
-    name: 'Dependency Security Scan',
-    description:
-      'Run npm audit and mvn dependency-check. Create issues for critical vulnerabilities.',
-    defaultRepos: ['strategiz-core', 'strategiz-ui', 'tacticl-core'],
-    defaultSchedule: '0 8 * * *',
-    defaultCheckpointPolicy: 'CHECKPOINT_MAJOR',
-    tags: ['security', 'deps', 'daily'],
-    createdAt: new Date(Date.now() - 2592000000).toISOString(),
-  },
-];
+import { useTemplates } from '../hooks/useTemplates';
 
 export default function TemplateListPage() {
-  const [templates] = useState<SparkTemplate[]>(MOCK_TEMPLATES);
+  const { data: templates, isLoading, isError, refetch } = useTemplates();
   const navigate = useNavigate();
+
+  const displayTemplates = templates ?? [];
 
   return (
     <>
@@ -67,7 +31,11 @@ export default function TemplateListPage() {
         }
       />
 
-      {templates.length === 0 ? (
+      {isLoading ? (
+        <LoadingState message="Loading templates..." />
+      ) : isError ? (
+        <ErrorState message="Failed to load templates." onRetry={refetch} />
+      ) : displayTemplates.length === 0 ? (
         <EmptyState
           icon={BookmarkIcon}
           title="No templates yet"
@@ -87,7 +55,7 @@ export default function TemplateListPage() {
             gap: 2,
           }}
         >
-          {templates.map((tmpl) => (
+          {displayTemplates.map((tmpl) => (
             <Card key={tmpl.id}>
               <CardActionArea
                 onClick={() =>

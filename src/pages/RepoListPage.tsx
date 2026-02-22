@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -12,38 +11,16 @@ import FolderIcon from '@mui/icons-material/Folder';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { formatDistanceToNow } from 'date-fns';
 import TopBar from '../components/layout/TopBar';
+import LoadingState from '../components/common/LoadingState';
+import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
-import type { RepoGrant } from '../api/types';
-
-const MOCK_REPOS: RepoGrant[] = [
-  {
-    id: 'r1',
-    userId: 'u1',
-    provider: 'GITHUB',
-    repoFullName: 'user/strategiz-core',
-    accessLevel: 'WRITE',
-    grantedAt: new Date(Date.now() - 2592000000).toISOString(),
-  },
-  {
-    id: 'r2',
-    userId: 'u1',
-    provider: 'GITHUB',
-    repoFullName: 'user/strategiz-ui',
-    accessLevel: 'WRITE',
-    grantedAt: new Date(Date.now() - 2592000000).toISOString(),
-  },
-  {
-    id: 'r3',
-    userId: 'u1',
-    provider: 'GITHUB',
-    repoFullName: 'user/tacticl-core',
-    accessLevel: 'ADMIN',
-    grantedAt: new Date(Date.now() - 604800000).toISOString(),
-  },
-];
+import { useRepos, useRevokeRepo } from '../hooks/useRepos';
 
 export default function RepoListPage() {
-  const [repos] = useState<RepoGrant[]>(MOCK_REPOS);
+  const { data: repos, isLoading, isError, refetch } = useRepos();
+  const revokeRepo = useRevokeRepo();
+
+  const displayRepos = repos ?? [];
 
   return (
     <>
@@ -56,7 +33,11 @@ export default function RepoListPage() {
         }
       />
 
-      {repos.length === 0 ? (
+      {isLoading ? (
+        <LoadingState message="Loading repositories..." />
+      ) : isError ? (
+        <ErrorState message="Failed to load repositories." onRetry={refetch} />
+      ) : displayRepos.length === 0 ? (
         <EmptyState
           icon={FolderIcon}
           title="No repos connected"
@@ -66,7 +47,7 @@ export default function RepoListPage() {
         />
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-          {repos.map((repo) => (
+          {displayRepos.map((repo) => (
             <Card key={repo.id}>
               <CardContent
                 sx={{
@@ -101,7 +82,11 @@ export default function RepoListPage() {
                         : 'default'
                   }
                 />
-                <IconButton size="small" title="Revoke access">
+                <IconButton
+                  size="small"
+                  title="Revoke access"
+                  onClick={() => revokeRepo.mutate(repo.id)}
+                >
                   <DeleteIcon fontSize="small" />
                 </IconButton>
               </CardContent>
