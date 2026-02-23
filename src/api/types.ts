@@ -258,3 +258,86 @@ export interface PaginatedResponse<T> {
   page: number;
   size: number;
 }
+
+// ─── Social ─────────────────────────────────────────────
+
+export interface SocialIntegration {
+  id: string;
+  platform: string;
+  platformUsername: string;
+  profileImageUrl?: string;
+  disabled: boolean;
+  tokenRefreshNeeded: boolean;
+  tokenExpiresAt?: string;
+  createdAt: string;
+}
+
+export type PostState = 'DRAFT' | 'QUEUED' | 'PUBLISHING' | 'PUBLISHED' | 'CANCELLED' | 'FAILED';
+
+export interface SocialPost {
+  id: string;
+  content: string;
+  mediaUrls: string[];
+  targetIntegrationIds: string[];
+  state: PostState;
+  publishDate?: string;
+  publishedPostId?: string;
+  publishedUrl?: string;
+  createdAt: string;
+}
+
+export interface CreatePostRequest {
+  content: string;
+  mediaUrls?: string[];
+  targetIntegrationIds?: string[];
+  publishDate?: string;
+}
+
+export interface OAuthAuthorizeResponse {
+  authUrl: string;
+  codeVerifier: string;
+}
+
+export interface OAuthCallbackResponse {
+  integrationId: string | null;
+  platform: string;
+  success: boolean;
+}
+
+// ─── Agent ──────────────────────────────────────────────
+
+export interface AuditLogEntry {
+  id: string;
+  commandText: string;
+  responseText: string;
+  toolsInvoked: string[];
+  success: boolean;
+  executionTimeMs: number;
+  createdAt: string;
+}
+
+export interface ActivityResponse {
+  activeAsks: Record<string, unknown>[];
+  recentAsks: Record<string, unknown>[];
+}
+
+export interface TranscribeResponse {
+  text: string;
+}
+
+export interface AgentCommandRequest {
+  text: string;
+  sessionId?: string;
+  timezone?: string;
+  model?: string;
+}
+
+export interface AgentCommandResponse {
+  responseText: string;
+  toolsInvoked: string[];
+  sparkId?: string;
+  sparkStatus?: string;
+  confirmationId?: string;
+  success: boolean;
+  model?: string;
+}

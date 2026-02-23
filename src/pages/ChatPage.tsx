@@ -5,9 +5,23 @@ import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import Drawer from '@mui/material/Drawer';
+import Badge from '@mui/material/Badge';
+import List from '@mui/material/List';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Divider from '@mui/material/Divider';
 import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
-import { api } from '../api/client';
+import HistoryIcon from '@mui/icons-material/History';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import { formatDistanceToNow } from 'date-fns';
+import { agentApi } from '../api/agent';
+import type { AgentCommandResponse } from '../api/types';
+import { useAgentHistory, useAgentActivity, useAgentModels } from '../hooks/useAgent';
 import TopBar from '../components/layout/TopBar';
 import TacticlLogo from '../components/TacticlLogo';
 
@@ -21,14 +35,6 @@ interface ChatMessage {
   loading?: boolean;
 }
 
-interface AgentCommandResponse {
-  responseText: string;
-  toolsInvoked: string[];
-  sparkId?: string;
-  sparkStatus?: string;
-  success: boolean;
-}
-
 const SUGGESTIONS = [
   'Clean up dead code in strategiz-core',
   'Audit cloud costs and find savings',
@@ -40,8 +46,16 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('');
+  const [historyOpen, setHistoryOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const { data: history = [], isLoading: historyLoading } = useAgentHistory();
+  const { data: activity } = useAgentActivity();
+  const { data: models = [] } = useAgentModels();
+
+  const activeAskCount = activity?.activeAsks?.length ?? 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,8 +82,9 @@ export default function ChatPage() {
     setSending(true);
 
     try {
-      const response = await api.post<AgentCommandResponse>('/api/agent/command', {
+      const response: AgentCommandResponse = await agentApi.command({
         text: msg,
+        ...(selectedModel ? { model: selectedModel } : {}),
       });
 
       setMessages((prev) =>
@@ -111,11 +126,30 @@ export default function ChatPage() {
     }
   };
 
+  const handleHistoryClick = (commandText: string) => {
+    setInput(commandText);
+    setHistoryOpen(false);
+    inputRef.current?.focus();
+  };
+
   const isEmpty = messages.length === 0;
+
+  const topBarActions = (
+    <>
+      {activeAskCount > 0 ? (
+        <Badge badgeContent={activeAskCount} color="primary">
+          <PendingActionsIcon fontSize="small" sx={{ color: 'text.secondary' }} />
+        </Badge>
+      ) : null}
+      <IconButton size="small" title="History" onClick={() => setHistoryOpen(true)}>
+        <HistoryIcon fontSize="small" />
+      </IconButton>
+    </>
+  );
 
   return (
     <>
-    <TopBar title="Chat" />
+    <TopBar title="Chat" actions={topBarActions} />
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, mx: -3, mb: -3 }}>
       {/* Messages area */}
       <Box
@@ -201,6 +235,31 @@ export default function ChatPage() {
               },
             }}
           />
+          {models.length > 0 && (
+            <FormControl size="small" sx={{ minWidth: 120 }}>
+              <Select
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+                displayEmpty
+                sx={{
+                  borderRadius: 3,
+                  bgcolor: 'background.default',
+                  fontSize: '0.75rem',
+                  height: 44,
+                  '& .MuiSelect-select': { py: 1 },
+                }}
+              >
+                <MenuItem value="">
+                  <Typography variant="caption" color="text.secondary">Auto</Typography>
+                </MenuItem>
+                {models.map((model) => (
+                  <MenuItem key={model} value={model}>
+                    <Typography variant="caption">{model}</Typography>
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
           <IconButton
             onClick={() => sendMessage()}
             disabled={!input.trim() || sending}
@@ -218,6 +277,94 @@ export default function ChatPage() {
         </Box>
       </Box>
     </Box>
+
+    {/* History Drawer */}
+    <Drawer
+      anchor="right"
+      open={historyOpen}
+      onClose={() => setHistoryOpen(false)}
+      PaperProps={{
+        sx: { width: 360, bgcolor: 'background.paper' },
+      }}
+    >
+      <Box sx={{ p: 2, borderBottom: 1, borderColor: 'divider' }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          History
+        </Typography>
+      </Box>
+      {historyLoading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+          <CircularProgress size={24} />
+        </Box>
+      ) : history.length === 0 ? (
+        <Box sx={{ p: 3, textAlign: 'center' }}>
+          <HistoryIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
+          <Typography variant="body2" color="text.secondary">
+            No commands yet
+          </Typography>
+        </Box>
+      ) : (
+        <List disablePadding>
+          {history.map((entry, idx) => (
+            <Box key={entry.id}>
+              <ListItemButton onClick={() => handleHistoryClick(entry.commandText)} sx={{ py: 1.5, px: 2 }}>
+                <ListItemText
+                  primary={
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }} noWrap>
+                      {entry.commandText}
+                    </Typography>
+                  }
+                  secondary={
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{
+                          display: '-webkit-box',
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {entry.responseText}
+                      </Typography>
+                      {entry.toolsInvoked.length > 0 && (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                          {entry.toolsInvoked.map((tool) => (
+                            <Chip
+                              key={tool}
+                              label={tool}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                fontSize: '0.6rem',
+                                bgcolor: '#1A1A1A',
+                                color: 'text.secondary',
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      )}
+                      <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
+                        {entry.executionTimeMs > 0 && (
+                          <Typography variant="caption" color="text.disabled">
+                            {(entry.executionTimeMs / 1000).toFixed(1)}s
+                          </Typography>
+                        )}
+                        <Typography variant="caption" color="text.disabled">
+                          {formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  }
+                />
+              </ListItemButton>
+              {idx < history.length - 1 && <Divider />}
+            </Box>
+          ))}
+        </List>
+      )}
+    </Drawer>
     </>
   );
 }
