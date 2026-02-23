@@ -71,6 +71,9 @@ function AppInner() {
           <Route path="/social" element={<SocialPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
+
+        {/* 404 catch-all */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

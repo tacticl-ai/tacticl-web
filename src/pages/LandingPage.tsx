@@ -15,7 +15,9 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import TacticlLogo from '../components/TacticlLogo';
 import PublicHeader from '../components/layout/PublicHeader';
 
-const SIGNUP_URL = 'https://tacticl-auth.web.app/signup?redirect=https://tacticl.web.app/';
+const AUTH_BASE = 'https://tacticl-auth.web.app';
+const REDIRECT = 'https://tacticl.web.app/';
+const SIGNUP_URL = `${AUTH_BASE}/signup?redirect=${encodeURIComponent(REDIRECT)}`;
 
 const features = [
   {
@@ -92,6 +94,9 @@ const globalKeyframes = `
 @keyframes dashFlow {
   from { stroke-dashoffset: 12; }
   to { stroke-dashoffset: 0; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .animated-dash { animation: dashFlow 1s linear infinite; }
 }
 `;
 
@@ -248,6 +253,7 @@ export default function LandingPage() {
             <Button
               variant="outlined"
               size="large"
+              disabled
               sx={{
                 px: 4,
                 py: 1.5,
@@ -256,20 +262,20 @@ export default function LandingPage() {
                 borderRadius: '12px',
                 borderColor: 'rgba(108,99,255,0.5)',
                 color: '#9D97FF',
-                '&:hover': {
-                  borderColor: '#6C63FF',
-                  bgcolor: 'rgba(108,99,255,0.08)',
+                '&.Mui-disabled': {
+                  borderColor: 'rgba(108,99,255,0.25)',
+                  color: 'rgba(157,151,255,0.4)',
                 },
               }}
             >
-              Watch Demo
+              Watch Demo — Coming Soon
             </Button>
           </Box>
         </Container>
       </Box>
 
       {/* ========== Features Section ========== */}
-      <Box component="section" sx={{ bgcolor: '#0F0F23', py: { xs: 8, md: 12 } }}>
+      <Box component="section" id="features" sx={{ bgcolor: '#0F0F23', py: { xs: 8, md: 12 } }}>
         <Container maxWidth="lg">
           <Typography
             variant="h3"
@@ -352,7 +358,7 @@ export default function LandingPage() {
       </Box>
 
       {/* ========== How It Works Section ========== */}
-      <Box component="section" sx={{ bgcolor: '#0D0D1A', py: { xs: 8, md: 12 } }}>
+      <Box component="section" id="how-it-works" sx={{ bgcolor: '#0D0D1A', py: { xs: 8, md: 12 } }}>
         <Container maxWidth="md">
           <Typography
             variant="h3"
@@ -465,9 +471,7 @@ export default function LandingPage() {
                         stroke="rgba(108,99,255,0.3)"
                         strokeWidth="2"
                         strokeDasharray="6 6"
-                        style={{
-                          animation: 'dashFlow 1s linear infinite',
-                        }}
+                        className="animated-dash"
                       />
                       <polygon points="48,5 58,10 48,15" fill="rgba(108,99,255,0.4)" />
                     </svg>
@@ -492,9 +496,7 @@ export default function LandingPage() {
                         stroke="rgba(108,99,255,0.3)"
                         strokeWidth="2"
                         strokeDasharray="6 6"
-                        style={{
-                          animation: 'dashFlow 1s linear infinite',
-                        }}
+                        className="animated-dash"
                       />
                       <polygon points="5,28 10,38 15,28" fill="rgba(108,99,255,0.4)" />
                     </svg>

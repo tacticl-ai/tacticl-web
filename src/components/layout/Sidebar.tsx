@@ -95,7 +95,7 @@ export default function Sidebar() {
       <Toolbar>
         <Box
           sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
-          onClick={() => navigate('/sparks')}
+          onClick={() => navigate('/chat')}
         >
           <TacticlLogo size={32} />
           <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>

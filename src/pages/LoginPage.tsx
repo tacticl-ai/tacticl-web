@@ -34,7 +34,7 @@ export default function LoginPage() {
         userId: email.trim(),
       });
       setAuth(res.token, res.userId);
-      navigate('/', { replace: true });
+      navigate('/chat', { replace: true });
     } catch {
       setError('Failed to authenticate. The backend may be starting up — try again in a moment.');
     } finally {
