@@ -23,8 +23,8 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { formatDistanceToNow } from 'date-fns';
 import { agentApi } from '../api/agent';
-import type { AgentCommandResponse } from '../api/types';
-import { useAgentHistory, useAgentActivity, useAgentModels, useConfirmAction } from '../hooks/useAgent';
+import type { AgentCommandResponse, AgentAsk } from '../api/types';
+import { useAgentHistory, useAgentActivity, useAgentModels, useConfirmAction, usePendingAsks, useCancelAsk } from '../hooks/useAgent';
 import TopBar from '../components/layout/TopBar';
 import TacticlLogo from '../components/TacticlLogo';
 
@@ -61,9 +61,11 @@ export default function ChatPage() {
   const { data: history = [], isLoading: historyLoading } = useAgentHistory();
   const { data: activity } = useAgentActivity();
   const { data: models = [] } = useAgentModels();
+  const { data: pendingAsks = [] } = usePendingAsks();
   const confirmAction = useConfirmAction();
+  const cancelAsk = useCancelAsk();
 
-  const activeAskCount = activity?.activeAsks?.length ?? 0;
+  const activeAskCount = pendingAsks.length;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -182,6 +184,82 @@ export default function ChatPage() {
           flexDirection: 'column',
         }}
       >
+        {/* Activity stats */}
+        {activity && (
+          <Box sx={{ display: 'flex', gap: 1.5, mb: 2, flexWrap: 'wrap' }}>
+            {[
+              { label: 'Recent Sparks', value: activity.recentAsks?.length ?? 0 },
+              { label: 'Active', value: activity.activeAsks?.length ?? 0 },
+            ].map((stat) => (
+              <Box
+                key={stat.label}
+                sx={{
+                  px: 2,
+                  py: 1,
+                  borderRadius: 2,
+                  bgcolor: 'rgba(108, 99, 255, 0.08)',
+                  border: '1px solid rgba(108, 99, 255, 0.15)',
+                  minWidth: 100,
+                }}
+              >
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                  {stat.label}
+                </Typography>
+                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: '1.125rem', lineHeight: 1.2 }}>
+                  {stat.value}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        )}
+
+        {/* Pending asks */}
+        {pendingAsks.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            {pendingAsks.map((ask: AgentAsk) => (
+              <Box
+                key={ask.id}
+                sx={{
+                  p: 2,
+                  mb: 1,
+                  borderRadius: 2,
+                  bgcolor: 'rgba(255, 152, 0, 0.08)',
+                  border: '1px solid rgba(255, 152, 0, 0.3)',
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.5 }}>
+                  {ask.question}
+                </Typography>
+                {ask.options.length > 0 && (
+                  <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>
+                    Options: {ask.options.join(' · ')}
+                  </Typography>
+                )}
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="success"
+                    onClick={() => confirmAction.mutate({ confirmationId: ask.id, approved: true })}
+                    sx={{ fontSize: '0.75rem', textTransform: 'none', borderRadius: 2 }}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    onClick={() => cancelAsk.mutate(ask.id)}
+                    sx={{ fontSize: '0.75rem', textTransform: 'none', borderRadius: 2 }}
+                  >
+                    Dismiss
+                  </Button>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        )}
+
         {isEmpty ? (
           <Box
             sx={{

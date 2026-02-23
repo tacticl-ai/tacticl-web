@@ -30,7 +30,10 @@ export function useConfirmAction() {
   return useMutation({
     mutationFn: ({ confirmationId, approved }: { confirmationId: string; approved: boolean }) =>
       agentApi.confirmAction(confirmationId, approved),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['agent-activity'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['agent-activity'] });
+      qc.invalidateQueries({ queryKey: ['agent-pending-asks'] });
+    },
   });
 }
 
@@ -38,6 +41,17 @@ export function useCancelAsk() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (askId: string) => agentApi.cancelAsk(askId),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['agent-activity'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['agent-activity'] });
+      qc.invalidateQueries({ queryKey: ['agent-pending-asks'] });
+    },
+  });
+}
+
+export function usePendingAsks() {
+  return useQuery({
+    queryKey: ['agent-pending-asks'],
+    queryFn: () => agentApi.getPendingAsks(),
+    refetchInterval: 10_000,
   });
 }

@@ -1,6 +1,6 @@
 import { api } from './client';
 import { useAuthStore } from '../stores/auth-store';
-import type { AuditLogEntry, ActivityResponse, TranscribeResponse, AgentCommandRequest, AgentCommandResponse } from './types';
+import type { AuditLogEntry, ActivityResponse, TranscribeResponse, AgentCommandRequest, AgentCommandResponse, AgentAsk } from './types';
 
 export const agentApi = {
   command: (data: AgentCommandRequest) =>
@@ -23,6 +23,9 @@ export const agentApi = {
 
   cancelAsk: (askId: string) =>
     api.post<void>(`/api/agent/asks/${askId}/cancel`),
+
+  getPendingAsks: () =>
+    api.get<AgentAsk[]>('/api/agent/asks/pending'),
 
   transcribe: async (file: File): Promise<TranscribeResponse> => {
     const formData = new FormData();

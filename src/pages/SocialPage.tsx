@@ -148,7 +148,7 @@ export default function SocialPage() {
         <ErrorState message="Failed to load integrations." onRetry={integrations.refetch} />
       ) : displayIntegrations.length === 0 ? (
         <EmptyState
-          icon={ShareIcon}
+          variant="social"
           title="No accounts connected"
           description="Connect your social accounts to publish content directly from Tacticl."
           actionLabel="Connect Account"
@@ -247,7 +247,7 @@ export default function SocialPage() {
         <ErrorState message="Failed to load posts." onRetry={posts.refetch} />
       ) : displayPosts.length === 0 ? (
         <EmptyState
-          icon={ShareIcon}
+          variant="social"
           title="No posts"
           description="Create a post to publish across your connected social accounts."
           actionLabel="New Post"

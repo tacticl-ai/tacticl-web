@@ -341,3 +341,13 @@ export interface AgentCommandResponse {
   success: boolean;
   model?: string;
 }
+
+export interface AgentAsk {
+  id: string;
+  sparkId: string;
+  question: string;
+  options: string[];
+  status: 'pending' | 'answered' | 'expired';
+  answer?: string;
+  createdAt: string;
+}
