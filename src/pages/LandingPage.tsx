@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
@@ -18,6 +19,88 @@ import PublicHeader from '../components/layout/PublicHeader';
 const AUTH_BASE = 'https://tacticl-auth.web.app';
 const REDIRECT = 'https://tacticl.web.app/';
 const SIGNUP_URL = `${AUTH_BASE}/signup?redirect=${encodeURIComponent(REDIRECT)}`;
+
+/* ---------- Hooks ---------- */
+
+function useParallax() {
+  const scrollY = useRef(0);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const helixRef = useRef<HTMLDivElement>(null);
+  const dotsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.innerWidth < 768;
+    if (prefersReduced || isMobile) return;
+
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          const y = window.scrollY;
+          scrollY.current = y;
+          if (gridRef.current) gridRef.current.style.transform = `translate3d(0, ${y * 0.1}px, 0)`;
+          if (helixRef.current) helixRef.current.style.transform = `translate3d(0, ${y * 0.12}px, 0)`;
+          if (dotsRef.current) dotsRef.current.style.transform = `translate3d(0, ${y * 0.25}px, 0)`;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return { gridRef, helixRef, dotsRef };
+}
+
+function useScrollReveal(threshold = 0.15) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      setIsVisible(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold },
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [threshold]);
+
+  return { ref, isVisible };
+}
+
+function useTilt3D(maxTilt = 5) {
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      const el = e.currentTarget;
+      const rect = el.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width - 0.5;
+      const y = (e.clientY - rect.top) / rect.height - 0.5;
+      el.style.transform = `perspective(800px) rotateY(${x * maxTilt}deg) rotateX(${-y * maxTilt}deg) translateY(-2px)`;
+    },
+    [maxTilt],
+  );
+
+  const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) translateY(0)';
+  }, []);
+
+  return { onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave };
+}
+
+/* ---------- Data ---------- */
 
 const features = [
   {
@@ -70,7 +153,7 @@ const steps = [
   },
 ];
 
-/* ---------- CSS keyframes (injected once) ---------- */
+/* ---------- CSS keyframes ---------- */
 
 const globalKeyframes = `
 @keyframes gridFade {
@@ -82,11 +165,6 @@ const globalKeyframes = `
   50% { transform: translateY(-20px) scale(1.2); opacity: 0.7; }
   100% { transform: translateY(0) scale(1); opacity: 0.4; }
 }
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(30px); }
   to { opacity: 1; transform: translateY(0); }
@@ -95,12 +173,85 @@ const globalKeyframes = `
   from { stroke-dashoffset: 12; }
   to { stroke-dashoffset: 0; }
 }
+@keyframes nodePulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+@keyframes helixFlow {
+  from { stroke-dashoffset: 20; }
+  to { stroke-dashoffset: 0; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .animated-dash { animation: dashFlow 1s linear infinite; }
+  .helix-line { animation: helixFlow 2s linear infinite; }
+  .helix-node { animation: nodePulse 3s ease-in-out infinite; }
 }
 `;
 
-/* ---------- Floating dots for hero ---------- */
+/* ---------- DNA Helix SVG ---------- */
+
+const HELIX_NODES = Array.from({ length: 20 }, (_, i) => {
+  const t = (i / 20) * Math.PI * 3;
+  const strand = i % 2;
+  const x = 50 + (i / 20) * 1100;
+  const y = 350 + Math.sin(t + strand * Math.PI) * 180;
+  const colors = ['#06b6d4', '#8b5cf6', '#ec4899'];
+  return { x, y, color: colors[i % 3], delay: i * 0.15, strand };
+});
+
+// Connect nearby nodes across strands
+const HELIX_CONNECTIONS: { x1: number; y1: number; x2: number; y2: number; delay: number }[] = [];
+for (let i = 0; i < HELIX_NODES.length; i++) {
+  for (let j = i + 1; j < HELIX_NODES.length; j++) {
+    const a = HELIX_NODES[i];
+    const b = HELIX_NODES[j];
+    if (a.strand === b.strand) continue;
+    const dist = Math.hypot(a.x - b.x, a.y - b.y);
+    if (dist < 200) {
+      HELIX_CONNECTIONS.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, delay: i * 0.1 });
+    }
+  }
+}
+
+function DNAHelixBackground() {
+  return (
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 1200 700"
+      preserveAspectRatio="xMidYMid slice"
+      style={{ position: 'absolute', inset: 0, opacity: 0.35, pointerEvents: 'none' }}
+    >
+      {HELIX_CONNECTIONS.map((c, i) => (
+        <line
+          key={`c${i}`}
+          x1={c.x1}
+          y1={c.y1}
+          x2={c.x2}
+          y2={c.y2}
+          stroke="rgba(108,99,255,0.08)"
+          strokeWidth="1"
+          strokeDasharray="4 4"
+          className="helix-line"
+          style={{ animationDelay: `${c.delay}s` }}
+        />
+      ))}
+      {HELIX_NODES.map((n, i) => (
+        <circle
+          key={`n${i}`}
+          cx={n.x}
+          cy={n.y}
+          r={2.5}
+          fill={n.color}
+          className="helix-node"
+          style={{ animationDelay: `${n.delay}s` }}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/* ---------- Floating dots ---------- */
 
 const heroDots = Array.from({ length: 18 }, (_, i) => ({
   left: `${5 + ((i * 37) % 90)}%`,
@@ -111,10 +262,32 @@ const heroDots = Array.from({ length: 18 }, (_, i) => ({
   color: i % 3 === 0 ? '#06b6d4' : i % 3 === 1 ? '#8b5cf6' : '#ec4899',
 }));
 
+/* ---------- Component ---------- */
+
 export default function LandingPage() {
+  const { gridRef, helixRef, dotsRef } = useParallax();
+  const orb1Ref = useRef<HTMLDivElement>(null);
+  const orb2Ref = useRef<HTMLDivElement>(null);
+  const featuresReveal = useScrollReveal();
+  const howItWorksReveal = useScrollReveal();
+  const ctaReveal = useScrollReveal();
+  const tilt = useTilt3D(5);
+
+  const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (window.innerWidth < 768) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width - 0.5;
+    const y = (e.clientY - rect.top) / rect.height - 0.5;
+    if (orb1Ref.current) {
+      orb1Ref.current.style.transform = `translate3d(${x * 40}px, ${y * 30}px, 0)`;
+    }
+    if (orb2Ref.current) {
+      orb2Ref.current.style.transform = `translate3d(${x * -25}px, ${y * -20}px, 0)`;
+    }
+  }, []);
+
   return (
     <Box sx={{ bgcolor: '#0D0D1A', minHeight: '100vh', color: '#fff', overflow: 'hidden' }}>
-      {/* Inject keyframes */}
       <style>{globalKeyframes}</style>
 
       <PublicHeader />
@@ -122,6 +295,7 @@ export default function LandingPage() {
       {/* ========== Hero Section ========== */}
       <Box
         component="section"
+        onMouseMove={handleHeroMouseMove}
         sx={{
           position: 'relative',
           minHeight: { xs: '90vh', md: '85vh' },
@@ -132,11 +306,13 @@ export default function LandingPage() {
           pb: { xs: 8, md: 10 },
         }}
       >
-        {/* Animated grid background */}
+        {/* Parallax layer: Animated grid */}
         <Box
+          ref={gridRef}
           sx={{
             position: 'absolute',
             inset: 0,
+            willChange: 'transform',
             backgroundImage:
               'linear-gradient(rgba(108,99,255,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(108,99,255,0.06) 1px, transparent 1px)',
             backgroundSize: '60px 60px',
@@ -146,40 +322,66 @@ export default function LandingPage() {
           }}
         />
 
-        {/* Radial glow */}
+        {/* Parallax layer: DNA Helix */}
         <Box
+          ref={helixRef}
+          sx={{ position: 'absolute', inset: 0, willChange: 'transform', pointerEvents: 'none' }}
+        >
+          <DNAHelixBackground />
+        </Box>
+
+        {/* Mouse-responsive gradient orbs */}
+        <Box
+          ref={orb1Ref}
           sx={{
             position: 'absolute',
-            top: '20%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '800px',
-            height: '500px',
-            background: 'radial-gradient(ellipse, rgba(108,99,255,0.15) 0%, transparent 70%)',
+            top: '10%',
+            left: '20%',
+            width: 500,
+            height: 500,
+            background: 'radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%)',
             pointerEvents: 'none',
+            transition: 'transform 0.3s ease-out',
+          }}
+        />
+        <Box
+          ref={orb2Ref}
+          sx={{
+            position: 'absolute',
+            bottom: '10%',
+            right: '15%',
+            width: 400,
+            height: 400,
+            background: 'radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)',
+            pointerEvents: 'none',
+            transition: 'transform 0.3s ease-out',
           }}
         />
 
-        {/* Floating dots */}
-        {heroDots.map((dot, i) => (
-          <Box
-            key={i}
-            sx={{
-              position: 'absolute',
-              left: dot.left,
-              top: dot.top,
-              width: dot.size,
-              height: dot.size,
-              borderRadius: '50%',
-              bgcolor: dot.color,
-              opacity: 0.4,
-              pointerEvents: 'none',
-              '@media (prefers-reduced-motion: no-preference)': {
-                animation: `floatDot ${dot.duration}s ease-in-out ${dot.delay}s infinite`,
-              },
-            }}
-          />
-        ))}
+        {/* Parallax layer: Floating dots */}
+        <Box
+          ref={dotsRef}
+          sx={{ position: 'absolute', inset: 0, willChange: 'transform', pointerEvents: 'none' }}
+        >
+          {heroDots.map((dot, i) => (
+            <Box
+              key={i}
+              sx={{
+                position: 'absolute',
+                left: dot.left,
+                top: dot.top,
+                width: dot.size,
+                height: dot.size,
+                borderRadius: '50%',
+                bgcolor: dot.color,
+                opacity: 0.4,
+                '@media (prefers-reduced-motion: no-preference)': {
+                  animation: `floatDot ${dot.duration}s ease-in-out ${dot.delay}s infinite`,
+                },
+              }}
+            />
+          ))}
+        </Box>
 
         {/* Hero content */}
         <Container
@@ -275,51 +477,80 @@ export default function LandingPage() {
       </Box>
 
       {/* ========== Features Section ========== */}
-      <Box component="section" id="features" sx={{ bgcolor: '#0F0F23', py: { xs: 8, md: 12 } }}>
+      <Box
+        component="section"
+        id="features"
+        ref={featuresReveal.ref}
+        sx={{ bgcolor: '#0F0F23', py: { xs: 8, md: 12 } }}
+      >
         <Container maxWidth="lg">
-          <Typography
-            variant="h3"
+          <Box
             sx={{
-              textAlign: 'center',
-              fontWeight: 700,
-              fontSize: { xs: '1.75rem', md: '2.25rem' },
-              mb: 2,
-              letterSpacing: '-0.02em',
+              opacity: featuresReveal.isVisible ? 1 : 0,
+              transform: featuresReveal.isVisible ? 'translateY(0)' : 'translateY(40px)',
+              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
             }}
           >
-            Everything you need to orchestrate AI
-          </Typography>
-          <Typography
-            sx={{
-              textAlign: 'center',
-              color: 'rgba(255,255,255,0.5)',
-              mb: { xs: 5, md: 8 },
-              maxWidth: 560,
-              mx: 'auto',
-            }}
-          >
-            Six primitives that turn your devices into a distributed AI workforce.
-          </Typography>
+            <Typography
+              variant="h3"
+              sx={{
+                textAlign: 'center',
+                fontWeight: 700,
+                fontSize: { xs: '1.75rem', md: '2.25rem' },
+                mb: 2,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Everything you need to orchestrate AI
+            </Typography>
+            <Typography
+              sx={{
+                textAlign: 'center',
+                color: 'rgba(255,255,255,0.5)',
+                mb: { xs: 5, md: 8 },
+                maxWidth: 560,
+                mx: 'auto',
+              }}
+            >
+              Six primitives that turn your devices into a distributed AI workforce.
+            </Typography>
+          </Box>
 
           <Grid container spacing={3}>
             {features.map((f, i) => (
               <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
                 <Box
+                  {...tilt}
                   sx={{
                     p: 4,
                     borderRadius: '16px',
                     border: '1px solid rgba(255,255,255,0.06)',
                     bgcolor: 'rgba(255,255,255,0.02)',
                     height: '100%',
+                    position: 'relative',
+                    overflow: 'hidden',
                     transition: 'all 0.3s ease',
-                    '@media (prefers-reduced-motion: no-preference)': {
-                      animation: `fadeInUp 0.6s ease-out ${0.1 * i}s both`,
-                    },
+                    opacity: featuresReveal.isVisible ? 1 : 0,
+                    transform: featuresReveal.isVisible ? undefined : 'translateY(40px)',
+                    transitionDelay: featuresReveal.isVisible ? `${i * 100}ms` : '0ms',
                     '&:hover': {
                       border: '1px solid rgba(108,99,255,0.3)',
                       bgcolor: 'rgba(108,99,255,0.05)',
                       boxShadow: '0 0 30px rgba(108,99,255,0.1)',
-                      transform: 'translateY(-2px)',
+                    },
+                    '&::after': {
+                      content: '""',
+                      position: 'absolute',
+                      inset: 0,
+                      borderRadius: 'inherit',
+                      background:
+                        'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, transparent 50%)',
+                      pointerEvents: 'none',
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease',
+                    },
+                    '@media (hover: hover)': {
+                      '&:hover::after': { opacity: 1 },
                     },
                   }}
                 >
@@ -358,31 +589,44 @@ export default function LandingPage() {
       </Box>
 
       {/* ========== How It Works Section ========== */}
-      <Box component="section" id="how-it-works" sx={{ bgcolor: '#0D0D1A', py: { xs: 8, md: 12 } }}>
+      <Box
+        component="section"
+        id="how-it-works"
+        ref={howItWorksReveal.ref}
+        sx={{ bgcolor: '#0D0D1A', py: { xs: 8, md: 12 } }}
+      >
         <Container maxWidth="md">
-          <Typography
-            variant="h3"
+          <Box
             sx={{
-              textAlign: 'center',
-              fontWeight: 700,
-              fontSize: { xs: '1.75rem', md: '2.25rem' },
-              mb: 2,
-              letterSpacing: '-0.02em',
+              opacity: howItWorksReveal.isVisible ? 1 : 0,
+              transform: howItWorksReveal.isVisible ? 'translateY(0)' : 'translateY(40px)',
+              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
             }}
           >
-            How it works
-          </Typography>
-          <Typography
-            sx={{
-              textAlign: 'center',
-              color: 'rgba(255,255,255,0.5)',
-              mb: { xs: 6, md: 8 },
-              maxWidth: 480,
-              mx: 'auto',
-            }}
-          >
-            Three steps from idea to execution.
-          </Typography>
+            <Typography
+              variant="h3"
+              sx={{
+                textAlign: 'center',
+                fontWeight: 700,
+                fontSize: { xs: '1.75rem', md: '2.25rem' },
+                mb: 2,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              How it works
+            </Typography>
+            <Typography
+              sx={{
+                textAlign: 'center',
+                color: 'rgba(255,255,255,0.5)',
+                mb: { xs: 6, md: 8 },
+                maxWidth: 480,
+                mx: 'auto',
+              }}
+            >
+              Three steps from idea to execution.
+            </Typography>
+          </Box>
 
           <Box
             sx={{
@@ -394,15 +638,15 @@ export default function LandingPage() {
           >
             {steps.map((step, i) => (
               <Box key={step.title} sx={{ display: 'contents' }}>
-                {/* Step card */}
                 <Box
                   sx={{
                     flex: 1,
                     textAlign: 'center',
                     px: { xs: 2, md: 3 },
-                    '@media (prefers-reduced-motion: no-preference)': {
-                      animation: `fadeInUp 0.6s ease-out ${0.2 * i}s both`,
-                    },
+                    opacity: howItWorksReveal.isVisible ? 1 : 0,
+                    transform: howItWorksReveal.isVisible ? 'translateY(0)' : 'translateY(40px)',
+                    transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+                    transitionDelay: howItWorksReveal.isVisible ? `${i * 200}ms` : '0ms',
                   }}
                 >
                   <Box
@@ -453,7 +697,7 @@ export default function LandingPage() {
                   </Typography>
                 </Box>
 
-                {/* Connector between steps (desktop only) */}
+                {/* Connector (desktop) */}
                 {i < steps.length - 1 && (
                   <Box
                     sx={{
@@ -478,7 +722,7 @@ export default function LandingPage() {
                   </Box>
                 )}
 
-                {/* Connector between steps (mobile only) */}
+                {/* Connector (mobile) */}
                 {i < steps.length - 1 && (
                   <Box
                     sx={{
@@ -511,13 +755,13 @@ export default function LandingPage() {
       {/* ========== CTA Section ========== */}
       <Box
         component="section"
+        ref={ctaReveal.ref}
         sx={{
           bgcolor: '#0F0F23',
           py: { xs: 8, md: 12 },
           position: 'relative',
         }}
       >
-        {/* Gradient glow behind CTA */}
         <Box
           sx={{
             position: 'absolute',
@@ -531,7 +775,17 @@ export default function LandingPage() {
           }}
         />
 
-        <Container maxWidth="sm" sx={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <Container
+          maxWidth="sm"
+          sx={{
+            textAlign: 'center',
+            position: 'relative',
+            zIndex: 1,
+            opacity: ctaReveal.isVisible ? 1 : 0,
+            transform: ctaReveal.isVisible ? 'translateY(0)' : 'translateY(40px)',
+            transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
+          }}
+        >
           <Typography
             variant="h3"
             sx={{
