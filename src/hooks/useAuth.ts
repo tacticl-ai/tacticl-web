@@ -1,25 +1,20 @@
 import { useAuthStore } from '../stores/auth-store';
-
-const AUTH_URL =
-  import.meta.env.VITE_AUTH_URL || 'https://auth.tacticl.ai';
+import { useNavigate } from 'react-router-dom';
 
 export function useAuth() {
-  const { token, isLoading, clearAuth } = useAuthStore();
-
-  const login = () => {
-    const returnUrl = encodeURIComponent(window.location.href);
-    window.location.href = `${AUTH_URL}/login?redirect_uri=${returnUrl}`;
-  };
+  const { token, userId, isLoading, clearAuth } = useAuthStore();
+  const navigate = useNavigate();
 
   const logout = () => {
     clearAuth();
+    navigate('/login', { replace: true });
   };
 
   return {
     token,
+    userId,
     isLoading,
     isAuthenticated: !!token,
-    login,
     logout,
   };
 }

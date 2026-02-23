@@ -4,10 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme';
 import AppLayout from './components/layout/AppLayout';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import LoginPage from './pages/LoginPage';
 import ChatPage from './pages/ChatPage';
 import SparkListPage from './pages/SparkListPage';
 import SparkDetailPage from './pages/SparkDetailPage';
-
 import DeviceListPage from './pages/DeviceListPage';
 import DeviceDetailPage from './pages/DeviceDetailPage';
 import RepoListPage from './pages/RepoListPage';
@@ -28,20 +29,27 @@ const queryClient = new QueryClient({
 });
 
 function AppInner() {
-  // Hydrate auth state from localStorage on mount
   const hydrate = useAuthStore((s) => s.hydrate);
   useEffect(() => { hydrate(); }, [hydrate]);
 
-  // Establish WebSocket connection for live spark updates
   useWebSocket();
 
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppLayout />}>
+        {/* Public */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Protected */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route path="/" element={<ChatPage />} />
           <Route path="/sparks" element={<SparkListPage />} />
-
           <Route path="/sparks/:id" element={<SparkDetailPage />} />
           <Route path="/devices" element={<DeviceListPage />} />
           <Route path="/devices/:id" element={<DeviceDetailPage />} />
