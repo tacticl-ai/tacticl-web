@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 import { Outlet } from 'react-router-dom';
-import Sidebar, { SIDEBAR_WIDTH } from './Sidebar';
+import Sidebar from './Sidebar';
 
 export default function AppLayout() {
   return (
@@ -11,8 +11,6 @@ export default function AppLayout() {
         component="main"
         sx={{
           flexGrow: 1,
-          ml: `${SIDEBAR_WIDTH}px`,
-          width: `calc(100% - ${SIDEBAR_WIDTH}px)`,
           display: 'flex',
           flexDirection: 'column',
         }}

@@ -1,17 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
-import AddIcon from '@mui/icons-material/Add';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import TopBar from '../components/layout/TopBar';
 import SparkCard from '../components/sparks/SparkCard';
-import CreateSparkDialog from '../components/sparks/CreateSparkDialog';
 import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
 import ErrorState from '../components/common/ErrorState';
-import { useSparks, useCreateSpark } from '../hooks/useSparks';
+import { useSparks } from '../hooks/useSparks';
 
 const statusFilters: { value: string; label: string }[] = [
   { value: 'ALL', label: 'All' },
@@ -23,29 +21,16 @@ const statusFilters: { value: string; label: string }[] = [
 
 export default function SparkListPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const navigate = useNavigate();
   const params =
     statusFilter === 'ALL' ? undefined : { status: statusFilter };
   const { data: sparks, isLoading, isError, refetch } = useSparks(params);
-  const createSpark = useCreateSpark();
 
   const filteredSparks = sparks ?? [];
 
   return (
     <>
-      <TopBar
-        title="Sparks"
-        actions={
-          <Button
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => setDialogOpen(true)}
-            size="small"
-          >
-            New Spark
-          </Button>
-        }
-      />
+      <TopBar title="Sparks" />
 
       <Box sx={{ mb: 3 }}>
         <ToggleButtonGroup
@@ -70,9 +55,9 @@ export default function SparkListPage() {
         <EmptyState
           icon={AutoAwesomeIcon}
           title="No sparks yet"
-          description="Drop your first spark to get started. Describe what you want done in natural language."
-          actionLabel="Create Spark"
-          onAction={() => setDialogOpen(true)}
+          description="Go to Chat and describe what you want done — a Spark will be created automatically."
+          actionLabel="Go to Chat"
+          onAction={() => navigate('/')}
         />
       ) : (
         <Box
@@ -91,18 +76,6 @@ export default function SparkListPage() {
           ))}
         </Box>
       )}
-
-      <CreateSparkDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        onSubmit={(data) => {
-          createSpark.mutate(data, {
-            onSuccess: () => setDialogOpen(false),
-          });
-        }}
-        loading={createSpark.isPending}
-      />
     </>
   );
 }
-

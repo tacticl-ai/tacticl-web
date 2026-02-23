@@ -60,7 +60,7 @@ export default function TemplateListPage() {
               <CardActionArea
                 onClick={() =>
                   navigate(
-                    `/sparks/new?templateId=${tmpl.id}`,
+                    `/?template=${tmpl.id}`,
                   )
                 }
               >

@@ -7,7 +7,7 @@ import AppLayout from './components/layout/AppLayout';
 import ChatPage from './pages/ChatPage';
 import SparkListPage from './pages/SparkListPage';
 import SparkDetailPage from './pages/SparkDetailPage';
-import SparkCreatePage from './pages/SparkCreatePage';
+
 import DeviceListPage from './pages/DeviceListPage';
 import DeviceDetailPage from './pages/DeviceDetailPage';
 import RepoListPage from './pages/RepoListPage';
@@ -41,7 +41,7 @@ function AppInner() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<ChatPage />} />
           <Route path="/sparks" element={<SparkListPage />} />
-          <Route path="/sparks/new" element={<SparkCreatePage />} />
+
           <Route path="/sparks/:id" element={<SparkDetailPage />} />
           <Route path="/devices" element={<DeviceListPage />} />
           <Route path="/devices/:id" element={<DeviceDetailPage />} />
