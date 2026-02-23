@@ -22,7 +22,7 @@ import TacticlLogo from '../TacticlLogo';
 export const SIDEBAR_WIDTH = 240;
 
 const navItems = [
-  { label: 'Chat', path: '/', icon: ChatIcon, exact: true },
+  { label: 'Chat', path: '/chat', icon: ChatIcon },
   { label: 'Sparks', path: '/sparks', icon: AutoAwesomeIcon },
   { label: 'Devices', path: '/devices', icon: DevicesIcon },
   { label: 'Repos', path: '/repos', icon: FolderIcon },

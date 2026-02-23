@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme';
 import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import ChatPage from './pages/ChatPage';
 import SparkListPage from './pages/SparkListPage';
@@ -18,6 +19,16 @@ import SocialPage from './pages/SocialPage';
 import SettingsPage from './pages/SettingsPage';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAuthStore } from './stores/auth-store';
+
+/** Show landing page for unauthenticated visitors, redirect to /chat for authenticated users */
+function LandingOrDashboard() {
+  const token = useAuthStore((s) => s.token);
+  const isLoading = useAuthStore((s) => s.isLoading);
+
+  if (isLoading) return null;
+  if (token) return <Navigate to="/chat" replace />;
+  return <LandingPage />;
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +49,7 @@ function AppInner() {
     <BrowserRouter>
       <Routes>
         {/* Public */}
+        <Route path="/" element={<LandingOrDashboard />} />
         <Route path="/login" element={<LoginPage />} />
 
         {/* Protected */}
@@ -48,7 +60,7 @@ function AppInner() {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<ChatPage />} />
+          <Route path="/chat" element={<ChatPage />} />
           <Route path="/sparks" element={<SparkListPage />} />
           <Route path="/sparks/:id" element={<SparkDetailPage />} />
           <Route path="/devices" element={<DeviceListPage />} />
