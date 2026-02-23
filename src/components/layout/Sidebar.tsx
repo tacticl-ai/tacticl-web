@@ -16,6 +16,7 @@ import KeyIcon from '@mui/icons-material/Key';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import ShareIcon from '@mui/icons-material/Share';
 import SettingsIcon from '@mui/icons-material/Settings';
+import TacticlLogo from '../TacticlLogo';
 
 export const SIDEBAR_WIDTH = 240;
 
@@ -48,8 +49,8 @@ export default function Sidebar() {
               borderRadius: 1,
               mx: 1,
               '&.Mui-selected': {
-                bgcolor: 'rgba(0, 188, 212, 0.12)',
-                '&:hover': { bgcolor: 'rgba(0, 188, 212, 0.18)' },
+                bgcolor: 'rgba(108, 99, 255, 0.12)',
+                '&:hover': { bgcolor: 'rgba(108, 99, 255, 0.18)' },
               },
             }}
           >
@@ -88,8 +89,11 @@ export default function Sidebar() {
       }}
     >
       <Toolbar>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <AutoAwesomeIcon sx={{ color: 'primary.main' }} />
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
+          onClick={() => navigate('/sparks')}
+        >
+          <TacticlLogo size={32} />
           <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
             Tacticl
           </Typography>
