@@ -4,6 +4,7 @@ import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Chip from '@mui/material/Chip';
+import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -18,10 +19,12 @@ import SendIcon from '@mui/icons-material/Send';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import HistoryIcon from '@mui/icons-material/History';
 import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 import { formatDistanceToNow } from 'date-fns';
 import { agentApi } from '../api/agent';
 import type { AgentCommandResponse } from '../api/types';
-import { useAgentHistory, useAgentActivity, useAgentModels } from '../hooks/useAgent';
+import { useAgentHistory, useAgentActivity, useAgentModels, useConfirmAction } from '../hooks/useAgent';
 import TopBar from '../components/layout/TopBar';
 import TacticlLogo from '../components/TacticlLogo';
 
@@ -32,6 +35,8 @@ interface ChatMessage {
   toolsInvoked?: string[];
   sparkId?: string;
   sparkStatus?: string;
+  confirmationId?: string;
+  confirmationHandled?: boolean;
   loading?: boolean;
 }
 
@@ -41,6 +46,8 @@ const SUGGESTIONS = [
   'Review open PRs and summarize changes',
   'Run security scan on all repos',
 ];
+
+const SESSION_ID = crypto.randomUUID();
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -54,12 +61,22 @@ export default function ChatPage() {
   const { data: history = [], isLoading: historyLoading } = useAgentHistory();
   const { data: activity } = useAgentActivity();
   const { data: models = [] } = useAgentModels();
+  const confirmAction = useConfirmAction();
 
   const activeAskCount = activity?.activeAsks?.length ?? 0;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleConfirm = (messageId: string, confirmationId: string, approved: boolean) => {
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === messageId ? { ...m, confirmationHandled: true } : m,
+      ),
+    );
+    confirmAction.mutate({ confirmationId, approved });
+  };
 
   const sendMessage = async (text?: string) => {
     const msg = (text || input).trim();
@@ -84,6 +101,8 @@ export default function ChatPage() {
     try {
       const response: AgentCommandResponse = await agentApi.command({
         text: msg,
+        sessionId: SESSION_ID,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         ...(selectedModel ? { model: selectedModel } : {}),
       });
 
@@ -96,6 +115,7 @@ export default function ChatPage() {
                 toolsInvoked: response.toolsInvoked,
                 sparkId: response.sparkId,
                 sparkStatus: response.sparkStatus,
+                confirmationId: response.confirmationId,
                 loading: false,
               }
             : m,
@@ -199,7 +219,7 @@ export default function ChatPage() {
         ) : (
           <>
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} />
+              <MessageBubble key={msg.id} message={msg} onConfirm={handleConfirm} />
             ))}
             <div ref={bottomRef} />
           </>
@@ -369,8 +389,14 @@ export default function ChatPage() {
   );
 }
 
-function MessageBubble({ message }: { message: ChatMessage }) {
+interface MessageBubbleProps {
+  message: ChatMessage;
+  onConfirm: (messageId: string, confirmationId: string, approved: boolean) => void;
+}
+
+function MessageBubble({ message, onConfirm }: MessageBubbleProps) {
   const isUser = message.role === 'user';
+  const showConfirmation = !isUser && message.confirmationId && !message.confirmationHandled;
 
   return (
     <Box
@@ -433,6 +459,35 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                   sx={{ height: 24, fontSize: '0.6875rem' }}
                 />
               </Box>
+            )}
+            {showConfirmation && (
+              <Box sx={{ display: 'flex', gap: 1, mt: 1.5, pt: 1, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="success"
+                  startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => onConfirm(message.id, message.confirmationId!, true)}
+                  sx={{ fontSize: '0.75rem', textTransform: 'none', borderRadius: 2, py: 0.5 }}
+                >
+                  Approve
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  startIcon={<CloseIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => onConfirm(message.id, message.confirmationId!, false)}
+                  sx={{ fontSize: '0.75rem', textTransform: 'none', borderRadius: 2, py: 0.5 }}
+                >
+                  Reject
+                </Button>
+              </Box>
+            )}
+            {message.confirmationHandled && (
+              <Typography variant="caption" color="text.disabled" sx={{ display: 'block', mt: 1 }}>
+                Decision submitted
+              </Typography>
             )}
           </>
         )}
