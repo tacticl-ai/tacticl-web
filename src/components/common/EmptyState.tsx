@@ -21,6 +21,7 @@ export default function EmptyState({
   return (
     <Box
       sx={{
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

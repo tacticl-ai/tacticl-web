@@ -1,0 +1,295 @@
+import { useState, useRef, useEffect } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import IconButton from '@mui/material/IconButton';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import SendIcon from '@mui/icons-material/Send';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import { api } from '../api/client';
+import TopBar from '../components/layout/TopBar';
+import TacticlLogo from '../components/TacticlLogo';
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'agent';
+  text: string;
+  toolsInvoked?: string[];
+  sparkId?: string;
+  sparkStatus?: string;
+  loading?: boolean;
+}
+
+interface AgentCommandResponse {
+  responseText: string;
+  toolsInvoked: string[];
+  sparkId?: string;
+  sparkStatus?: string;
+  success: boolean;
+}
+
+const SUGGESTIONS = [
+  'Clean up dead code in strategiz-core',
+  'Audit cloud costs and find savings',
+  'Review open PRs and summarize changes',
+  'Run security scan on all repos',
+];
+
+export default function ChatPage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const sendMessage = async (text?: string) => {
+    const msg = (text || input).trim();
+    if (!msg || sending) return;
+
+    const userMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'user',
+      text: msg,
+    };
+    const loadingMsg: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'agent',
+      text: '',
+      loading: true,
+    };
+
+    setMessages((prev) => [...prev, userMsg, loadingMsg]);
+    setInput('');
+    setSending(true);
+
+    try {
+      const response = await api.post<AgentCommandResponse>('/api/agent/command', {
+        text: msg,
+      });
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === loadingMsg.id
+            ? {
+                ...m,
+                text: response.responseText,
+                toolsInvoked: response.toolsInvoked,
+                sparkId: response.sparkId,
+                sparkStatus: response.sparkStatus,
+                loading: false,
+              }
+            : m,
+        ),
+      );
+    } catch {
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === loadingMsg.id
+            ? {
+                ...m,
+                text: "I couldn't process that right now. The backend may be starting up — try again in a moment.",
+                loading: false,
+              }
+            : m,
+        ),
+      );
+    } finally {
+      setSending(false);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
+    }
+  };
+
+  const isEmpty = messages.length === 0;
+
+  return (
+    <>
+    <TopBar title="Chat" />
+    <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, mx: -3, mb: -3 }}>
+      {/* Messages area */}
+      <Box
+        sx={{
+          flex: 1,
+          overflowY: 'auto',
+          px: 3,
+          py: 2,
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {isEmpty ? (
+          <Box
+            sx={{
+              flex: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 3,
+            }}
+          >
+            <TacticlLogo size={80} />
+            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+              What can I help you with?
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 480, textAlign: 'center' }}>
+              Describe what you need done in plain English. I'll create a Spark, route it to the right
+              device, and get it done.
+            </Typography>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, justifyContent: 'center', mt: 1 }}>
+              {SUGGESTIONS.map((s) => (
+                <Chip
+                  key={s}
+                  label={s}
+                  variant="outlined"
+                  onClick={() => sendMessage(s)}
+                  sx={{
+                    borderColor: 'rgba(108, 99, 255, 0.3)',
+                    '&:hover': { borderColor: 'primary.main', bgcolor: 'rgba(108, 99, 255, 0.08)' },
+                  }}
+                />
+              ))}
+            </Box>
+          </Box>
+        ) : (
+          <>
+            {messages.map((msg) => (
+              <MessageBubble key={msg.id} message={msg} />
+            ))}
+            <div ref={bottomRef} />
+          </>
+        )}
+      </Box>
+
+      {/* Input area */}
+      <Box
+        sx={{
+          px: 3,
+          py: 2,
+          borderTop: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+        }}
+      >
+        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end', maxWidth: 800, mx: 'auto' }}>
+          <TextField
+            inputRef={inputRef}
+            fullWidth
+            multiline
+            maxRows={4}
+            placeholder="Describe what you need done..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            disabled={sending}
+            autoFocus
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: 3,
+                bgcolor: 'background.default',
+              },
+            }}
+          />
+          <IconButton
+            onClick={() => sendMessage()}
+            disabled={!input.trim() || sending}
+            sx={{
+              bgcolor: 'primary.main',
+              color: 'white',
+              width: 44,
+              height: 44,
+              '&:hover': { bgcolor: 'primary.dark' },
+              '&.Mui-disabled': { bgcolor: 'rgba(108, 99, 255, 0.3)', color: 'rgba(255,255,255,0.3)' },
+            }}
+          >
+            <SendIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      </Box>
+    </Box>
+    </>
+  );
+}
+
+function MessageBubble({ message }: { message: ChatMessage }) {
+  const isUser = message.role === 'user';
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        justifyContent: isUser ? 'flex-end' : 'flex-start',
+        mb: 2,
+        maxWidth: '100%',
+      }}
+    >
+      <Box
+        sx={{
+          maxWidth: '70%',
+          px: 2,
+          py: 1.5,
+          borderRadius: '16px',
+          borderBottomRightRadius: isUser ? '4px' : '16px',
+          borderBottomLeftRadius: isUser ? '16px' : '4px',
+          bgcolor: isUser ? 'primary.main' : '#2C2C2C',
+          color: '#FFFFFF',
+        }}
+      >
+        {message.loading ? (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
+            <CircularProgress size={16} sx={{ color: 'primary.main' }} />
+            <Typography variant="body2" color="text.secondary">
+              Thinking...
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <Typography variant="body2" sx={{ fontSize: '0.9375rem', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>
+              {message.text}
+            </Typography>
+            {message.toolsInvoked && message.toolsInvoked.length > 0 && (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 1 }}>
+                {message.toolsInvoked.map((tool) => (
+                  <Chip
+                    key={tool}
+                    label={tool}
+                    size="small"
+                    sx={{
+                      height: 22,
+                      fontSize: '0.625rem',
+                      bgcolor: '#1A1A1A',
+                      color: 'text.secondary',
+                    }}
+                  />
+                ))}
+              </Box>
+            )}
+            {message.sparkId && (
+              <Box sx={{ mt: 1 }}>
+                <Chip
+                  icon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+                  label={`Spark: ${message.sparkStatus || 'created'}`}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  sx={{ height: 24, fontSize: '0.6875rem' }}
+                />
+              </Box>
+            )}
+          </>
+        )}
+      </Box>
+    </Box>
+  );
+}

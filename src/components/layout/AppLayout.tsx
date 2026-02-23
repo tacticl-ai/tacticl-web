@@ -13,11 +13,14 @@ export default function AppLayout() {
           flexGrow: 1,
           ml: `${SIDEBAR_WIDTH}px`,
           width: `calc(100% - ${SIDEBAR_WIDTH}px)`,
-          p: 3,
+          display: 'flex',
+          flexDirection: 'column',
         }}
       >
         <Toolbar />
-        <Outlet />
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );

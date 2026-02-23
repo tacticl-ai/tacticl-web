@@ -9,6 +9,7 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
+import ChatIcon from '@mui/icons-material/Chat';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import DevicesIcon from '@mui/icons-material/Devices';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -21,6 +22,7 @@ import TacticlLogo from '../TacticlLogo';
 export const SIDEBAR_WIDTH = 240;
 
 const navItems = [
+  { label: 'Chat', path: '/', icon: ChatIcon, exact: true },
   { label: 'Sparks', path: '/sparks', icon: AutoAwesomeIcon },
   { label: 'Devices', path: '/devices', icon: DevicesIcon },
   { label: 'Repos', path: '/repos', icon: FolderIcon },
@@ -39,7 +41,9 @@ export default function Sidebar() {
 
   const renderItems = (items: typeof navItems) =>
     items.map((item) => {
-      const isActive = location.pathname.startsWith(item.path);
+      const isActive = 'exact' in item && item.exact
+        ? location.pathname === item.path
+        : location.pathname.startsWith(item.path);
       return (
         <ListItem key={item.path} disablePadding>
           <ListItemButton

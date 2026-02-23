@@ -15,6 +15,7 @@ export default function ErrorState({
   return (
     <Box
       sx={{
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',

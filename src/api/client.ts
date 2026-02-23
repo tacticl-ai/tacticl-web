@@ -2,7 +2,7 @@ import { useAuthStore } from '../stores/auth-store';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  'https://tacticl-core-1085580127767.us-east1.run.app';
+  'https://tacticl-core-qa-bflhiwsnmq-ue.a.run.app';
 
 export class ApiError extends Error {
   status: number;
