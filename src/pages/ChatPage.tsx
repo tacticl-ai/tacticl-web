@@ -70,13 +70,15 @@ export default function ChatPage() {
   const cancelAsk = useCancelAsk();
 
   // Get live checkpoint messages from WebSocket to show inline notifications
-  const allProgressMessages = useSparkProgressStore((s) => s.messages);
+  const allSparkProgress = useSparkProgressStore((s) => s.sparkProgress);
   const checkpointAlerts: Array<{ sparkId: string; message: string }> = [];
-  allProgressMessages.forEach((msgs, sparkId) => {
-    msgs
-      .filter((m) => m.type === 'checkpoint')
-      .forEach((m) => checkpointAlerts.push({ sparkId, message: m.message }));
-  });
+  for (const [sparkId, msgs] of Object.entries(allSparkProgress)) {
+    for (const m of msgs) {
+      if (m.type === 'checkpoint') {
+        checkpointAlerts.push({ sparkId, message: m.message });
+      }
+    }
+  }
 
   const activeAskCount = pendingAsks.length;
 

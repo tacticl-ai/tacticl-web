@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -19,8 +19,13 @@ const SPARK_TYPES: SparkType[] = ['code', 'social', 'research', 'devops'];
 
 export default function DeviceDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: device, isLoading, isError, refetch } = useDevice(id!);
-  const updatePrefs = useUpdateDevicePreferences(id!);
+  const deviceId = id ?? '';
+  const { data: device, isLoading, isError, refetch } = useDevice(deviceId);
+  const updatePrefs = useUpdateDevicePreferences(deviceId);
+
+  if (!id) {
+    return <Navigate to="/devices" replace />;
+  }
 
   if (isLoading) {
     return (

@@ -15,10 +15,13 @@ export interface WebSocketClientOptions {
   onStatusChange: (status: WebSocketStatus) => void;
 }
 
+// Derive WebSocket URL from env or current page location.
+// VITE_WS_URL takes precedence; otherwise derive from the API base or window.location.
 const WS_BASE_URL =
+  import.meta.env.VITE_WS_URL ||
   import.meta.env.VITE_WS_BASE_URL ||
   import.meta.env.VITE_API_BASE_URL?.replace(/^http/, 'ws') ||
-  'wss://tacticl-core-1085580127767.us-east1.run.app';
+  `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}`;
 
 const HEARTBEAT_INTERVAL = 30_000;
 const MAX_RECONNECT_DELAY = 30_000;
@@ -41,6 +44,14 @@ export class WebSocketClient {
     this.cleanup();
 
     const token = useAuthStore.getState().token;
+    // Token in URL is a known limitation of the browser WebSocket API which
+    // does not support custom headers on the initial handshake request.
+    // Mitigations:
+    //   - WSS is used in production (encrypted transport).
+    //   - Tokens are short-lived and rotated.
+    //   - Server-side log scrubbing removes token query parameters.
+    // Alternative: Sending the token as a WebSocket subprotocol, but this
+    // complicates server-side validation and is non-standard.
     const url = `${WS_BASE_URL}/ws/user${token ? `?token=${encodeURIComponent(token)}` : ''}`;
 
     this.options.onStatusChange('connecting');

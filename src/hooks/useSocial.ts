@@ -14,6 +14,9 @@ export function useDisconnectIntegration() {
   return useMutation({
     mutationFn: (id: string) => socialApi.disconnectIntegration(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['social-integrations'] }),
+    onError: (error) => {
+      console.error('Failed to disconnect integration:', error);
+    },
   });
 }
 
@@ -30,6 +33,9 @@ export function useCreatePost() {
   return useMutation({
     mutationFn: socialApi.createPost,
     onSuccess: () => qc.invalidateQueries({ queryKey: ['social-posts'] }),
+    onError: (error) => {
+      console.error('Failed to create post:', error);
+    },
   });
 }
 
@@ -38,5 +44,8 @@ export function useCancelPost() {
   return useMutation({
     mutationFn: (id: string) => socialApi.cancelPost(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['social-posts'] }),
+    onError: (error) => {
+      console.error('Failed to cancel post:', error);
+    },
   });
 }

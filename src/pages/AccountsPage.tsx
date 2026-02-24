@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Avatar from '@mui/material/Avatar';
 import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
 import YouTubeIcon from '@mui/icons-material/YouTube';
@@ -25,7 +26,7 @@ import TopBar from '../components/layout/TopBar';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
-import { useAccounts, useConnectAccount, useDisconnectAccount, useHandleOAuthCallback } from '../hooks/useAccounts';
+import { useAccounts, useConnectAccount, useDisconnectAccount, useHandleOAuthCallback, validateOAuthState } from '../hooks/useAccounts';
 import type { SocialIntegration } from '../api/types';
 
 interface PlatformInfo {
@@ -63,6 +64,13 @@ function getIntegrationForPlatform(
   );
 }
 
+/**
+ * AccountsPage provides a platform-centric grid for connecting and managing
+ * OAuth account integrations (GitHub, YouTube, Twitter, etc.).
+ *
+ * For social media content publishing (posts, scheduling), see SocialPage
+ * which focuses on content operations across connected platforms.
+ */
 export default function AccountsPage() {
   const { data: accounts, isLoading, isError, refetch } = useAccounts();
   const connectAccount = useConnectAccount();
@@ -72,13 +80,23 @@ export default function AccountsPage() {
 
   const displayAccounts = accounts ?? [];
 
+  const [oauthError, setOauthError] = useState<string | null>(null);
+
   // Handle OAuth callback params in URL
   useEffect(() => {
     const code = searchParams.get('code');
     const platform = searchParams.get('platform');
+    const state = searchParams.get('state');
     const codeVerifier = searchParams.get('code_verifier') || undefined;
 
     if (code && platform) {
+      // Validate OAuth state parameter to prevent CSRF attacks
+      if (!validateOAuthState(state)) {
+        setOauthError('Invalid OAuth state. The authentication request may have been tampered with. Please try again.');
+        setSearchParams({});
+        return;
+      }
+
       const redirectUri = window.location.origin + '/accounts';
       handleOAuthCallback.mutate(
         { platform, code, redirectUri, codeVerifier },
@@ -86,6 +104,9 @@ export default function AccountsPage() {
           onSettled: () => {
             // Clean up URL params
             setSearchParams({});
+          },
+          onError: () => {
+            setOauthError('Failed to connect account. Please try again.');
           },
         },
       );
@@ -124,6 +145,12 @@ export default function AccountsPage() {
   return (
     <>
       <TopBar title="Accounts" />
+
+      {oauthError && (
+        <Alert severity="error" onClose={() => setOauthError(null)} sx={{ mb: 2 }}>
+          {oauthError}
+        </Alert>
+      )}
 
       {/* Platform Cards */}
       <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>

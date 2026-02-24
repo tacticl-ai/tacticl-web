@@ -10,36 +10,44 @@ export interface ProgressMessage {
   type: 'progress' | 'checkpoint' | 'status' | 'completed' | 'failed';
 }
 
+/** Maximum number of progress messages retained per spark to prevent unbounded memory growth. */
+const MAX_MESSAGES_PER_SPARK = 200;
+
 interface SparkProgressStore {
-  messages: Map<string, ProgressMessage[]>;
+  sparkProgress: Record<string, ProgressMessage[]>;
   addProgress: (sparkId: string, msg: Omit<ProgressMessage, 'id' | 'timestamp'>) => void;
   getProgress: (sparkId: string) => ProgressMessage[];
   clearProgress: (sparkId: string) => void;
 }
 
 export const useSparkProgressStore = create<SparkProgressStore>((set, get) => ({
-  messages: new Map(),
+  sparkProgress: {},
   addProgress: (sparkId, msg) => {
     set((state) => {
-      const newMessages = new Map(state.messages);
-      const existing = newMessages.get(sparkId) || [];
-      newMessages.set(sparkId, [
+      const existing = state.sparkProgress[sparkId] || [];
+      const updated = [
         ...existing,
         {
           ...msg,
           id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           timestamp: Date.now(),
         },
-      ]);
-      return { messages: newMessages };
+      ];
+      // Trim to MAX_MESSAGES_PER_SPARK to prevent unbounded memory growth
+      const trimmed =
+        updated.length > MAX_MESSAGES_PER_SPARK
+          ? updated.slice(updated.length - MAX_MESSAGES_PER_SPARK)
+          : updated;
+      return {
+        sparkProgress: { ...state.sparkProgress, [sparkId]: trimmed },
+      };
     });
   },
-  getProgress: (sparkId) => get().messages.get(sparkId) || [],
+  getProgress: (sparkId) => get().sparkProgress[sparkId] || [],
   clearProgress: (sparkId) => {
     set((state) => {
-      const newMessages = new Map(state.messages);
-      newMessages.delete(sparkId);
-      return { messages: newMessages };
+      const { [sparkId]: _, ...rest } = state.sparkProgress;
+      return { sparkProgress: rest };
     });
   },
 }));

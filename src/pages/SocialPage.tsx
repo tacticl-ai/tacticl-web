@@ -86,6 +86,13 @@ function getPlatformIcon(platform: string): React.ReactElement {
   return platformIcons[platform.toLowerCase()] ?? <ShareIcon />;
 }
 
+/**
+ * SocialPage manages social media content publishing: creating posts, scheduling,
+ * and viewing post status across connected platforms. It focuses on content operations.
+ *
+ * For account connection/disconnection management, see AccountsPage which provides
+ * a platform-centric grid view for connecting and managing OAuth integrations.
+ */
 export default function SocialPage() {
   const integrations = useSocialIntegrations();
   const disconnectIntegration = useDisconnectIntegration();
@@ -106,7 +113,12 @@ export default function SocialPage() {
     setConnectOpen(false);
     const redirectUri = window.location.origin + '/social';
     const resp = await socialApi.getOAuthUrl(platform, redirectUri);
-    window.open(resp.authUrl, '_blank', 'noopener');
+    // Generate and store a random state for CSRF protection before redirecting
+    const state = crypto.randomUUID();
+    sessionStorage.setItem('tacticl_oauth_state', state);
+    const separator = resp.authUrl.includes('?') ? '&' : '?';
+    const authUrlWithState = `${resp.authUrl}${separator}state=${encodeURIComponent(state)}`;
+    window.open(authUrlWithState, '_blank', 'noopener');
   };
 
   const handleCreatePost = () => {

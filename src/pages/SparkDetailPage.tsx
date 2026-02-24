@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { useRef, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
@@ -27,13 +27,18 @@ import { useSparkProgressStore } from '../hooks/useSparkProgress';
 
 export default function SparkDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: spark, isLoading, isError, refetch } = useSpark(id!);
-  const { data: tactics } = useSparkTactics(id!);
-  const { data: logs } = useSparkLogs(id!);
+  const sparkId = id ?? '';
+  const { data: spark, isLoading, isError, refetch } = useSpark(sparkId);
+  const { data: tactics } = useSparkTactics(sparkId);
+  const { data: logs } = useSparkLogs(sparkId);
   const { data: allCheckpoints } = useCheckpoints();
   const cancelSpark = useCancelSpark();
 
-  const progressMessages = useSparkProgressStore((s) => s.messages.get(id!) || []);
+  const progressMessages = useSparkProgressStore((s) => s.sparkProgress[sparkId] || []);
+
+  if (!id) {
+    return <Navigate to="/sparks" replace />;
+  }
   const activityEndRef = useRef<HTMLDivElement>(null);
 
   const displayTactics = tactics ?? [];
