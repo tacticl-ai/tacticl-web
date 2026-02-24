@@ -27,6 +27,10 @@ import type { AgentCommandResponse, AgentAsk } from '../api/types';
 import { useAgentHistory, useAgentActivity, useAgentModels, useConfirmAction, usePendingAsks, useCancelAsk } from '../hooks/useAgent';
 import TopBar from '../components/layout/TopBar';
 import TacticlLogo from '../components/TacticlLogo';
+import Alert from '@mui/material/Alert';
+import { Link as RouterLink } from 'react-router-dom';
+import MuiLink from '@mui/material/Link';
+import { useSparkProgressStore } from '../hooks/useSparkProgress';
 
 interface ChatMessage {
   id: string;
@@ -64,6 +68,15 @@ export default function ChatPage() {
   const { data: pendingAsks = [] } = usePendingAsks();
   const confirmAction = useConfirmAction();
   const cancelAsk = useCancelAsk();
+
+  // Get live checkpoint messages from WebSocket to show inline notifications
+  const allProgressMessages = useSparkProgressStore((s) => s.messages);
+  const checkpointAlerts: Array<{ sparkId: string; message: string }> = [];
+  allProgressMessages.forEach((msgs, sparkId) => {
+    msgs
+      .filter((m) => m.type === 'checkpoint')
+      .forEach((m) => checkpointAlerts.push({ sparkId, message: m.message }));
+  });
 
   const activeAskCount = pendingAsks.length;
 
@@ -256,6 +269,30 @@ export default function ChatPage() {
                   </Button>
                 </Box>
               </Box>
+            ))}
+          </Box>
+        )}
+
+        {/* Checkpoint notifications from WebSocket */}
+        {checkpointAlerts.length > 0 && (
+          <Box sx={{ mb: 2 }}>
+            {checkpointAlerts.map((alert, idx) => (
+              <Alert
+                key={`${alert.sparkId}-${idx}`}
+                severity="warning"
+                sx={{ mb: 1 }}
+                action={
+                  <MuiLink
+                    component={RouterLink}
+                    to={`/sparks/${alert.sparkId}`}
+                    sx={{ fontSize: '0.8125rem', fontWeight: 600, whiteSpace: 'nowrap' }}
+                  >
+                    View Checkpoint
+                  </MuiLink>
+                }
+              >
+                {alert.message}
+              </Alert>
             ))}
           </Box>
         )}

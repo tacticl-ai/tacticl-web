@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useRef, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -6,24 +7,23 @@ import CardContent from '@mui/material/CardContent';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Divider from '@mui/material/Divider';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
+import Paper from '@mui/material/Paper';
+import LinearProgress from '@mui/material/LinearProgress';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import CancelIcon from '@mui/icons-material/Cancel';
 import LinkIcon from '@mui/icons-material/Link';
 import { formatDistanceToNow, format } from 'date-fns';
 import TopBar from '../components/layout/TopBar';
 import SparkTimeline from '../components/sparks/SparkTimeline';
 import SparkStatusBadge from '../components/sparks/SparkStatusBadge';
+import CheckpointApproval from '../components/sparks/CheckpointApproval';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import { useSpark, useSparkTactics, useSparkLogs, useCancelSpark } from '../hooks/useSparks';
-import { useCheckpoints, useDecideCheckpoint } from '../hooks/useCheckpoints';
+import { useCheckpoints } from '../hooks/useCheckpoints';
+import { useSparkProgressStore } from '../hooks/useSparkProgress';
 
 export default function SparkDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -32,13 +32,20 @@ export default function SparkDetailPage() {
   const { data: logs } = useSparkLogs(id!);
   const { data: allCheckpoints } = useCheckpoints();
   const cancelSpark = useCancelSpark();
-  const decideCheckpoint = useDecideCheckpoint();
+
+  const progressMessages = useSparkProgressStore((s) => s.messages.get(id!) || []);
+  const activityEndRef = useRef<HTMLDivElement>(null);
 
   const displayTactics = tactics ?? [];
   const displayCheckpoints = (allCheckpoints ?? []).filter(
     (cp) => cp.sparkId === id,
   );
   const displayLogs = logs ?? [];
+
+  // Auto-scroll live activity to bottom when new messages arrive
+  useEffect(() => {
+    activityEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [progressMessages.length]);
 
   if (isLoading) {
     return (
@@ -65,6 +72,10 @@ export default function SparkDetailPage() {
     spark.status === 'EXECUTING' ||
     spark.status === 'ROUTING' ||
     spark.status === 'CHECKPOINT';
+
+  const showLiveActivity =
+    (spark.status === 'EXECUTING' || spark.status === 'CHECKPOINT') &&
+    progressMessages.length > 0;
 
   return (
     <>
@@ -119,6 +130,108 @@ export default function SparkDetailPage() {
           </Box>
         </CardContent>
       </Card>
+
+      {/* Live Activity */}
+      {showLiveActivity && (
+        <Paper
+          sx={{
+            mb: 3,
+            overflow: 'hidden',
+            border: '1px solid',
+            borderColor: 'divider',
+          }}
+        >
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 2,
+              py: 1.5,
+              borderBottom: '1px solid',
+              borderBottomColor: 'divider',
+              bgcolor: 'background.default',
+            }}
+          >
+            <Box
+              sx={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                bgcolor: '#4caf50',
+                animation: 'pulse 2s ease-in-out infinite',
+                '@keyframes pulse': {
+                  '0%, 100%': { opacity: 1 },
+                  '50%': { opacity: 0.4 },
+                },
+              }}
+            />
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              Live Activity
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              maxHeight: 300,
+              overflowY: 'auto',
+              px: 2,
+              py: 1,
+            }}
+          >
+            {progressMessages.map((msg) => (
+              <Box key={msg.id} sx={{ py: 0.75 }}>
+                {msg.type === 'checkpoint' ? (
+                  <Box sx={{ py: 0.5 }}>
+                    <Chip
+                      label="Checkpoint"
+                      size="small"
+                      sx={{
+                        mb: 0.5,
+                        bgcolor: 'rgba(255, 152, 0, 0.12)',
+                        color: 'warning.main',
+                        fontSize: '0.7rem',
+                      }}
+                    />
+                    <Typography variant="body2">{msg.message}</Typography>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ fontFamily: 'monospace', flexShrink: 0, pt: 0.25 }}
+                    >
+                      {format(new Date(msg.timestamp), 'HH:mm:ss')}
+                    </Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        variant="body2"
+                        color={
+                          msg.type === 'failed'
+                            ? 'error.main'
+                            : msg.type === 'completed'
+                              ? 'success.main'
+                              : 'text.primary'
+                        }
+                      >
+                        {msg.message}
+                      </Typography>
+                      {msg.percent != null && (
+                        <LinearProgress
+                          variant="determinate"
+                          value={msg.percent}
+                          sx={{ mt: 0.5, borderRadius: 1, height: 4 }}
+                        />
+                      )}
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            ))}
+            <div ref={activityEndRef} />
+          </Box>
+        </Paper>
+      )}
 
       {/* Tactics */}
       <Typography variant="h6" sx={{ mb: 1.5 }}>
@@ -187,79 +300,7 @@ export default function SparkDetailPage() {
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3 }}>
             {displayCheckpoints.map((cp) => (
-              <Card
-                key={cp.id}
-                sx={{
-                  borderLeft: cp.userDecision
-                    ? undefined
-                    : '3px solid',
-                  borderLeftColor: cp.userDecision
-                    ? undefined
-                    : 'warning.main',
-                }}
-              >
-                <CardContent>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    {cp.title}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                    {cp.description}
-                  </Typography>
-                  {cp.findings.length > 0 && (
-                    <List dense sx={{ mb: 1 }}>
-                      {cp.findings.map((f, i) => (
-                        <ListItem key={i} sx={{ px: 0 }}>
-                          <ListItemText
-                            primary={f.description}
-                            secondary={f.suggestedAction}
-                            primaryTypographyProps={{ variant: 'body2' }}
-                            secondaryTypographyProps={{ variant: 'caption' }}
-                          />
-                        </ListItem>
-                      ))}
-                    </List>
-                  )}
-                  {!cp.userDecision && (
-                    <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                      <Button
-                        variant="contained"
-                        color="success"
-                        size="small"
-                        startIcon={<CheckCircleIcon />}
-                        onClick={() =>
-                          decideCheckpoint.mutate({
-                            id: cp.id,
-                            data: { decision: 'APPROVED' },
-                          })
-                        }
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        startIcon={<CancelIcon />}
-                        onClick={() =>
-                          decideCheckpoint.mutate({
-                            id: cp.id,
-                            data: { decision: 'REJECTED' },
-                          })
-                        }
-                      >
-                        Reject
-                      </Button>
-                    </Box>
-                  )}
-                  {cp.userDecision && (
-                    <Chip
-                      label={cp.userDecision}
-                      size="small"
-                      color={cp.userDecision === 'APPROVED' ? 'success' : 'error'}
-                    />
-                  )}
-                </CardContent>
-              </Card>
+              <CheckpointApproval key={cp.id} checkpoint={cp} />
             ))}
           </Box>
         </>

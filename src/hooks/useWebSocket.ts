@@ -6,6 +6,7 @@ import {
   type SparkWebSocketMessage,
 } from '../lib/websocket';
 import { useAuthStore } from '../stores/auth-store';
+import { useSparkProgressStore } from './useSparkProgress';
 
 export function useWebSocket() {
   const [status, setStatus] = useState<WebSocketStatus>('disconnected');
@@ -15,20 +16,69 @@ export function useWebSocket() {
 
   const handleMessage = useCallback(
     (msg: SparkWebSocketMessage) => {
+      const { addProgress, clearProgress } = useSparkProgressStore.getState();
+
       switch (msg.type) {
         case 'spark_progress':
-        case 'spark_completed':
-        case 'spark_failed':
+          addProgress(msg.sparkId, {
+            sparkId: msg.sparkId,
+            tacticId: msg.tacticId,
+            message: msg.message || msg.status,
+            percent: msg.progress,
+            type: 'progress',
+          });
+          queryClient.invalidateQueries({ queryKey: ['sparks'] });
+          queryClient.invalidateQueries({
+            queryKey: ['sparks', msg.sparkId],
+          });
+          break;
+        case 'spark_status':
+          addProgress(msg.sparkId, {
+            sparkId: msg.sparkId,
+            message: msg.message || msg.status,
+            type: 'status',
+          });
           queryClient.invalidateQueries({ queryKey: ['sparks'] });
           queryClient.invalidateQueries({
             queryKey: ['sparks', msg.sparkId],
           });
           break;
         case 'spark_checkpoint':
+          addProgress(msg.sparkId, {
+            sparkId: msg.sparkId,
+            message: msg.message || 'Checkpoint requires approval',
+            type: 'checkpoint',
+          });
           queryClient.invalidateQueries({ queryKey: ['checkpoints'] });
           queryClient.invalidateQueries({
             queryKey: ['sparks', msg.sparkId],
           });
+          break;
+        case 'spark_completed':
+          addProgress(msg.sparkId, {
+            sparkId: msg.sparkId,
+            message: 'Spark completed',
+            type: 'completed',
+          });
+          queryClient.invalidateQueries({ queryKey: ['sparks'] });
+          queryClient.invalidateQueries({
+            queryKey: ['sparks', msg.sparkId],
+          });
+          // Clear progress after a short delay so the completed message is visible
+          setTimeout(() => clearProgress(msg.sparkId), 5000);
+          break;
+        case 'spark_failed':
+          addProgress(msg.sparkId, {
+            sparkId: msg.sparkId,
+            message: msg.error || 'Spark failed',
+            type: 'failed',
+          });
+          queryClient.invalidateQueries({ queryKey: ['sparks'] });
+          queryClient.invalidateQueries({
+            queryKey: ['sparks', msg.sparkId],
+          });
+          // Clear progress after a short delay so the failed message is visible
+          setTimeout(() => clearProgress(msg.sparkId), 5000);
           break;
         case 'pong':
           break;

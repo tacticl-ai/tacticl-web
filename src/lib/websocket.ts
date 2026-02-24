@@ -3,10 +3,11 @@ import { useAuthStore } from '../stores/auth-store';
 export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected';
 
 export type SparkWebSocketMessage =
-  | { type: 'spark_progress'; sparkId: string; status: string; progress?: number }
+  | { type: 'spark_progress'; sparkId: string; tacticId?: string; status: string; progress?: number; message?: string }
+  | { type: 'spark_status'; sparkId: string; status: string; message?: string }
   | { type: 'spark_completed'; sparkId: string; result: unknown }
   | { type: 'spark_failed'; sparkId: string; error: string }
-  | { type: 'spark_checkpoint'; sparkId: string; checkpointId: string }
+  | { type: 'spark_checkpoint'; sparkId: string; checkpointId: string; message?: string }
   | { type: 'pong' };
 
 export interface WebSocketClientOptions {
@@ -40,7 +41,7 @@ export class WebSocketClient {
     this.cleanup();
 
     const token = useAuthStore.getState().token;
-    const url = `${WS_BASE_URL}/ws/device${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    const url = `${WS_BASE_URL}/ws/user${token ? `?token=${encodeURIComponent(token)}` : ''}`;
 
     this.options.onStatusChange('connecting');
 
