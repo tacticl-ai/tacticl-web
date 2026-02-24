@@ -16,6 +16,7 @@ import RepoListPage from './pages/RepoListPage';
 import TokenListPage from './pages/TokenListPage';
 import TemplateListPage from './pages/TemplateListPage';
 import SocialPage from './pages/SocialPage';
+import AccountsPage from './pages/AccountsPage';
 import SettingsPage from './pages/SettingsPage';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAuthStore } from './stores/auth-store';
@@ -69,6 +70,7 @@ function AppInner() {
           <Route path="/tokens" element={<TokenListPage />} />
           <Route path="/templates" element={<TemplateListPage />} />
           <Route path="/social" element={<SocialPage />} />
+          <Route path="/accounts" element={<AccountsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

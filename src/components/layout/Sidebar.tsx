@@ -16,6 +16,7 @@ import FolderIcon from '@mui/icons-material/Folder';
 import KeyIcon from '@mui/icons-material/Key';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
 import ShareIcon from '@mui/icons-material/Share';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import TacticlLogo from '../TacticlLogo';
 
@@ -32,6 +33,7 @@ const navItems = [
 
 const secondaryItems = [
   { label: 'Social', path: '/social', icon: ShareIcon },
+  { label: 'Accounts', path: '/accounts', icon: AccountCircleIcon },
   { label: 'Settings', path: '/settings', icon: SettingsIcon },
 ];
 
