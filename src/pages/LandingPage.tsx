@@ -16,8 +16,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import TacticlLogo from '../components/TacticlLogo';
 import PublicHeader from '../components/layout/PublicHeader';
 
-const AUTH_BASE = 'https://tacticl-auth.web.app';
-const REDIRECT = 'https://tacticl.web.app/';
+const AUTH_BASE = 'https://auth.tacticl.ai';
+const REDIRECT = 'https://tacticl.ai/';
 const SIGNUP_URL = `${AUTH_BASE}/signup?redirect=${encodeURIComponent(REDIRECT)}`;
 
 /* ---------- Hooks ---------- */
