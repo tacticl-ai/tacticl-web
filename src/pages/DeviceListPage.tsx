@@ -1,18 +1,34 @@
+import { useState } from 'react';
 import Box from '@mui/material/Box';
-import DevicesIcon from '@mui/icons-material/Devices';
+import Button from '@mui/material/Button';
+import AddIcon from '@mui/icons-material/Add';
 import TopBar from '../components/layout/TopBar';
 import DeviceCard from '../components/devices/DeviceCard';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
+import AddDeviceDialog from '../components/devices/AddDeviceDialog';
 import { useDevices } from '../hooks/useDevices';
 
 export default function DeviceListPage() {
   const { data: devices, isLoading, isError, refetch } = useDevices();
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   return (
     <>
-      <TopBar title="Devices" />
+      <TopBar
+        title="Devices"
+        actions={
+          <Button
+            variant="contained"
+            size="small"
+            startIcon={<AddIcon />}
+            onClick={() => setShowAddDialog(true)}
+          >
+            Add Device
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <LoadingState message="Loading devices..." />
@@ -20,9 +36,11 @@ export default function DeviceListPage() {
         <ErrorState message="Failed to load devices." onRetry={refetch} />
       ) : (devices ?? []).length === 0 ? (
         <EmptyState
-          icon={DevicesIcon}
+          variant="devices"
           title="No devices registered"
-          description="Register a device by installing the Tacticl desktop app or mobile app."
+          description="Pair your first device to start running sparks locally."
+          actionLabel="Add Device"
+          onAction={() => setShowAddDialog(true)}
         />
       ) : (
         <Box
@@ -41,6 +59,11 @@ export default function DeviceListPage() {
           ))}
         </Box>
       )}
+
+      <AddDeviceDialog
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+      />
     </>
   );
 }
