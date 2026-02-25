@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import ToggleButton from '@mui/material/ToggleButton';
@@ -24,7 +23,6 @@ const statusFilters: { value: string; label: string }[] = [
 export default function SparkListPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const navigate = useNavigate();
   const params =
     statusFilter === 'ALL' ? undefined : { status: statusFilter };
   const { data: sparks, isLoading, isError, refetch } = useSparks(params);
