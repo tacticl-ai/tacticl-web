@@ -1,5 +1,5 @@
 import { api } from './client';
-import type { Device } from './types';
+import type { Device, PairingCodeResponse } from './types';
 
 export const devicesApi = {
   list: () => api.get<Device[]>('/api/devices'),
@@ -10,4 +10,7 @@ export const devicesApi = {
 
   updatePreferences: (id: string, preferences: Record<string, boolean>) =>
     api.put<Device>(`/api/devices/${id}/preferences`, preferences),
+
+  createPairingCode: () =>
+    api.post<PairingCodeResponse>('/api/devices/pairing-code'),
 };

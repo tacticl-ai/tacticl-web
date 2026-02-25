@@ -249,6 +249,13 @@ export interface DevicePreference {
   fallbackPolicy: FallbackPolicy;
 }
 
+// ─── Device Pairing ─────────────────────────────────────
+
+export interface PairingCodeResponse {
+  code: string;
+  expiresIn: number;
+}
+
 // ─── Paginated Response ──────────────────────────────────
 
 export interface PaginatedResponse<T> {
