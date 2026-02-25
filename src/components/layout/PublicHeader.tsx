@@ -14,10 +14,8 @@ import { useTheme } from '@mui/material/styles';
 import MenuIcon from '@mui/icons-material/Menu';
 import TacticlLogo from '../TacticlLogo';
 
-const AUTH_BASE = 'https://auth.tacticl.ai';
-const REDIRECT = 'https://tacticl.ai/';
-const SIGN_IN_URL = `${AUTH_BASE}/signin?redirect=${encodeURIComponent(REDIRECT)}`;
-const SIGN_UP_URL = `${AUTH_BASE}/signup?redirect=${encodeURIComponent(REDIRECT)}`;
+const SIGN_IN_URL = '/login';
+const SIGN_UP_URL = '/login';
 
 const NAV_LINKS = [
   { label: 'Features', href: '#features' },
