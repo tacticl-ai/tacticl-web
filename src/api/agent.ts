@@ -31,7 +31,7 @@ export const agentApi = {
     const formData = new FormData();
     formData.append('file', file);
     const token = useAuthStore.getState().token;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://tacticl-core-qa-bflhiwsnmq-ue.a.run.app';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://tacticl-core-43628135674.us-east1.run.app';
     const res = await fetch(`${baseUrl}/api/agent/transcribe`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
