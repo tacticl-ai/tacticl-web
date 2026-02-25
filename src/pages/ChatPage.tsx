@@ -23,7 +23,7 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { formatDistanceToNow } from 'date-fns';
 import { agentApi } from '../api/agent';
-import type { AgentCommandResponse, AgentAsk } from '../api/types';
+import type { AgentCommandResponse, AgentAsk, SparkType } from '../api/types';
 import { useAgentHistory, useAgentActivity, useAgentModels, useConfirmAction, usePendingAsks, useCancelAsk } from '../hooks/useAgent';
 import TopBar from '../components/layout/TopBar';
 import TacticlLogo from '../components/TacticlLogo';
@@ -53,11 +53,22 @@ const SUGGESTIONS = [
 
 const SESSION_ID = crypto.randomUUID();
 
+const SPARK_TYPES: Array<{ value: SparkType | ''; label: string }> = [
+  { value: '', label: 'Auto' },
+  { value: 'code', label: 'Code' },
+  { value: 'social', label: 'Social' },
+  { value: 'research', label: 'Research' },
+  { value: 'devops', label: 'DevOps' },
+  { value: 'creative', label: 'Creative' },
+  { value: 'data', label: 'Data' },
+];
+
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [selectedModel, setSelectedModel] = useState('');
+  const [sparkType, setSparkType] = useState<SparkType | ''>('');
   const [historyOpen, setHistoryOpen] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -121,6 +132,7 @@ export default function ChatPage() {
         sessionId: SESSION_ID,
         timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         ...(selectedModel ? { model: selectedModel } : {}),
+        ...(sparkType ? { sparkType } : {}),
       });
 
       setMessages((prev) =>
@@ -353,6 +365,19 @@ export default function ChatPage() {
           bgcolor: 'background.paper',
         }}
       >
+        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', maxWidth: 800, mx: 'auto', mb: 1 }}>
+          {SPARK_TYPES.map((t) => (
+            <Chip
+              key={t.value}
+              label={t.label}
+              size="small"
+              variant={sparkType === t.value ? 'filled' : 'outlined'}
+              color={sparkType === t.value ? 'primary' : 'default'}
+              onClick={() => setSparkType(t.value)}
+              sx={{ height: 26, fontSize: '0.75rem' }}
+            />
+          ))}
+        </Box>
         <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end', maxWidth: 800, mx: 'auto' }}>
           <TextField
             inputRef={inputRef}

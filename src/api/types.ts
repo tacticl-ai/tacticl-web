@@ -11,7 +11,7 @@ export type SparkStatus =
 
 export type SparkPriority = 'LOW' | 'NORMAL' | 'HIGH' | 'URGENT';
 
-export type SparkType = 'code' | 'social' | 'research' | 'devops';
+export type SparkType = 'code' | 'social' | 'research' | 'devops' | 'creative' | 'data';
 
 export type CheckpointPolicy = 'AUTO' | 'CHECKPOINT_MAJOR' | 'CHECKPOINT_ALL';
 
@@ -330,6 +330,7 @@ export interface AgentCommandRequest {
   sessionId?: string;
   timezone?: string;
   model?: string;
+  sparkType?: SparkType;
 }
 
 export interface AgentCommandResponse {
