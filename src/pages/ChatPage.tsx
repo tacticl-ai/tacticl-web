@@ -42,6 +42,8 @@ interface ChatMessage {
   confirmationId?: string;
   confirmationHandled?: boolean;
   loading?: boolean;
+  delegated?: boolean;
+  deviceName?: string;
 }
 
 const SUGGESTIONS = [
@@ -97,6 +99,48 @@ export default function ChatPage() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Watch for spark completion/failure from WebSocket to update delegated chat messages
+  useEffect(() => {
+    setMessages((prev) => {
+      let changed = false;
+      const updated = prev.map((m) => {
+        if (!m.sparkId || !m.delegated || !m.loading) return m;
+        const progress = allSparkProgress[m.sparkId];
+        if (!progress) return m;
+
+        const completed = progress.find((p) => p.type === 'completed');
+        if (completed) {
+          changed = true;
+          const res = completed.result as Record<string, unknown> | undefined;
+          const responseText = res?.responseText
+            ? String(res.responseText)
+            : res?.summary
+              ? String(res.summary)
+              : 'Spark completed on ' + (m.deviceName || 'device');
+          return { ...m, text: responseText, loading: false, sparkStatus: 'COMPLETED' };
+        }
+
+        const failed = progress.find((p) => p.type === 'failed');
+        if (failed) {
+          changed = true;
+          const res = failed.result as Record<string, unknown> | undefined;
+          const errorText = res?.error ? String(res.error) : failed.message || 'Spark failed';
+          return { ...m, text: errorText, loading: false, sparkStatus: 'FAILED' };
+        }
+
+        // Update status from latest progress message
+        const latest = progress[progress.length - 1];
+        if (latest && latest.message !== m.sparkStatus) {
+          changed = true;
+          return { ...m, sparkStatus: latest.message };
+        }
+
+        return m;
+      });
+      return changed ? updated : prev;
+    });
+  }, [allSparkProgress]);
+
   const handleConfirm = (messageId: string, confirmationId: string, approved: boolean) => {
     setMessages((prev) =>
       prev.map((m) =>
@@ -145,7 +189,9 @@ export default function ChatPage() {
                 sparkId: response.sparkId,
                 sparkStatus: response.sparkStatus,
                 confirmationId: response.confirmationId,
-                loading: false,
+                delegated: response.delegated,
+                deviceName: response.deviceName,
+                loading: response.delegated ? true : false,
               }
             : m,
         ),
@@ -565,7 +611,9 @@ function MessageBubble({ message, onConfirm }: MessageBubbleProps) {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.5 }}>
             <CircularProgress size={16} sx={{ color: 'primary.main' }} />
             <Typography variant="body2" color="text.secondary">
-              Thinking...
+              {message.delegated
+                ? `Routing to ${message.deviceName || 'device'}...`
+                : 'Thinking...'}
             </Typography>
           </Box>
         ) : (

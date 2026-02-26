@@ -59,6 +59,7 @@ export function useWebSocket() {
             sparkId: msg.sparkId,
             message: 'Spark completed',
             type: 'completed',
+            result: msg.result,
           });
           queryClient.invalidateQueries({ queryKey: ['sparks'] });
           queryClient.invalidateQueries({
@@ -72,6 +73,7 @@ export function useWebSocket() {
             sparkId: msg.sparkId,
             message: msg.error || 'Spark failed',
             type: 'failed',
+            result: { error: msg.error },
           });
           queryClient.invalidateQueries({ queryKey: ['sparks'] });
           queryClient.invalidateQueries({

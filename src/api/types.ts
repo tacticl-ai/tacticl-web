@@ -348,6 +348,8 @@ export interface AgentCommandResponse {
   confirmationId?: string;
   success: boolean;
   model?: string;
+  delegated?: boolean;
+  deviceName?: string;
 }
 
 export interface AgentAsk {

@@ -8,6 +8,7 @@ export interface ProgressMessage {
   percent?: number;
   timestamp: number;
   type: 'progress' | 'checkpoint' | 'status' | 'completed' | 'failed';
+  result?: unknown;
 }
 
 /** Maximum number of progress messages retained per spark to prevent unbounded memory growth. */
