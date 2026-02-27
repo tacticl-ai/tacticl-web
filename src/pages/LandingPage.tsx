@@ -15,6 +15,7 @@ import HubIcon from '@mui/icons-material/Hub';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import TacticlLogo from '../components/TacticlLogo';
 import PublicHeader from '../components/layout/PublicHeader';
+import PricingSection from '../components/pricing/PricingSection';
 
 const SIGNUP_URL = '/login';
 
@@ -749,6 +750,9 @@ export default function LandingPage() {
           </Box>
         </Container>
       </Box>
+
+      {/* ========== Pricing Section ========== */}
+      <PricingSection id="pricing" />
 
       {/* ========== CTA Section ========== */}
       <Box
