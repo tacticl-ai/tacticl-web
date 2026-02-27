@@ -5,7 +5,8 @@ import IconButton from '@mui/material/IconButton';
 import Box from '@mui/material/Box';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../../hooks/useAuth';
-import { SIDEBAR_WIDTH } from './Sidebar';
+import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './Sidebar';
+import { useSidebar } from './SidebarContext';
 
 interface TopBarProps {
   title: string;
@@ -14,17 +15,20 @@ interface TopBarProps {
 
 export default function TopBar({ title, actions }: TopBarProps) {
   const { logout } = useAuth();
+  const { collapsed } = useSidebar();
+  const currentWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
   return (
     <AppBar
       position="fixed"
       elevation={0}
       sx={{
-        width: `calc(100% - ${SIDEBAR_WIDTH}px)`,
-        ml: `${SIDEBAR_WIDTH}px`,
+        width: `calc(100% - ${currentWidth}px)`,
+        ml: `${currentWidth}px`,
         bgcolor: 'background.default',
         borderBottom: 1,
         borderColor: 'divider',
+        transition: 'width 200ms ease, margin-left 200ms ease',
       }}
     >
       <Toolbar>

@@ -9,6 +9,8 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import ChatIcon from '@mui/icons-material/Chat';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import DevicesIcon from '@mui/icons-material/Devices';
@@ -18,9 +20,13 @@ import BookmarkIcon from '@mui/icons-material/Bookmark';
 import ShareIcon from '@mui/icons-material/Share';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TacticlLogo from '../TacticlLogo';
+import { useSidebar } from './SidebarContext';
 
 export const SIDEBAR_WIDTH = 240;
+export const SIDEBAR_COLLAPSED_WIDTH = 64;
 
 const navItems = [
   { label: 'Chat', path: '/chat', icon: ChatIcon },
@@ -40,34 +46,45 @@ const secondaryItems = [
 export default function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { collapsed, toggleCollapsed } = useSidebar();
+
+  const currentWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
   const renderItems = (items: typeof navItems) =>
     items.map((item) => {
       const isActive = 'exact' in item && item.exact
         ? location.pathname === item.path
         : location.pathname.startsWith(item.path);
-      return (
-        <ListItem key={item.path} disablePadding>
-          <ListItemButton
-            selected={isActive}
-            onClick={() => navigate(item.path)}
+
+      const button = (
+        <ListItemButton
+          selected={isActive}
+          onClick={() => navigate(item.path)}
+          sx={{
+            borderRadius: 1,
+            mx: 1,
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            px: collapsed ? 1.5 : 2,
+            '&.Mui-selected': {
+              bgcolor: 'rgba(108, 99, 255, 0.12)',
+              '&:hover': { bgcolor: 'rgba(108, 99, 255, 0.18)' },
+            },
+          }}
+        >
+          <ListItemIcon
             sx={{
-              borderRadius: 1,
-              mx: 1,
-              '&.Mui-selected': {
-                bgcolor: 'rgba(108, 99, 255, 0.12)',
-                '&:hover': { bgcolor: 'rgba(108, 99, 255, 0.18)' },
-              },
+              minWidth: collapsed ? 0 : 36,
+              justifyContent: 'center',
             }}
           >
-            <ListItemIcon sx={{ minWidth: 36 }}>
-              <item.icon
-                sx={{
-                  fontSize: 20,
-                  color: isActive ? 'primary.main' : 'text.secondary',
-                }}
-              />
-            </ListItemIcon>
+            <item.icon
+              sx={{
+                fontSize: 20,
+                color: isActive ? 'primary.main' : 'text.secondary',
+              }}
+            />
+          </ListItemIcon>
+          {!collapsed && (
             <ListItemText
               primary={item.label}
               primaryTypographyProps={{
@@ -76,7 +93,19 @@ export default function Sidebar() {
                 color: isActive ? 'primary.main' : 'text.primary',
               }}
             />
-          </ListItemButton>
+          )}
+        </ListItemButton>
+      );
+
+      return (
+        <ListItem key={item.path} disablePadding>
+          {collapsed ? (
+            <Tooltip title={item.label} placement="right" arrow>
+              {button}
+            </Tooltip>
+          ) : (
+            button
+          )}
         </ListItem>
       );
     });
@@ -85,29 +114,49 @@ export default function Sidebar() {
     <Drawer
       variant="permanent"
       sx={{
-        width: SIDEBAR_WIDTH,
+        width: currentWidth,
         flexShrink: 0,
+        transition: 'width 200ms ease',
         '& .MuiDrawer-paper': {
-          width: SIDEBAR_WIDTH,
+          width: currentWidth,
           boxSizing: 'border-box',
           bgcolor: 'background.default',
+          transition: 'width 200ms ease',
+          overflowX: 'hidden',
         },
       }}
     >
       <Toolbar>
         <Box
-          sx={{ display: 'flex', alignItems: 'center', gap: 1.5, cursor: 'pointer' }}
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
+            cursor: 'pointer',
+            overflow: 'hidden',
+            width: '100%',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+          }}
           onClick={() => navigate('/chat')}
         >
-          <TacticlLogo size={32} />
-          <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: -0.5 }}>
-            Tacticl
-          </Typography>
+          <TacticlLogo size={collapsed ? 28 : 32} />
+          {!collapsed && (
+            <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: -0.5, whiteSpace: 'nowrap' }}>
+              Tacticl
+            </Typography>
+          )}
         </Box>
       </Toolbar>
       <List sx={{ py: 0.5 }}>{renderItems(navItems)}</List>
       <Divider sx={{ my: 1 }} />
       <List sx={{ py: 0.5 }}>{renderItems(secondaryItems)}</List>
+      <Box sx={{ flexGrow: 1 }} />
+      <Divider />
+      <Box sx={{ display: 'flex', justifyContent: collapsed ? 'center' : 'flex-end', p: 1 }}>
+        <IconButton onClick={toggleCollapsed} size="small" title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}>
+          {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
+        </IconButton>
+      </Box>
     </Drawer>
   );
 }
