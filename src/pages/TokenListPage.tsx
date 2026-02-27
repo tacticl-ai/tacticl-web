@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -6,6 +7,12 @@ import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
 import LinearProgress from '@mui/material/LinearProgress';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import MenuItem from '@mui/material/MenuItem';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
 import KeyIcon from '@mui/icons-material/Key';
@@ -13,11 +20,33 @@ import TopBar from '../components/layout/TopBar';
 import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
-import { useTokens, useRemoveToken } from '../hooks/useTokens';
+import { useTokens, useRemoveToken, useCreateToken } from '../hooks/useTokens';
+import type { TokenProvider } from '../api/types';
 
 export default function TokenListPage() {
   const { data: tokens, isLoading, isError, refetch } = useTokens();
   const removeToken = useRemoveToken();
+  const createToken = useCreateToken();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [provider, setProvider] = useState<TokenProvider>('ANTHROPIC');
+  const [label, setLabel] = useState('');
+  const [token, setToken] = useState('');
+
+  const handleOpen = () => {
+    setProvider('ANTHROPIC');
+    setLabel('');
+    setToken('');
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!label.trim() || !token.trim()) return;
+    createToken.mutate(
+      { provider, label: label.trim(), token: token.trim() },
+      { onSuccess: () => setDialogOpen(false) },
+    );
+  };
 
   const displayTokens = tokens ?? [];
 
@@ -26,7 +55,7 @@ export default function TokenListPage() {
       <TopBar
         title="Tokens"
         actions={
-          <Button variant="contained" startIcon={<AddIcon />} size="small">
+          <Button variant="contained" startIcon={<AddIcon />} size="small" onClick={handleOpen}>
             Add Token
           </Button>
         }
@@ -42,7 +71,7 @@ export default function TokenListPage() {
           title="No tokens configured"
           description="Add an API token so Tacticl agents can interact with external services."
           actionLabel="Add Token"
-          onAction={() => {}}
+          onAction={handleOpen}
         />
       ) : (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -157,6 +186,52 @@ export default function TokenListPage() {
           })}
         </Box>
       )}
+
+      <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Add Token</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: '16px !important' }}>
+          <TextField
+            select
+            label="Provider"
+            value={provider}
+            onChange={(e) => setProvider(e.target.value as TokenProvider)}
+            size="small"
+            fullWidth
+          >
+            <MenuItem value="ANTHROPIC">Anthropic</MenuItem>
+            <MenuItem value="GITHUB">GitHub</MenuItem>
+            <MenuItem value="OPENAI">OpenAI</MenuItem>
+          </TextField>
+          <TextField
+            label="Label"
+            placeholder="e.g. Production key"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            size="small"
+            fullWidth
+            autoFocus
+          />
+          <TextField
+            label="Token"
+            placeholder="sk-..."
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+            size="small"
+            fullWidth
+            type="password"
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={!label.trim() || !token.trim() || createToken.isPending}
+          >
+            {createToken.isPending ? 'Adding...' : 'Add'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
