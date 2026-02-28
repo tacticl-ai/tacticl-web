@@ -97,13 +97,13 @@ export default function AddDeviceDialog({ open, onClose }: AddDeviceDialogProps)
               1. Download and install{' '}
               <Typography
                 component="a"
-                href="https://github.com/tacticl-ai/tacticl-daemon/releases"
+                href="https://github.com/tacticl-ai/tacticl-device/releases"
                 target="_blank"
                 rel="noopener noreferrer"
                 variant="body2"
                 sx={{ color: 'primary.main', textDecoration: 'underline' }}
               >
-                Tacticl Desktop
+                Tacticl Device
               </Typography>
               <br />
               2. Open the app
