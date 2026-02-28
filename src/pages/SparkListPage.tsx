@@ -47,7 +47,7 @@ export default function SparkListPage() {
     const oa = statusOrder[a.status] ?? 9;
     const ob = statusOrder[b.status] ?? 9;
     if (oa !== ob) return oa - ob;
-    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    return (new Date(b.updatedAt).getTime() || 0) - (new Date(a.updatedAt).getTime() || 0);
   });
 
   return (

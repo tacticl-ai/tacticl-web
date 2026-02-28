@@ -7,8 +7,22 @@ import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Collapse from '@mui/material/Collapse';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isValid } from 'date-fns';
 import SparkStatusBadge from './SparkStatusBadge';
+
+function safeTimeAgo(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (!isValid(d)) return '';
+  return formatDistanceToNow(d, { addSuffix: true }).replace('about ', '');
+}
+
+function safeFormat(dateVal: string | number | null | undefined, fmt: string): string {
+  if (dateVal == null) return '';
+  const d = new Date(dateVal);
+  if (!isValid(d)) return '';
+  return format(d, fmt);
+}
 import TacticTimeline from './TacticTimeline';
 import CheckpointApproval from './CheckpointApproval';
 import { useSparkTactics, useCancelSpark } from '../../hooks/useSparks';
@@ -110,7 +124,7 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
           ${spark.estimatedCost.toFixed(2)}
         </Typography>
         <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>
-          {formatDistanceToNow(new Date(spark.updatedAt), { addSuffix: true }).replace('about ', '')}
+          {safeTimeAgo(spark.updatedAt)}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExpanded ? 'primary.light' : 'text.disabled', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
           <KeyboardArrowDownIcon sx={{ fontSize: 18 }} />
@@ -143,7 +157,7 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
                 {progressMessages.map((msg) => (
                   <Box key={msg.id} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.25, px: 1.75, py: 0.5 }}>
                     <Typography sx={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: 'text.disabled', flexShrink: 0, pt: 0.125 }}>
-                      {format(new Date(msg.timestamp), 'HH:mm:ss')}
+                      {safeFormat(msg.timestamp, 'HH:mm:ss')}
                     </Typography>
                     <Typography sx={{
                       fontSize: 12.5,
