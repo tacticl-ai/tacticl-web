@@ -23,7 +23,7 @@ interface AddDeviceDialogProps {
   onClose: () => void;
 }
 
-const DOWNLOAD_BASE = 'https://github.com/tacticl-ai/tacticl-device/releases/latest/download';
+const DOWNLOAD_BASE = 'https://github.com/tacticl-ai/tacticl-releases/releases/latest/download';
 
 function getOS(): { label: string; downloadUrl: string } {
   const ua = navigator.userAgent;
