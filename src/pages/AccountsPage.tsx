@@ -12,14 +12,6 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Divider from '@mui/material/Divider';
 import Grid from '@mui/material/Grid';
-import YouTubeIcon from '@mui/icons-material/YouTube';
-import InstagramIcon from '@mui/icons-material/Instagram';
-import MailIcon from '@mui/icons-material/Mail';
-import XIcon from '@mui/icons-material/X';
-import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
-import LinkedInIcon from '@mui/icons-material/LinkedIn';
-import FacebookIcon from '@mui/icons-material/Facebook';
-import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import LinkIcon from '@mui/icons-material/Link';
 import TopBar from '../components/layout/TopBar';
@@ -28,30 +20,8 @@ import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
 import { useAccounts, useConnectAccount, useDisconnectAccount, useHandleOAuthCallback, validateOAuthState } from '../hooks/useAccounts';
 import type { Connection } from '../api/types';
-
-interface PlatformInfo {
-  key: string;
-  name: string;
-  icon: React.ReactElement;
-  color: string;
-}
-
-const platforms: PlatformInfo[] = [
-  { key: 'youtube', name: 'YouTube', icon: <YouTubeIcon />, color: '#FF0000' },
-  { key: 'instagram', name: 'Instagram', icon: <InstagramIcon />, color: '#E4405F' },
-  { key: 'gmail', name: 'Gmail', icon: <MailIcon />, color: '#D14836' },
-  { key: 'twitter', name: 'X (Twitter)', icon: <XIcon />, color: '#000000' },
-  { key: 'tiktok', name: 'TikTok', icon: <VideoLibraryIcon />, color: '#010101' },
-  { key: 'linkedin', name: 'LinkedIn', icon: <LinkedInIcon />, color: '#0A66C2' },
-  { key: 'facebook', name: 'Facebook', icon: <FacebookIcon />, color: '#1877F2' },
-  { key: 'github', name: 'GitHub', icon: <GitHubIcon />, color: '#181717' },
-];
-
-function getPlatformInfo(key: string): PlatformInfo | undefined {
-  return platforms.find(
-    (p) => p.key === key.toLowerCase() || (key.toLowerCase() === 'x' && p.key === 'twitter'),
-  );
-}
+import { platforms, getPlatformInfo } from '../components/common/platformInfo';
+import type { PlatformInfo } from '../components/common/platformInfo';
 
 function getIntegrationForPlatform(
   integrations: Connection[],
