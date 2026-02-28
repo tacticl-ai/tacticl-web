@@ -111,7 +111,7 @@ export default function SocialPage() {
 
   const handleConnect = async (platform: string) => {
     setConnectOpen(false);
-    const redirectUri = window.location.origin + '/social';
+    const redirectUri = window.location.origin + '/accounts';
     const resp = await socialApi.getOAuthUrl(platform, redirectUri);
     // Generate and store a random state for CSRF protection before redirecting
     const state = crypto.randomUUID();
