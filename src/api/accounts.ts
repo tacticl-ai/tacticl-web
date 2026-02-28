@@ -1,10 +1,10 @@
 import { api } from './client';
-import type { SocialIntegration, OAuthAuthorizeResponse, OAuthCallbackResponse } from './types';
+import type { Connection, OAuthAuthorizeResponse, OAuthCallbackResponse } from './types';
 
 export const accountsApi = {
   /** List all connected accounts (reuses social integrations endpoint) */
   list: () =>
-    api.get<SocialIntegration[]>('/api/social/integrations'),
+    api.get<Connection[]>('/api/social/integrations'),
 
   /** Get OAuth authorization URL for a platform */
   getOAuthUrl: (platform: string, redirectUri: string) =>

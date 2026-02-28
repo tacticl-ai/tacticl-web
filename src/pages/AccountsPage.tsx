@@ -27,7 +27,7 @@ import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
 import { useAccounts, useConnectAccount, useDisconnectAccount, useHandleOAuthCallback, validateOAuthState } from '../hooks/useAccounts';
-import type { SocialIntegration } from '../api/types';
+import type { Connection } from '../api/types';
 
 interface PlatformInfo {
   key: string;
@@ -54,9 +54,9 @@ function getPlatformInfo(key: string): PlatformInfo | undefined {
 }
 
 function getIntegrationForPlatform(
-  integrations: SocialIntegration[],
+  integrations: Connection[],
   platformKey: string,
-): SocialIntegration | undefined {
+): Connection | undefined {
   return integrations.find(
     (i) =>
       i.platform.toLowerCase() === platformKey ||

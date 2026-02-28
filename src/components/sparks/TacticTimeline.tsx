@@ -45,7 +45,7 @@ export default function TacticTimeline({ tactics, checkpoints, onInsertCheckpoin
   if (tactics.length === 0) return null;
 
   // Find checkpoints between tactics (checkpoint.tacticId = the tactic it's gating before)
-  const getCheckpointBetween = (prevTacticId: string, _nextTacticId: string) => {
+  const getCheckpointBetween = (prevTacticId: string) => {
     return checkpoints.find((cp) => cp.tacticId === prevTacticId);
   };
 
@@ -53,7 +53,7 @@ export default function TacticTimeline({ tactics, checkpoints, onInsertCheckpoin
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0, py: 2, overflowX: 'auto' }}>
       {tactics.map((tactic, i) => {
         const style = statusStyles[tactic.status] || statusStyles.PENDING;
-        const cp = i > 0 ? getCheckpointBetween(tactics[i - 1].id, tactic.id) : null;
+        const cp = i > 0 ? getCheckpointBetween(tactics[i - 1].id) : null;
 
         return (
           <Box key={tactic.id} sx={{ display: 'flex', alignItems: 'center' }}>

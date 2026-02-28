@@ -40,7 +40,7 @@ import {
   useCancelPost,
 } from '../hooks/useSocial';
 import { socialApi } from '../api/social';
-import type { PostState, SocialIntegration } from '../api/types';
+import type { PostState, Connection } from '../api/types';
 
 const platformIcons: Record<string, React.ReactElement> = {
   twitter: <XIcon />,
@@ -76,7 +76,7 @@ const stateChipColor: Record<PostState, 'default' | 'info' | 'warning' | 'succes
   CANCELLED: 'default',
 };
 
-function getStatusColor(integration: SocialIntegration): string {
+function getStatusColor(integration: Connection): string {
   if (integration.disabled) return '#f44336';
   if (integration.tokenRefreshNeeded) return '#ff9800';
   return '#4caf50';
