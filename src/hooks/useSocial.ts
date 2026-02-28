@@ -1,25 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { socialApi } from '../api/social';
 
-export function useSocialIntegrations() {
-  return useQuery({
-    queryKey: ['social-integrations'],
-    queryFn: () => socialApi.listIntegrations(),
-    refetchInterval: 30_000,
-  });
-}
-
-export function useDisconnectIntegration() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => socialApi.disconnectIntegration(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['social-integrations'] }),
-    onError: (error) => {
-      console.error('Failed to disconnect integration:', error);
-    },
-  });
-}
-
 export function useSocialPosts(state?: string) {
   return useQuery({
     queryKey: ['social-posts', state],

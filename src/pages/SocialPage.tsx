@@ -33,13 +33,11 @@ import LoadingState from '../components/common/LoadingState';
 import ErrorState from '../components/common/ErrorState';
 import EmptyState from '../components/common/EmptyState';
 import {
-  useSocialIntegrations,
-  useDisconnectIntegration,
   useSocialPosts,
   useCreatePost,
   useCancelPost,
 } from '../hooks/useSocial';
-import { socialApi } from '../api/social';
+import { useConnections, useConnectPlatform, useDisconnectPlatform } from '../hooks/useConnections';
 import type { PostState, Connection } from '../api/types';
 
 const platformIcons: Record<string, React.ReactElement> = {
@@ -94,8 +92,9 @@ function getPlatformIcon(platform: string): React.ReactElement {
  * a platform-centric grid view for connecting and managing OAuth integrations.
  */
 export default function SocialPage() {
-  const integrations = useSocialIntegrations();
-  const disconnectIntegration = useDisconnectIntegration();
+  const integrations = useConnections();
+  const disconnectIntegration = useDisconnectPlatform();
+  const connectPlatform = useConnectPlatform();
   const [postFilter, setPostFilter] = useState('ALL');
   const posts = useSocialPosts(postFilter === 'ALL' ? undefined : postFilter);
   const createPost = useCreatePost();
@@ -109,16 +108,10 @@ export default function SocialPage() {
   const displayIntegrations = integrations.data ?? [];
   const displayPosts = posts.data ?? [];
 
-  const handleConnect = async (platform: string) => {
+  const handleConnect = (platform: string) => {
     setConnectOpen(false);
     const redirectUri = window.location.origin + '/accounts';
-    const resp = await socialApi.getOAuthUrl(platform, redirectUri);
-    // Generate and store a random state for CSRF protection before redirecting
-    const state = crypto.randomUUID();
-    sessionStorage.setItem('tacticl_oauth_state', state);
-    const separator = resp.authUrl.includes('?') ? '&' : '?';
-    const authUrlWithState = `${resp.authUrl}${separator}state=${encodeURIComponent(state)}`;
-    window.open(authUrlWithState, '_blank', 'noopener');
+    connectPlatform.mutate({ platform, redirectUri });
   };
 
   const handleCreatePost = () => {
