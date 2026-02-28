@@ -24,8 +24,8 @@ export default function SparkListPage() {
   const sparks = allSparks ?? [];
   const deviceList = devices ?? [];
 
-  // Apply filters
-  let filtered = sparks;
+  // Apply filters (copy to avoid mutating React Query cache)
+  let filtered = [...sparks];
   if (statusFilter !== 'ALL') {
     if (statusFilter === 'EXECUTING') {
       filtered = filtered.filter((s) => s.status === 'EXECUTING' || s.status === 'ROUTING');
