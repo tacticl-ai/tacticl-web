@@ -17,8 +17,7 @@ import DevicesIcon from '@mui/icons-material/Devices';
 import FolderIcon from '@mui/icons-material/Folder';
 import KeyIcon from '@mui/icons-material/Key';
 import BookmarkIcon from '@mui/icons-material/Bookmark';
-import ShareIcon from '@mui/icons-material/Share';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import CableIcon from '@mui/icons-material/Cable';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -38,8 +37,7 @@ const navItems = [
 ];
 
 const secondaryItems = [
-  { label: 'Social', path: '/social', icon: ShareIcon },
-  { label: 'Accounts', path: '/accounts', icon: AccountCircleIcon },
+  { label: 'Connections', path: '/connections', icon: CableIcon },
   { label: 'Settings', path: '/settings', icon: SettingsIcon },
 ];
 

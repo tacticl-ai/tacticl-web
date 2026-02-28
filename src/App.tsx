@@ -15,8 +15,11 @@ import DeviceDetailPage from './pages/DeviceDetailPage';
 import RepoListPage from './pages/RepoListPage';
 import TokenListPage from './pages/TokenListPage';
 import TemplateListPage from './pages/TemplateListPage';
-import SocialPage from './pages/SocialPage';
-import AccountsPage from './pages/AccountsPage';
+import ConnectionsOverviewPage from './pages/connections/ConnectionsOverviewPage';
+import SocialConnectionsPage from './pages/connections/SocialConnectionsPage';
+import MediaConnectionsPage from './pages/connections/MediaConnectionsPage';
+import DeveloperConnectionsPage from './pages/connections/DeveloperConnectionsPage';
+import ProductivityConnectionsPage from './pages/connections/ProductivityConnectionsPage';
 import SettingsPage from './pages/SettingsPage';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAuthStore } from './stores/auth-store';
@@ -69,8 +72,11 @@ function AppInner() {
           <Route path="/repos" element={<RepoListPage />} />
           <Route path="/tokens" element={<TokenListPage />} />
           <Route path="/templates" element={<TemplateListPage />} />
-          <Route path="/social" element={<SocialPage />} />
-          <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/connections" element={<ConnectionsOverviewPage />} />
+          <Route path="/connections/social" element={<SocialConnectionsPage />} />
+          <Route path="/connections/media" element={<MediaConnectionsPage />} />
+          <Route path="/connections/developer" element={<DeveloperConnectionsPage />} />
+          <Route path="/connections/productivity" element={<ProductivityConnectionsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
