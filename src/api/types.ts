@@ -266,9 +266,9 @@ export interface PaginatedResponse<T> {
   size: number;
 }
 
-// ─── Social ─────────────────────────────────────────────
+// ─── Connections ─────────────────────────────────────────
 
-export interface SocialIntegration {
+export interface Connection {
   id: string;
   platform: string;
   platformUsername: string;
@@ -285,7 +285,7 @@ export interface SocialPost {
   id: string;
   content: string;
   mediaUrls: string[];
-  targetIntegrationIds: string[];
+  targetConnectionIds: string[];
   state: PostState;
   publishDate?: string;
   publishedPostId?: string;
@@ -296,7 +296,7 @@ export interface SocialPost {
 export interface CreatePostRequest {
   content: string;
   mediaUrls?: string[];
-  targetIntegrationIds?: string[];
+  targetConnectionIds?: string[];
   publishDate?: string;
 }
 
@@ -306,7 +306,7 @@ export interface OAuthAuthorizeResponse {
 }
 
 export interface OAuthCallbackResponse {
-  integrationId: string | null;
+  connectionId: string | null;
   platform: string;
   success: boolean;
 }
