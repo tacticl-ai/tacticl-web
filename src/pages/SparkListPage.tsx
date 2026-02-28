@@ -1,77 +1,106 @@
+// src/pages/SparkListPage.tsx — renamed conceptually to SparkControlPage
 import { useState } from 'react';
 import Box from '@mui/material/Box';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import Typography from '@mui/material/Typography';
 import TopBar from '../components/layout/TopBar';
-import SparkCard from '../components/sparks/SparkCard';
+import SummaryBar from '../components/sparks/SummaryBar';
+import DeviceStrip from '../components/sparks/DeviceStrip';
+import SparkRow from '../components/sparks/SparkRow';
 import LoadingState from '../components/common/LoadingState';
 import EmptyState from '../components/common/EmptyState';
 import ErrorState from '../components/common/ErrorState';
 import { useSparks } from '../hooks/useSparks';
-
-const statusFilters: { value: string; label: string }[] = [
-  { value: 'ALL', label: 'All' },
-  { value: 'EXECUTING', label: 'Active' },
-  { value: 'CHECKPOINT', label: 'Checkpoints' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'FAILED', label: 'Failed' },
-];
+import { useDevices } from '../hooks/useDevices';
 
 export default function SparkListPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
-  const params =
-    statusFilter === 'ALL' ? undefined : { status: statusFilter };
-  const { data: sparks, isLoading, isError, refetch } = useSparks(params);
+  const [deviceFilter, setDeviceFilter] = useState<string | null>(null);
+  const [expandedSparkId, setExpandedSparkId] = useState<string | null>(null);
 
-  const filteredSparks = sparks ?? [];
+  // Fetch all sparks (we filter client-side for summary counts + device filter)
+  const { data: allSparks, isLoading: sparksLoading, isError: sparksError, refetch } = useSparks();
+  const { data: devices } = useDevices();
+
+  const sparks = allSparks ?? [];
+  const deviceList = devices ?? [];
+
+  // Apply filters
+  let filtered = sparks;
+  if (statusFilter !== 'ALL') {
+    if (statusFilter === 'EXECUTING') {
+      filtered = filtered.filter((s) => s.status === 'EXECUTING' || s.status === 'ROUTING');
+    } else {
+      filtered = filtered.filter((s) => s.status === statusFilter);
+    }
+  }
+  if (deviceFilter) {
+    if (deviceFilter === 'cloud') {
+      filtered = filtered.filter((s) => !s.deviceId);
+    } else {
+      filtered = filtered.filter((s) => s.deviceId === deviceFilter);
+    }
+  }
+
+  // Sort: active sparks first (EXECUTING, CHECKPOINT, ROUTING, PENDING), then by updatedAt desc
+  const statusOrder: Record<string, number> = { EXECUTING: 0, CHECKPOINT: 1, ROUTING: 2, PENDING: 3, COMPLETED: 4, FAILED: 5, CANCELLED: 6 };
+  filtered.sort((a, b) => {
+    const oa = statusOrder[a.status] ?? 9;
+    const ob = statusOrder[b.status] ?? 9;
+    if (oa !== ob) return oa - ob;
+    return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+  });
 
   return (
     <>
-      <TopBar title="Sparks" />
+      <TopBar title="Spark Control" />
 
-      <Box sx={{ mb: 3 }}>
-        <ToggleButtonGroup
-          value={statusFilter}
-          exclusive
-          onChange={(_, v) => v && setStatusFilter(v)}
-          size="small"
-        >
-          {statusFilters.map((f) => (
-            <ToggleButton key={f.value} value={f.value}>
-              {f.label}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
-      </Box>
-
-      {isLoading ? (
+      {sparksLoading ? (
         <LoadingState message="Loading sparks..." />
-      ) : isError ? (
+      ) : sparksError ? (
         <ErrorState message="Failed to load sparks." onRetry={refetch} />
-      ) : filteredSparks.length === 0 ? (
-        <EmptyState
-          variant="sparks"
-          title="No sparks yet"
-          description="Start a conversation in Chat to create your first spark."
-        />
+      ) : sparks.length === 0 ? (
+        <EmptyState variant="sparks" title="No sparks yet" description="Start a conversation in Chat to create your first spark." />
       ) : (
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, 1fr)',
-              lg: 'repeat(3, 1fr)',
-            },
-            gap: 2,
-          }}
-        >
-          {filteredSparks.map((spark) => (
-            <SparkCard key={spark.id} spark={spark} />
-          ))}
-        </Box>
-      )}
+        <>
+          <SummaryBar sparks={sparks} activeFilter={statusFilter} onFilterChange={setStatusFilter} />
+          <DeviceStrip devices={deviceList} sparks={sparks} activeDeviceId={deviceFilter} onDeviceChange={setDeviceFilter} />
 
+          {/* Spark Table */}
+          <Box sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: '10px', overflow: 'hidden' }}>
+            {/* Header */}
+            <Box sx={{
+              display: 'grid',
+              gridTemplateColumns: '90px 1fr 130px 120px 70px 80px 36px',
+              px: 2, py: 1.25,
+              bgcolor: 'background.default',
+              borderBottom: '1px solid', borderBottomColor: 'divider',
+            }}>
+              {['Status', 'Spark', 'Device', 'Tactics', 'Cost', 'Updated', ''].map((h) => (
+                <Typography key={h} sx={{ fontSize: 11, fontWeight: 500, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                  {h}
+                </Typography>
+              ))}
+            </Box>
+
+            {/* Rows */}
+            {filtered.length === 0 ? (
+              <Box sx={{ py: 6, textAlign: 'center' }}>
+                <Typography color="text.secondary" sx={{ fontSize: 13 }}>No sparks match the current filters.</Typography>
+              </Box>
+            ) : (
+              filtered.map((spark) => (
+                <SparkRow
+                  key={spark.id}
+                  spark={spark}
+                  devices={deviceList}
+                  isExpanded={expandedSparkId === spark.id}
+                  onToggle={() => setExpandedSparkId(expandedSparkId === spark.id ? null : spark.id)}
+                />
+              ))
+            )}
+          </Box>
+        </>
+      )}
     </>
   );
 }
