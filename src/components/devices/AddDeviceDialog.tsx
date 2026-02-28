@@ -23,12 +23,14 @@ interface AddDeviceDialogProps {
   onClose: () => void;
 }
 
-function getOSLabel(): string {
+const DOWNLOAD_BASE = 'https://github.com/tacticl-ai/tacticl-device/releases/latest/download';
+
+function getOS(): { label: string; downloadUrl: string } {
   const ua = navigator.userAgent;
-  if (ua.includes('Mac')) return 'macOS';
-  if (ua.includes('Win')) return 'Windows';
-  if (ua.includes('Linux')) return 'Linux';
-  return 'your computer';
+  if (ua.includes('Mac')) return { label: 'macOS', downloadUrl: `${DOWNLOAD_BASE}/tacticl-device.dmg` };
+  if (ua.includes('Win')) return { label: 'Windows', downloadUrl: `${DOWNLOAD_BASE}/tacticl-device-Setup.exe` };
+  if (ua.includes('Linux')) return { label: 'Linux', downloadUrl: `${DOWNLOAD_BASE}/tacticl-device.AppImage` };
+  return { label: 'your computer', downloadUrl: `${DOWNLOAD_BASE}/tacticl-device.dmg` };
 }
 
 export default function AddDeviceDialog({ open, onClose }: AddDeviceDialogProps) {
@@ -85,7 +87,7 @@ export default function AddDeviceDialog({ open, onClose }: AddDeviceDialogProps)
     }
   };
 
-  const osLabel = getOSLabel();
+  const { label: osLabel, downloadUrl } = getOS();
   const codeReady = !isPending && !isError && data;
 
   const stepCircle = (icon: React.ReactNode, active: boolean) => (
@@ -176,7 +178,7 @@ export default function AddDeviceDialog({ open, onClose }: AddDeviceDialogProps)
                 <Button
                   variant="outlined"
                   size="small"
-                  href="https://tacticl.ai/download"
+                  href={downloadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   startIcon={<DownloadRoundedIcon />}
