@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useAuthStore } from '../../stores/auth-store';
@@ -25,7 +25,9 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   if (!token) {
-    return <Navigate to="/" state={{ from: location }} replace />;
+    const redirectUrl = encodeURIComponent(window.location.href);
+    window.location.href = `https://auth.tacticl.ai/signin?redirect=${redirectUrl}`;
+    return null;
   }
 
   return <>{children}</>;

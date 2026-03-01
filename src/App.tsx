@@ -21,6 +21,7 @@ import MediaConnectionsPage from './pages/connections/MediaConnectionsPage';
 import DeveloperConnectionsPage from './pages/connections/DeveloperConnectionsPage';
 import ProductivityConnectionsPage from './pages/connections/ProductivityConnectionsPage';
 import SettingsPage from './pages/SettingsPage';
+import ErrorBoundary from './components/auth/ErrorBoundary';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAuthStore } from './stores/auth-store';
 
@@ -92,7 +93,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <AppInner />
+        <ErrorBoundary>
+          <AppInner />
+        </ErrorBoundary>
       </ThemeProvider>
     </QueryClientProvider>
   );

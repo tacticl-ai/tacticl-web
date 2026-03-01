@@ -18,7 +18,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     const token = localStorage.getItem('tacticl-auth-token');
     const userId = localStorage.getItem('tacticl-user-id');
 
-    // Check for token in URL params (SSO redirect from auth.strategiz.ai)
+    // Check for token in URL params (SSO redirect from auth.tacticl.ai)
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get('auth_token');
     const urlUserId = params.get('user_id');
