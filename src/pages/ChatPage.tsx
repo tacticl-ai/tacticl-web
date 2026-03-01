@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import TextField from '@mui/material/TextField';
@@ -23,14 +23,16 @@ import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { formatDistanceToNow } from 'date-fns';
 import { agentApi } from '../api/agent';
-import type { AgentCommandResponse, AgentAsk, SparkType } from '../api/types';
+import type { AgentCommandResponse, AgentAsk, SparkType, AgentAction } from '../api/types';
 import { useAgentHistory, useAgentActivity, useAgentModels, useConfirmAction, usePendingAsks, useCancelAsk } from '../hooks/useAgent';
 import TopBar from '../components/layout/TopBar';
 import TacticlLogo from '../components/TacticlLogo';
 import Alert from '@mui/material/Alert';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import MuiLink from '@mui/material/Link';
 import { useSparkProgressStore } from '../hooks/useSparkProgress';
+import { useHandleOAuthCallback, validateOAuthState } from '../hooks/useConnections';
+import ActionCard from '../components/chat/ActionCard';
 
 interface ChatMessage {
   id: string;
@@ -44,6 +46,10 @@ interface ChatMessage {
   loading?: boolean;
   delegated?: boolean;
   deviceName?: string;
+  actions?: AgentAction[];
+  completedActions?: Set<number>;
+  originalCommand?: string;
+  resumed?: boolean;
 }
 
 const SUGGESTIONS = [
@@ -54,6 +60,26 @@ const SUGGESTIONS = [
 ];
 
 const SESSION_ID = crypto.randomUUID();
+
+const PENDING_ACTION_KEY = 'tacticl_chat_pending_action';
+
+interface PendingActionState {
+  originalCommand: string;
+  sessionId: string;
+  sparkType?: SparkType | '';
+  model?: string;
+}
+
+export function savePendingAction(state: PendingActionState) {
+  sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(state));
+}
+
+function loadPendingAction(): PendingActionState | null {
+  const raw = sessionStorage.getItem(PENDING_ACTION_KEY);
+  sessionStorage.removeItem(PENDING_ACTION_KEY);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch { return null; }
+}
 
 const SPARK_TYPES: Array<{ value: SparkType | ''; label: string }> = [
   { value: '', label: 'Auto' },
@@ -94,6 +120,36 @@ export default function ChatPage() {
   }
 
   const activeAskCount = pendingAsks.length;
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const handleOAuthCallback = useHandleOAuthCallback();
+
+  useEffect(() => {
+    const code = searchParams.get('code');
+    const platform = searchParams.get('platform');
+    const state = searchParams.get('state');
+    const codeVerifier = searchParams.get('code_verifier') || undefined;
+
+    if (code && platform) {
+      if (!validateOAuthState(state)) {
+        setSearchParams({});
+        return;
+      }
+      const redirectUri = window.location.origin + '/chat';
+      handleOAuthCallback.mutate(
+        { platform, code, redirectUri, codeVerifier },
+        {
+          onSettled: () => setSearchParams({}),
+          onSuccess: () => {
+            const pending = loadPendingAction();
+            if (pending) {
+              sendMessage(pending.originalCommand);
+            }
+          },
+        },
+      );
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -150,6 +206,26 @@ export default function ChatPage() {
     confirmAction.mutate({ confirmationId, approved });
   };
 
+  const handleActionComplete = useCallback((messageId: string, actionIndex: number) => {
+    setMessages((prev) => {
+      const updated = prev.map((m) => {
+        if (m.id !== messageId || !m.actions) return m;
+        const newCompleted = new Set(m.completedActions);
+        newCompleted.add(actionIndex);
+
+        const allDone = m.actions.length === newCompleted.size;
+
+        if (allDone && m.originalCommand && !m.resumed) {
+          setTimeout(() => sendMessage(m.originalCommand), 500);
+          return { ...m, completedActions: newCompleted, resumed: true };
+        }
+
+        return { ...m, completedActions: newCompleted };
+      });
+      return updated;
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const sendMessage = async (text?: string) => {
     const msg = (text || input).trim();
     if (!msg || sending) return;
@@ -192,6 +268,9 @@ export default function ChatPage() {
                 delegated: response.delegated,
                 deviceName: response.deviceName,
                 loading: response.delegated ? true : false,
+                actions: response.actions,
+                originalCommand: response.actions?.length ? msg : undefined,
+                completedActions: response.actions?.length ? new Set<number>() : undefined,
               }
             : m,
         ),
@@ -394,7 +473,12 @@ export default function ChatPage() {
         ) : (
           <>
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} message={msg} onConfirm={handleConfirm} />
+              <MessageBubble
+                key={msg.id}
+                message={msg}
+                onConfirm={handleConfirm}
+                onActionComplete={handleActionComplete}
+              />
             ))}
             <div ref={bottomRef} />
           </>
@@ -580,9 +664,10 @@ export default function ChatPage() {
 interface MessageBubbleProps {
   message: ChatMessage;
   onConfirm: (messageId: string, confirmationId: string, approved: boolean) => void;
+  onActionComplete: (messageId: string, actionIndex: number) => void;
 }
 
-function MessageBubble({ message, onConfirm }: MessageBubbleProps) {
+function MessageBubble({ message, onConfirm, onActionComplete }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const showConfirmation = !isUser && message.confirmationId && !message.confirmationHandled;
 
@@ -648,6 +733,17 @@ function MessageBubble({ message, onConfirm }: MessageBubbleProps) {
                   variant="outlined"
                   sx={{ height: 24, fontSize: '0.6875rem' }}
                 />
+              </Box>
+            )}
+            {message.actions && message.actions.length > 0 && (
+              <Box sx={{ mt: 1.5 }}>
+                {message.actions.map((action, idx) => (
+                  <ActionCard
+                    key={idx}
+                    action={action}
+                    onComplete={() => onActionComplete(message.id, idx)}
+                  />
+                ))}
               </Box>
             )}
             {showConfirmation && (
