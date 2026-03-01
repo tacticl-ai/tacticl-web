@@ -48,6 +48,7 @@ export default function MediaConnectionsPage() {
 
     if (code && platform) {
       if (!validateOAuthState(state)) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- OAuth callback runs once on mount
         setOauthError('Invalid OAuth state. Please try again.');
         setSearchParams({});
         return;
