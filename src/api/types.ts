@@ -350,6 +350,7 @@ export interface AgentCommandResponse {
   model?: string;
   delegated?: boolean;
   deviceName?: string;
+  actions?: AgentAction[];
 }
 
 export interface AgentAsk {
@@ -360,4 +361,18 @@ export interface AgentAsk {
   status: 'pending' | 'answered' | 'expired';
   answer?: string;
   createdAt: string;
+}
+
+// ─── Agent Actions (chat-driven setup) ──────────────────
+
+export type AgentActionType = 'connect_account' | 'grant_repo' | 'add_token' | 'connect_device';
+
+export interface AgentAction {
+  type: AgentActionType;
+  platform?: string;
+  provider?: RepoProvider;
+  tokenProvider?: TokenProvider;
+  repoFullName?: string;
+  accessLevel?: RepoAccessLevel;
+  message?: string;
 }
