@@ -70,10 +70,6 @@ interface PendingActionState {
   model?: string;
 }
 
-export function savePendingAction(state: PendingActionState) {
-  sessionStorage.setItem(PENDING_ACTION_KEY, JSON.stringify(state));
-}
-
 function loadPendingAction(): PendingActionState | null {
   const raw = sessionStorage.getItem(PENDING_ACTION_KEY);
   sessionStorage.removeItem(PENDING_ACTION_KEY);

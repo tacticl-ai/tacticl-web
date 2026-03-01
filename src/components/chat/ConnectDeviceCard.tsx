@@ -32,7 +32,7 @@ interface ConnectDeviceCardProps {
 export default function ConnectDeviceCard({ action, onComplete }: ConnectDeviceCardProps) {
   const { mutate: generateCode, data, isPending, isError } = useCreatePairingCode();
   const { data: devices } = useDevices();
-  const initialDeviceCount = useRef<number | null>(null);
+  const [initialDeviceCount] = useState(() => devices?.length ?? 0);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [copied, setCopied] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -43,7 +43,6 @@ export default function ConnectDeviceCard({ action, onComplete }: ConnectDeviceC
 
   // Generate code on mount
   useEffect(() => {
-    initialDeviceCount.current = devices?.length ?? 0;
     generate();
     return () => {
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
@@ -62,14 +61,14 @@ export default function ConnectDeviceCard({ action, onComplete }: ConnectDeviceC
   // Detect new device paired
   useEffect(() => {
     if (
-      initialDeviceCount.current !== null &&
-      (devices?.length ?? 0) > initialDeviceCount.current &&
+      initialDeviceCount !== null &&
+      (devices?.length ?? 0) > initialDeviceCount &&
       !completed
     ) {
-      setCompleted(true);
+      setCompleted(true); // eslint-disable-line react-hooks/set-state-in-effect
       onComplete();
     }
-  }, [devices?.length, completed, onComplete]);
+  }, [devices?.length, initialDeviceCount, completed, onComplete]);
 
   const formattedCode = data?.code ? `${data.code.slice(0, 3)} ${data.code.slice(3)}` : '';
   const { label: osLabel, downloadUrl } = getOS();
