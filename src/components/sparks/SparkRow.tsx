@@ -30,6 +30,8 @@ import { useCheckpoints } from '../../hooks/useCheckpoints';
 import { useSparkProgressStore } from '../../hooks/useSparkProgress';
 import type { Spark, Device } from '../../api/types';
 
+const EMPTY_PROGRESS: never[] = [];
+
 interface SparkRowProps {
   spark: Spark;
   devices: Device[];
@@ -41,7 +43,7 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
   const { data: tactics } = useSparkTactics(spark.id);
   const { data: allCheckpoints } = useCheckpoints();
   const cancelSpark = useCancelSpark();
-  const progressMessages = useSparkProgressStore((s) => s.sparkProgress[spark.id] || []);
+  const progressMessages = useSparkProgressStore((s) => s.sparkProgress[spark.id] ?? EMPTY_PROGRESS);
   const activityEndRef = useRef<HTMLDivElement>(null);
 
   const displayTactics = tactics ?? [];
