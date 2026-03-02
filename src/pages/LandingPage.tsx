@@ -17,7 +17,7 @@ import TacticlLogo from '../components/TacticlLogo';
 import PublicHeader from '../components/layout/PublicHeader';
 import PricingSection from '../components/pricing/PricingSection';
 
-const SIGNUP_URL = '/login';
+const SIGNUP_URL = 'https://auth.tacticl.ai/signup';
 
 /* ---------- Hooks ---------- */
 

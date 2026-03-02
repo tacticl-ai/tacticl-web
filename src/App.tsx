@@ -7,7 +7,6 @@ import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
-import LoginPage from './pages/LoginPage';
 import ChatPage from './pages/ChatPage';
 import SparkListPage from './pages/SparkListPage';
 import DeviceListPage from './pages/DeviceListPage';
@@ -55,8 +54,7 @@ function AppInner() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingOrDashboard />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/pricing" element={<PricingPage />} />
+<Route path="/pricing" element={<PricingPage />} />
 
         {/* Protected */}
         <Route

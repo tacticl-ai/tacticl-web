@@ -38,7 +38,7 @@ const tiers: PricingTier[] = [
     color: '#06b6d4',
     features: ['All 6 spark types', 'Manual checkpoints', '1 social platform', 'Community support'],
     cta: 'Start Free Trial',
-    ctaHref: '/login',
+    ctaHref: 'https://auth.tacticl.ai/signup',
     highlighted: false,
   },
   {
@@ -51,7 +51,7 @@ const tiers: PricingTier[] = [
     color: '#6C63FF',
     features: ['Everything in Starter', 'All AI models', 'Scheduling', '3 social platforms', 'Email support (48h)'],
     cta: 'Start Free Trial',
-    ctaHref: '/login',
+    ctaHref: 'https://auth.tacticl.ai/signup',
     highlighted: true,
   },
   {
@@ -64,7 +64,7 @@ const tiers: PricingTier[] = [
     color: '#8b5cf6',
     features: ['Everything in Pro', 'Priority routing', 'Recurring schedules', 'Unlimited social platforms', 'Priority support (4h)', 'BYOK option'],
     cta: 'Start Free Trial',
-    ctaHref: '/login',
+    ctaHref: 'https://auth.tacticl.ai/signup',
     highlighted: false,
   },
   {
