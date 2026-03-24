@@ -26,11 +26,11 @@ import { useAuthStore } from './stores/auth-store';
 
 /** Show landing page for unauthenticated visitors, redirect to /chat for authenticated users */
 function LandingOrDashboard() {
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
 
   if (isLoading) return null;
-  if (token) return <Navigate to="/chat" replace />;
+  if (isAuthenticated) return <Navigate to="/chat" replace />;
   return <LandingPage />;
 }
 

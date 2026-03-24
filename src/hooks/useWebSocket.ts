@@ -12,7 +12,7 @@ export function useWebSocket() {
   const [status, setStatus] = useState<WebSocketStatus>('disconnected');
   const clientRef = useRef<WebSocketClient | null>(null);
   const queryClient = useQueryClient();
-  const token = useAuthStore((s) => s.token);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
   const handleMessage = useCallback(
     (msg: SparkWebSocketMessage) => {
@@ -90,7 +90,7 @@ export function useWebSocket() {
   );
 
   useEffect(() => {
-    if (!token) {
+    if (!isAuthenticated) {
       setStatus('disconnected');
       return;
     }
@@ -106,7 +106,7 @@ export function useWebSocket() {
       client.disconnect();
       clientRef.current = null;
     };
-  }, [token, handleMessage]);
+  }, [isAuthenticated, handleMessage]);
 
   return { status };
 }

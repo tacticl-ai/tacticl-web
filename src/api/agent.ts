@@ -1,5 +1,4 @@
 import { api } from './client';
-import { useAuthStore } from '../stores/auth-store';
 import type { AuditLogEntry, ActivityResponse, TranscribeResponse, AgentCommandRequest, AgentCommandResponse, AgentAsk } from './types';
 
 export const agentApi = {
@@ -30,11 +29,9 @@ export const agentApi = {
   transcribe: async (file: File): Promise<TranscribeResponse> => {
     const formData = new FormData();
     formData.append('file', file);
-    const token = useAuthStore.getState().token;
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://tacticl-core-254aoetxaa-ue.a.run.app';
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.tacticl.ai';
     const res = await fetch(`${baseUrl}/api/agent/transcribe`, {
       method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,
       credentials: 'include',
     });
