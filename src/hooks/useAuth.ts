@@ -1,20 +1,23 @@
 import { useAuthStore } from '../stores/auth-store';
 import { useNavigate } from 'react-router-dom';
 
+const AUTH_API_URL =
+  import.meta.env.VITE_AUTH_API_URL || 'https://auth-api.tacticl.ai';
+
 export function useAuth() {
-  const { token, userId, isLoading, clearAuth } = useAuthStore();
+  const { userId, isLoading, isAuthenticated, clearAuth } = useAuthStore();
   const navigate = useNavigate();
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await fetch(`${AUTH_API_URL}/v1/auth/sessions/revoke`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch { /* best-effort */ }
     clearAuth();
     navigate('/', { replace: true });
   };
 
-  return {
-    token,
-    userId,
-    isLoading,
-    isAuthenticated: !!token,
-    logout,
-  };
+  return { userId, isLoading, isAuthenticated, logout };
 }
