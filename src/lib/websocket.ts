@@ -1,5 +1,3 @@
-import { useAuthStore } from '../stores/auth-store';
-
 export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected';
 
 export type SparkWebSocketMessage =
@@ -43,16 +41,7 @@ export class WebSocketClient {
     if (this.disposed) return;
     this.cleanup();
 
-    const token = useAuthStore.getState().token;
-    // Token in URL is a known limitation of the browser WebSocket API which
-    // does not support custom headers on the initial handshake request.
-    // Mitigations:
-    //   - WSS is used in production (encrypted transport).
-    //   - Tokens are short-lived and rotated.
-    //   - Server-side log scrubbing removes token query parameters.
-    // Alternative: Sending the token as a WebSocket subprotocol, but this
-    // complicates server-side validation and is non-standard.
-    const url = `${WS_BASE_URL}/ws/user${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+    const url = `${WS_BASE_URL}/ws/user`;
 
     this.options.onStatusChange('connecting');
 
