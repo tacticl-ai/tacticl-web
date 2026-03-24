@@ -1,53 +1,70 @@
 import { create } from 'zustand';
 
+const AUTH_API_URL =
+  import.meta.env.VITE_AUTH_API_URL || 'https://auth-api.tacticl.ai';
+
 interface AuthState {
-  token: string | null;
   userId: string | null;
   isLoading: boolean;
-  hydrate: () => void;
-  setAuth: (token: string, userId: string) => void;
+  isAuthenticated: boolean;
+  hydrate: () => Promise<void>;
   clearAuth: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  token: null,
   userId: null,
   isLoading: true,
+  isAuthenticated: false,
 
-  hydrate: () => {
-    const token = localStorage.getItem('tacticl-auth-token');
-    const userId = localStorage.getItem('tacticl-user-id');
-
-    // Check for token in URL params (SSO redirect from auth.tacticl.ai)
+  hydrate: async () => {
     const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('auth_token');
-    const urlUserId = params.get('user_id');
+    const authToken = params.get('auth_token');
 
-    if (urlToken) {
-      localStorage.setItem('tacticl-auth-token', urlToken);
-      if (urlUserId) localStorage.setItem('tacticl-user-id', urlUserId);
-      // Clean URL
+    if (authToken) {
+      try {
+        const response = await fetch(`${AUTH_API_URL}/v1/auth/token/exchange`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: authToken }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          params.delete('auth_token');
+          params.delete('user_id');
+          const clean = params.toString();
+          const newUrl = window.location.pathname + (clean ? `?${clean}` : '');
+          window.history.replaceState({}, '', newUrl);
+          set({ userId: data.userId || data.user?.id || null, isAuthenticated: true, isLoading: false });
+          return;
+        }
+      } catch (error) {
+        console.error('Token exchange failed:', error);
+      }
       params.delete('auth_token');
       params.delete('user_id');
       const clean = params.toString();
       const newUrl = window.location.pathname + (clean ? `?${clean}` : '');
       window.history.replaceState({}, '', newUrl);
-      set({ token: urlToken, userId: urlUserId, isLoading: false });
-      return;
     }
 
-    set({ token, userId, isLoading: false });
-  },
+    try {
+      const response = await fetch(`${AUTH_API_URL}/v1/auth/session/check`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        set({ userId: data.userId || data.user?.id || null, isAuthenticated: true, isLoading: false });
+        return;
+      }
+    } catch { /* not authenticated */ }
 
-  setAuth: (token: string, userId: string) => {
-    localStorage.setItem('tacticl-auth-token', token);
-    localStorage.setItem('tacticl-user-id', userId);
-    set({ token, userId });
+    set({ userId: null, isAuthenticated: false, isLoading: false });
   },
 
   clearAuth: () => {
-    localStorage.removeItem('tacticl-auth-token');
-    localStorage.removeItem('tacticl-user-id');
-    set({ token: null, userId: null });
+    set({ userId: null, isAuthenticated: false });
   },
 }));
