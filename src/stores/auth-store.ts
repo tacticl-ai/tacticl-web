@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
 
     try {
-      const response = await fetch(`${AUTH_API_URL}/v1/auth/session/check`, {
+      const response = await fetch(`${AUTH_API_URL}/v1/auth/session/validate-cookie`, {
         method: 'GET',
         credentials: 'include',
       });
