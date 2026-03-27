@@ -1,3 +1,5 @@
+import { getAccessToken } from '../stores/auth-store';
+
 export type WebSocketStatus = 'connecting' | 'connected' | 'disconnected';
 
 export type SparkWebSocketMessage =
@@ -41,7 +43,10 @@ export class WebSocketClient {
     if (this.disposed) return;
     this.cleanup();
 
-    const url = `${WS_BASE_URL}/ws/user`;
+    const token = getAccessToken();
+    const url = token
+      ? `${WS_BASE_URL}/ws/user?token=${encodeURIComponent(token)}`
+      : `${WS_BASE_URL}/ws/user`;
 
     this.options.onStatusChange('connecting');
 

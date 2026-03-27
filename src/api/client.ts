@@ -1,4 +1,4 @@
-import { useAuthStore } from '../stores/auth-store';
+import { useAuthStore, getAccessToken } from '../stores/auth-store';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'https://api.tacticl.ai';
@@ -20,6 +20,12 @@ class ApiClient {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
     };
+
+    // Attach Bearer token for cross-subdomain auth
+    const token = getAccessToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
 
     const response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
