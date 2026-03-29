@@ -2,12 +2,12 @@ import { api } from './client';
 import type { AgentToken, CreateTokenRequest } from './types';
 
 export const tokensApi = {
-  list: () => api.get<AgentToken[]>('/api/tokens'),
+  list: () => api.get<AgentToken[]>('/v1/tokens'),
 
   create: (data: CreateTokenRequest) =>
-    api.post<AgentToken>('/api/tokens', data),
+    api.post<AgentToken>('/v1/tokens', data),
 
-  remove: (id: string) => api.delete<void>(`/api/tokens/${id}`),
+  remove: (id: string) => api.delete<void>(`/v1/tokens/${id}`),
 
-  usage: (id: string) => api.get<AgentToken>(`/api/tokens/${id}/usage`),
+  usage: (id: string) => api.get<AgentToken>(`/v1/tokens/${id}/usage`),
 };

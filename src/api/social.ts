@@ -3,14 +3,14 @@ import type { SocialPost, CreatePostRequest } from './types';
 
 export const socialApi = {
   listPosts: (state?: string) =>
-    api.get<SocialPost[]>(state ? `/api/social/posts?state=${state}` : '/api/social/posts'),
+    api.get<SocialPost[]>(state ? `/v1/social/posts?state=${state}` : '/v1/social/posts'),
 
   getPost: (id: string) =>
-    api.get<SocialPost>(`/api/social/posts/${id}`),
+    api.get<SocialPost>(`/v1/social/posts/${id}`),
 
   createPost: (data: CreatePostRequest) =>
-    api.post<SocialPost>('/api/social/posts', data),
+    api.post<SocialPost>('/v1/social/posts', data),
 
   cancelPost: (id: string) =>
-    api.delete<void>(`/api/social/posts/${id}`),
+    api.delete<void>(`/v1/social/posts/${id}`),
 };

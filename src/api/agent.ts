@@ -3,34 +3,34 @@ import type { AuditLogEntry, ActivityResponse, TranscribeResponse, AgentCommandR
 
 export const agentApi = {
   command: (data: AgentCommandRequest) =>
-    api.post<AgentCommandResponse>('/api/agent/command', data),
+    api.post<AgentCommandResponse>('/v1/agent/command', data),
 
   getHistory: () =>
-    api.get<AuditLogEntry[]>('/api/agent/history'),
+    api.get<AuditLogEntry[]>('/v1/agent/history'),
 
   getActivity: () =>
-    api.get<ActivityResponse>('/api/agent/activity'),
+    api.get<ActivityResponse>('/v1/agent/activity'),
 
   getModels: () =>
-    api.get<string[]>('/api/agent/models'),
+    api.get<string[]>('/v1/agent/models'),
 
   confirmAction: (confirmationId: string, approved: boolean) =>
-    api.post<string>(`/api/agent/confirm/${confirmationId}`, { approved }),
+    api.post<string>(`/v1/agent/confirm/${confirmationId}`, { approved }),
 
   getAsk: (askId: string) =>
-    api.get<Record<string, unknown>>(`/api/agent/asks/${askId}`),
+    api.get<Record<string, unknown>>(`/v1/agent/asks/${askId}`),
 
   cancelAsk: (askId: string) =>
-    api.post<void>(`/api/agent/asks/${askId}/cancel`),
+    api.post<void>(`/v1/agent/asks/${askId}/cancel`),
 
   getPendingAsks: () =>
-    api.get<AgentAsk[]>('/api/agent/asks/pending'),
+    api.get<AgentAsk[]>('/v1/agent/asks/pending'),
 
   transcribe: async (file: File): Promise<TranscribeResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.tacticl.ai';
-    const res = await fetch(`${baseUrl}/api/agent/transcribe`, {
+    const res = await fetch(`${baseUrl}/v1/agent/transcribe`, {
       method: 'POST',
       body: formData,
       credentials: 'include',

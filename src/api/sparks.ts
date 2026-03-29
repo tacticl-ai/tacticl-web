@@ -14,24 +14,24 @@ export const sparksApi = {
     if (params?.page !== undefined) query.set('page', String(params.page));
     if (params?.size !== undefined) query.set('size', String(params.size));
     const qs = query.toString();
-    return api.get<Spark[]>(`/api/sparks${qs ? `?${qs}` : ''}`);
+    return api.get<Spark[]>(`/v1/sparks${qs ? `?${qs}` : ''}`);
   },
 
-  get: (id: string) => api.get<Spark>(`/api/sparks/${id}`),
+  get: (id: string) => api.get<Spark>(`/v1/sparks/${id}`),
 
   create: (data: CreateSparkRequest) =>
-    api.post<Spark>('/api/sparks', data),
+    api.post<Spark>('/v1/sparks', data),
 
   update: (id: string, data: UpdateSparkRequest) =>
-    api.put<Spark>(`/api/sparks/${id}`, data),
+    api.put<Spark>(`/v1/sparks/${id}`, data),
 
-  cancel: (id: string) => api.delete<void>(`/api/sparks/${id}`),
+  cancel: (id: string) => api.delete<void>(`/v1/sparks/${id}`),
 
-  run: (id: string) => api.post<Spark>(`/api/sparks/${id}/run`),
+  run: (id: string) => api.post<Spark>(`/v1/sparks/${id}/run`),
 
   tactics: (sparkId: string) =>
-    api.get<Tactic[]>(`/api/sparks/${sparkId}/tactics`),
+    api.get<Tactic[]>(`/v1/sparks/${sparkId}/tactics`),
 
   logs: (sparkId: string) =>
-    api.get<ExecutionLog[]>(`/api/sparks/${sparkId}/logs`),
+    api.get<ExecutionLog[]>(`/v1/sparks/${sparkId}/logs`),
 };

@@ -2,10 +2,10 @@ import { api } from './client';
 import type { Checkpoint, CheckpointDecisionRequest } from './types';
 
 export const checkpointsApi = {
-  list: () => api.get<Checkpoint[]>('/api/checkpoints'),
+  list: () => api.get<Checkpoint[]>('/v1/checkpoints'),
 
-  get: (id: string) => api.get<Checkpoint>(`/api/checkpoints/${id}`),
+  get: (id: string) => api.get<Checkpoint>(`/v1/checkpoints/${id}`),
 
   decide: (id: string, data: CheckpointDecisionRequest) =>
-    api.post<Checkpoint>(`/api/checkpoints/${id}/decide`, data),
+    api.post<Checkpoint>(`/v1/checkpoints/${id}/decide`, data),
 };
