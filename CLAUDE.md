@@ -1,5 +1,17 @@
 # CLAUDE.md — Tacticl Web
 
+## Ecosystem (MUST READ before cross-cutting changes)
+
+| Repo | Role | Notes |
+|------|------|-------|
+| **tacticl-core** | Java backend, REST API | This app's data source — all `/v1/*` endpoints |
+| **tacticl-web** (this repo) | React web dashboard | Firebase Hosting → `tacticl.web.app` |
+| **tacticl-mobile** | React Native mobile app | Shares same API contract as this app |
+| **tacticl-device** | Electron desktop agent | WebSocket only, no REST |
+
+**Backend API prefix:** `/v1/` — all API modules in `src/api/*.ts` use this prefix.
+**When backend API changes, this app MUST be updated and redeployed.**
+
 ## Overview
 
 Web dashboard for Tacticl — the personal AI assistant that remotes into all your devices. This is a React SPA that provides a web interface for managing Sparks (AI tasks), connected devices, social media, and the agent chat interface. Deployed on Firebase Hosting, talks to tacticl-core (Java/Cloud Run) backend via REST + WebSocket.
