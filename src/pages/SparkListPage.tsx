@@ -75,7 +75,7 @@ export default function SparkListPage() {
               bgcolor: 'background.default',
               borderBottom: '1px solid', borderBottomColor: 'divider',
             }}>
-              {['Status', 'Spark', 'Device', 'Tactics', 'Cost', 'Updated', ''].map((h) => (
+              {['Status', 'Spark', 'Device', 'Progress', 'Cost', 'Updated', ''].map((h) => (
                 <Typography key={h} sx={{ fontSize: 11, fontWeight: 500, color: 'text.disabled', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   {h}
                 </Typography>

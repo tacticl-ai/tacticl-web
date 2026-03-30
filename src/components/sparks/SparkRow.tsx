@@ -8,7 +8,10 @@ import Paper from '@mui/material/Paper';
 import Collapse from '@mui/material/Collapse';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { format, formatDistanceToNow, isValid } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import SparkStatusBadge from './SparkStatusBadge';
+import RoleProgressBar from './RoleProgressBar';
+import SparkExecutionSummary from './SparkExecutionSummary';
 
 function safeTimeAgo(dateStr: string | null | undefined): string {
   if (!dateStr) return '';
@@ -28,6 +31,7 @@ import CheckpointApproval from './CheckpointApproval';
 import { useSparkTactics, useCancelSpark } from '../../hooks/useSparks';
 import { useCheckpoints } from '../../hooks/useCheckpoints';
 import { useSparkProgressStore } from '../../hooks/useSparkProgress';
+import { usePipelineRun } from '../../hooks/usePipeline';
 import type { Spark, Device } from '../../api/types';
 
 const EMPTY_PROGRESS: never[] = [];
@@ -40,11 +44,19 @@ interface SparkRowProps {
 }
 
 export default function SparkRow({ spark, devices, isExpanded, onToggle }: SparkRowProps) {
+  const navigate = useNavigate();
   const { data: tactics } = useSparkTactics(spark.id);
   const { data: allCheckpoints } = useCheckpoints();
   const cancelSpark = useCancelSpark();
   const progressMessages = useSparkProgressStore((s) => s.sparkProgress[spark.id] ?? EMPTY_PROGRESS);
   const activityEndRef = useRef<HTMLDivElement>(null);
+
+  // Conditionally fetch pipeline data for code/devops sparks
+  const isPipelineType = spark.type === 'code' || spark.type === 'devops';
+  const isActive = spark.status === 'EXECUTING' || spark.status === 'ROUTING' || spark.status === 'CHECKPOINT';
+  const { data: pipelineRun } = usePipelineRun(isPipelineType ? spark.id : undefined);
+
+  const hasPipeline = pipelineRun != null && (pipelineRun.pipelineTier === 'PLAYBOOK' || pipelineRun.pipelineTier === 'FULL_PDLC');
 
   const displayTactics = tactics ?? [];
   const sparkCheckpoints = (allCheckpoints ?? []).filter((cp) => cp.sparkId === spark.id);
@@ -52,8 +64,6 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
   const device = devices.find((d) => d.id === spark.deviceId);
   const completedTactics = displayTactics.filter((t) => t.status === 'COMPLETED').length;
   const totalTactics = displayTactics.length;
-
-  const isActive = spark.status === 'EXECUTING' || spark.status === 'ROUTING' || spark.status === 'CHECKPOINT';
   const showLiveActivity = isActive && progressMessages.length > 0;
 
   // Priority accent
@@ -79,7 +89,7 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
     }}>
       {/* Collapsed row */}
       <Box
-        onClick={onToggle}
+        onClick={() => navigate(`/sparks/${spark.id}`)}
         sx={{
           display: 'grid',
           gridTemplateColumns: '90px 1fr 130px 120px 70px 80px 36px',
@@ -97,15 +107,23 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
         <Box><SparkStatusBadge status={spark.status} size="small" /></Box>
         <Box>
           <Typography sx={{ fontSize: 13.5, fontWeight: 500, mb: 0.25 }}>{spark.title}</Typography>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, flexWrap: 'wrap' }}>
             {spark.type && (
               <Typography component="span" sx={{ fontSize: 10.5, px: 0.75, py: 0.125, bgcolor: 'rgba(255,255,255,0.04)', borderRadius: '3px', color: 'text.secondary', fontWeight: 500 }}>
                 {spark.type}
               </Typography>
             )}
+            {hasPipeline && (
+              <Chip label={pipelineRun.playbook} size="small" sx={{ height: 18, fontSize: 10, fontWeight: 500, bgcolor: 'rgba(108, 99, 255, 0.12)', color: '#6C63FF' }} />
+            )}
             {spark.priority !== 'NORMAL' && (
               <Typography component="span" sx={{ fontSize: 11, fontWeight: 500, color: spark.priority === 'URGENT' ? '#F87171' : spark.priority === 'HIGH' ? '#FBBF24' : 'text.secondary' }}>
                 {spark.priority}
+              </Typography>
+            )}
+            {hasPipeline && pipelineRun.currentRole && isActive && (
+              <Typography component="span" sx={{ fontSize: 10.5, fontWeight: 600, color: '#6C63FF' }}>
+                {pipelineRun.currentRole}
               </Typography>
             )}
           </Box>
@@ -115,12 +133,24 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
           <Typography sx={{ fontSize: 12.5, color: 'text.secondary' }}>{deviceName}</Typography>
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box sx={{ flex: 1, height: 4, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-            <Box sx={{ height: '100%', width: `${progressPercent}%`, background: progressColor, borderRadius: 2, transition: 'width 0.5s ease' }} />
-          </Box>
-          <Typography sx={{ fontSize: 12, fontFamily: '"JetBrains Mono", monospace', color: 'text.secondary', whiteSpace: 'nowrap' }}>
-            {completedTactics}/{totalTactics}
-          </Typography>
+          {hasPipeline ? (
+            <RoleProgressBar
+              activatedRoles={pipelineRun.activatedRoles}
+              roleResults={pipelineRun.roleResults}
+              currentRole={pipelineRun.currentRole}
+            />
+          ) : isPipelineType && pipelineRun?.pipelineTier === 'SIMPLE' ? (
+            <SparkExecutionSummary totalTokens={spark.totalTokens} estimatedCost={spark.estimatedCost} />
+          ) : (
+            <>
+              <Box sx={{ flex: 1, height: 4, bgcolor: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+                <Box sx={{ height: '100%', width: `${progressPercent}%`, background: progressColor, borderRadius: 2, transition: 'width 0.5s ease' }} />
+              </Box>
+              <Typography sx={{ fontSize: 12, fontFamily: '"JetBrains Mono", monospace', color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                {completedTactics}/{totalTactics}
+              </Typography>
+            </>
+          )}
         </Box>
         <Typography sx={{ fontSize: 12.5, fontFamily: '"JetBrains Mono", monospace', color: 'text.secondary' }}>
           ${spark.estimatedCost.toFixed(2)}
@@ -128,7 +158,10 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
         <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>
           {safeTimeAgo(spark.updatedAt)}
         </Typography>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExpanded ? 'primary.light' : 'text.disabled', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none' }}>
+        <Box
+          onClick={(e) => { e.stopPropagation(); onToggle(); }}
+          sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: isExpanded ? 'primary.light' : 'text.disabled', transition: 'transform 0.2s', transform: isExpanded ? 'rotate(180deg)' : 'none', '&:hover': { color: 'primary.main' } }}
+        >
           <KeyboardArrowDownIcon sx={{ fontSize: 18 }} />
         </Box>
       </Box>
