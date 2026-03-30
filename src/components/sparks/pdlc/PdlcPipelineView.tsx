@@ -5,6 +5,9 @@ import PdlcRoleStrip from './PdlcRoleStrip';
 import ActiveRolePanel from './ActiveRolePanel';
 import EventTimeline from '../EventTimeline';
 import ArtifactTabs from './ArtifactTabs';
+import CheckpointBanner from '../CheckpointBanner';
+import PdlcPipelineControls from './PdlcPipelineControls';
+import { useCheckpoints } from '../../../hooks/useCheckpoints';
 
 interface PdlcPipelineViewProps {
   sparkId: string;
@@ -13,6 +16,14 @@ interface PdlcPipelineViewProps {
 
 export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineViewProps) {
   const [selectedRole, setSelectedRole] = useState<PdlcRole | null>(null);
+  const { data: checkpoints } = useCheckpoints();
+
+  const activeCheckpoint = checkpoints?.find(
+    (c) => c.sparkId === sparkId && !c.userDecision,
+  );
+
+  const isPipelineActive =
+    pipelineRun.status === 'EXECUTING' || pipelineRun.status === 'CHECKPOINT';
 
   const handleRoleClick = (role: PdlcRole) => {
     setSelectedRole(role);
@@ -29,7 +40,10 @@ export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineV
         onRoleClick={handleRoleClick}
       />
 
-      {/* CheckpointBanner slot -- added in Task 20 */}
+      {/* 2. Checkpoint banner (visible when checkpoint is active) */}
+      {activeCheckpoint && (
+        <CheckpointBanner sparkId={sparkId} checkpoint={activeCheckpoint} />
+      )}
 
       {/* 3. Two-column layout: ActiveRolePanel | EventTimeline */}
       <Box sx={{ display: 'flex', gap: 2 }}>
@@ -47,8 +61,10 @@ export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineV
         </Box>
       </Box>
 
-      {/* 4. PdlcPipelineControls placeholder */}
-      {/* PdlcPipelineControls slot -- future task */}
+      {/* 4. Pipeline controls (visible when pipeline is active) */}
+      {isPipelineActive && (
+        <PdlcPipelineControls sparkId={sparkId} pipelineRun={pipelineRun} />
+      )}
 
       {/* 5. Artifact tabs (full width) */}
       <ArtifactTabs
