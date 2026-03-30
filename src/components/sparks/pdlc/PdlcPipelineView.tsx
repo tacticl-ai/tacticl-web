@@ -57,7 +57,7 @@ export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineV
           </Box>
         )}
         <Box sx={{ flex: 0.8, minWidth: 0 }}>
-          <EventTimeline sparkId={sparkId} />
+          <EventTimeline sparkId={sparkId} isActive={isPipelineActive} />
         </Box>
       </Box>
 

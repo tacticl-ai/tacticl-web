@@ -5,6 +5,7 @@ import type { PipelineEventType, PdlcRole } from '../../api/types';
 
 interface EventTimelineProps {
   sparkId: string;
+  isActive?: boolean;
 }
 
 const EVENT_COLORS: Record<string, string> = {
@@ -110,8 +111,8 @@ function formatTimestamp(timestamp: string): string {
   return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-export default function EventTimeline({ sparkId }: EventTimelineProps) {
-  const { data: events, isLoading } = usePipelineEvents(sparkId, true);
+export default function EventTimeline({ sparkId, isActive = false }: EventTimelineProps) {
+  const { data: events, isLoading } = usePipelineEvents(sparkId, isActive);
 
   if (isLoading) {
     return (

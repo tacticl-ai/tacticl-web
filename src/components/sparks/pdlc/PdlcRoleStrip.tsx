@@ -119,10 +119,13 @@ export default function PdlcRoleStrip({
                   width: 20,
                   height: '2px',
                   mt: '19px', // center vertically with 40px node
-                  bgcolor:
-                    status === 'completed' || status === 'failed' || status === 'skipped'
-                      ? '#4CAF50'
-                      : '#555',
+                  bgcolor: (() => {
+                    // Connector color based on PREVIOUS node's completion
+                    const prevRole = activatedRoles[index - 1];
+                    const prevResult = roleResults[prevRole];
+                    const prevDone = prevResult && (prevResult.status === 'COMPLETED' || prevResult.status === 'FAILED' || prevResult.status === 'SKIPPED');
+                    return prevDone ? '#4CAF50' : '#555';
+                  })(),
                   flexShrink: 0,
                 }}
               />
