@@ -8,6 +8,7 @@ export type SparkWebSocketMessage =
   | { type: 'spark_completed'; sparkId: string; result: unknown }
   | { type: 'spark_failed'; sparkId: string; error: string }
   | { type: 'spark_checkpoint'; sparkId: string; checkpointId: string; message?: string }
+  | { type: 'pipeline_event'; sparkId: string; eventType: string; role?: string; status?: string; pipelineRunId?: string; metadata?: Record<string, unknown> }
   | { type: 'pong' };
 
 export interface WebSocketClientOptions {

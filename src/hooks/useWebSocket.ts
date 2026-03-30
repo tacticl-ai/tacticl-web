@@ -82,6 +82,21 @@ export function useWebSocket() {
           // Clear progress after a short delay so the failed message is visible
           setTimeout(() => clearProgress(msg.sparkId), 5000);
           break;
+        case 'pipeline_event': {
+          const { sparkId, eventType, role } = msg;
+          addProgress(sparkId, {
+            sparkId,
+            message: `[${role ?? 'pipeline'}] ${eventType}`,
+            type: 'progress',
+          });
+          const terminalEvents = ['PIPELINE_COMPLETED', 'PIPELINE_FAILED', 'PIPELINE_CANCELLED'];
+          if (terminalEvents.includes(eventType)) {
+            queryClient.invalidateQueries({ queryKey: ['pipeline-run', sparkId] });
+            queryClient.invalidateQueries({ queryKey: ['pipeline-events', sparkId] });
+            queryClient.invalidateQueries({ queryKey: ['sparks'] });
+          }
+          break;
+        }
         case 'pong':
           break;
       }
