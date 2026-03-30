@@ -376,3 +376,94 @@ export interface AgentAction {
   accessLevel?: RepoAccessLevel;
   message?: string;
 }
+
+// ─── PDLC Pipeline ─────────────────────────────────────
+
+export type PipelineTier = 'SIMPLE' | 'PLAYBOOK' | 'FULL_PDLC';
+
+export type PipelineStatus =
+  | 'CREATED' | 'CLASSIFYING' | 'AWAITING_CONFIRMATION'
+  | 'EXECUTING' | 'CHECKPOINT'
+  | 'COMPLETED' | 'FAILED' | 'CANCELLED';
+
+export type PdlcRole =
+  | 'PM' | 'RESEARCHER' | 'ARCHITECT' | 'DESIGNER' | 'PLANNER'
+  | 'IMPLEMENTER' | 'REVIEWER' | 'TESTER' | 'SECURITY_ANALYST'
+  | 'TECHNICAL_WRITER' | 'DEVOPS' | 'RETRO_ANALYST';
+
+export type RoleStatus =
+  | 'PENDING' | 'EXECUTING' | 'COMPLETED' | 'REJECTED' | 'REWORKING'
+  | 'FAILED' | 'ESCALATED' | 'SKIPPED' | 'AWAITING_APPROVAL';
+
+export type PipelineEventType =
+  | 'PIPELINE_STARTED' | 'PIPELINE_COMPLETED' | 'PIPELINE_FAILED'
+  | 'PIPELINE_CANCELLED' | 'PIPELINE_RESUMED'
+  | 'ROLE_STARTED' | 'ROLE_COMPLETED' | 'ROLE_REJECTED' | 'ROLE_SKIPPED'
+  | 'REWORK_TRIGGERED' | 'REWORK_COMPLETED' | 'REWORK_ESCALATED'
+  | 'ARTIFACT_PRODUCED'
+  | 'CHECKPOINT_REQUESTED' | 'CHECKPOINT_RESOLVED' | 'CHECKPOINT_TIMEOUT_REMINDER'
+  | 'PARALLEL_ROLES_STARTED'
+  | 'COST_THRESHOLD_WARNING' | 'COST_CEILING_REACHED';
+
+export interface RoleResultSummary {
+  childSparkId: string | null;
+  status: RoleStatus;
+  artifactId: string | null;
+  iteration: number;
+  tokens: number;
+  cost: number;
+  durationMs: number;
+  model: string;
+  engine: string | null;
+}
+
+export interface PipelineRun {
+  id: string;
+  sparkId: string;
+  playbook: string;
+  pipelineTier: PipelineTier;
+  status: PipelineStatus;
+  activatedRoles: PdlcRole[];
+  currentRole: PdlcRole | null;
+  roleResults: Record<string, RoleResultSummary>;
+  skippedRequiredRoles: string[];
+  reworkCount: number;
+  totalTokens: number;
+  totalCost: number;
+  createdAt: string;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+export interface PipelineEvent {
+  id: string;
+  pipelineRunId: string;
+  eventType: PipelineEventType;
+  role: PdlcRole | null;
+  roleIteration: number;
+  metadata: Record<string, unknown>;
+  timestamp: string;
+}
+
+export interface RoleArtifact {
+  id: string;
+  role: PdlcRole;
+  artifactType: string;
+  content: Record<string, unknown>;
+  artifactVersion: number;
+  createdAt: string;
+}
+
+export interface CheckpointResolution {
+  decision: 'APPROVED' | 'REJECTED' | 'MODIFIED';
+  feedback: string | null;
+}
+
+export interface Playbook {
+  name: string;
+  displayName: string;
+  description: string;
+  tier: PipelineTier;
+  stages: string[];
+  isSystemPlaybook: boolean;
+}
