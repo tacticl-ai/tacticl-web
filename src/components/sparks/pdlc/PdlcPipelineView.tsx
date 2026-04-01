@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Box from '@mui/material/Box';
 import type { PipelineRun, PdlcRole } from '../../../api/types';
 import PdlcRoleStrip from './PdlcRoleStrip';
@@ -15,7 +14,6 @@ interface PdlcPipelineViewProps {
 }
 
 export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineViewProps) {
-  const [selectedRole, setSelectedRole] = useState<PdlcRole | null>(null);
   const { data: checkpoints } = useCheckpoints();
 
   const activeCheckpoint = checkpoints?.find(
@@ -25,8 +23,9 @@ export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineV
   const isPipelineActive =
     pipelineRun.status === 'EXECUTING' || pipelineRun.status === 'CHECKPOINT';
 
-  const handleRoleClick = (role: PdlcRole) => {
-    setSelectedRole(role);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleRoleClick = (_role: PdlcRole) => {
+    // TODO: wire up role detail panel
   };
 
   return (
