@@ -18,9 +18,9 @@ const SIGN_IN_URL = 'https://auth.tacticl.ai/signin';
 const SIGN_UP_URL = 'https://auth.tacticl.ai/signup';
 
 const NAV_LINKS = [
-  { label: 'Features', href: '#features' },
   { label: 'How it works', href: '#how-it-works' },
-  { label: 'Pricing', href: '#pricing' },
+  { label: 'The Team', href: '#meet-your-team' },
+  { label: 'Pricing', href: '/pricing' },
 ];
 
 export default function PublicHeader() {
