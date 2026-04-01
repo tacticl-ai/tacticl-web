@@ -42,18 +42,19 @@ export default function ConnectorsSection({ scrollReveal }: ConnectorsSectionPro
               letterSpacing: '-0.02em',
             }}
           >
-            Connect your world
+            Your ecosystem, connected
           </Typography>
           <Typography
             sx={{
               textAlign: 'center',
               color: 'rgba(255,255,255,0.5)',
               mb: { xs: 4, md: 5 },
-              maxWidth: 420,
+              maxWidth: 480,
               mx: 'auto',
             }}
           >
-            Tacticl agents work with the tools and platforms you already use.
+            Distribute your agents across devices or the cloud. Connect the tools and platforms
+            you already use — you decide where and how your workflows run.
           </Typography>
         </Box>
 

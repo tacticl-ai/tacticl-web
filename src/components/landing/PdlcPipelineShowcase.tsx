@@ -233,7 +233,7 @@ export default function PdlcPipelineShowcase({ scrollReveal }: PdlcPipelineShowc
               letterSpacing: '-0.02em',
             }}
           >
-            A full product team, on demand
+            A whole team of experts, on demand
           </Typography>
           <Typography
             sx={{
@@ -244,8 +244,8 @@ export default function PdlcPipelineShowcase({ scrollReveal }: PdlcPipelineShowc
               mx: 'auto',
             }}
           >
-            Behind every Spark is a pipeline of specialized AI roles — the same structure
-            used by world-class product teams, running in minutes instead of months.
+            Behind every Spark is a pipeline of specialized AI experts — the same roles
+            found in world-class product teams, running in minutes instead of months.
           </Typography>
         </Box>
 

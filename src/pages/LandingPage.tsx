@@ -85,7 +85,7 @@ const steps = [
   {
     icon: <HubIcon sx={{ fontSize: 40 }} />,
     title: 'Your team assembles',
-    description: 'Tacticl spins up the right AI specialists for the job — from a single agent for quick tasks to a full 12-role development team for complex products.',
+    description: 'Tacticl spins up the right AI experts and distributes them wherever you choose — your MacBook, iPhone, or the cloud. You control where workflows run.',
   },
   {
     icon: <CheckCircleOutlineIcon sx={{ fontSize: 40 }} />,
@@ -371,9 +371,9 @@ export default function LandingPage() {
               lineHeight: 1.6,
             }}
           >
-            Tacticl gives you an AI-powered development team on demand. Describe what you want
-            to build — from a social post to a full product — and your team assembles, executes,
-            and delivers.
+            A whole team of AI experts — PM, architect, designer, developer, QA, security — assembled
+            on demand and deployed across your devices or the cloud. Describe what you want to build,
+            and your team gets to work.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
