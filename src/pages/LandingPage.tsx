@@ -240,6 +240,7 @@ export default function LandingPage() {
         onMouseMove={handleHeroMouseMove}
         sx={{
           position: 'relative',
+          overflow: 'hidden',
           minHeight: { xs: '90vh', md: '85vh' },
           display: 'flex',
           alignItems: 'center',
