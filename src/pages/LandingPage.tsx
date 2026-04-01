@@ -3,19 +3,14 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import Grid from '@mui/material/Grid';
-import BoltIcon from '@mui/icons-material/Bolt';
-import RouteIcon from '@mui/icons-material/AltRoute';
-import AccountTreeIcon from '@mui/icons-material/AccountTree';
-import FactCheckIcon from '@mui/icons-material/FactCheck';
-import ShareIcon from '@mui/icons-material/Share';
-import DevicesIcon from '@mui/icons-material/Devices';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import HubIcon from '@mui/icons-material/Hub';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import TacticlLogo from '../components/TacticlLogo';
 import PublicHeader from '../components/layout/PublicHeader';
-import PricingSection from '../components/pricing/PricingSection';
+import PdlcPipelineShowcase from '../components/landing/PdlcPipelineShowcase';
+import ScaleToFitSection from '../components/landing/ScaleToFitSection';
+import ConnectorsSection from '../components/landing/ConnectorsSection';
 
 const SIGNUP_URL = 'https://auth.tacticl.ai/signup';
 
@@ -79,76 +74,23 @@ function useScrollReveal(threshold = 0.15) {
   return { ref, isVisible };
 }
 
-function useTilt3D(maxTilt = 5) {
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent<HTMLDivElement>) => {
-      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-      const el = e.currentTarget;
-      const rect = el.getBoundingClientRect();
-      const x = (e.clientX - rect.left) / rect.width - 0.5;
-      const y = (e.clientY - rect.top) / rect.height - 0.5;
-      el.style.transform = `perspective(800px) rotateY(${x * maxTilt}deg) rotateX(${-y * maxTilt}deg) translateY(-2px)`;
-    },
-    [maxTilt],
-  );
-
-  const handleMouseLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    e.currentTarget.style.transform = 'perspective(800px) rotateY(0deg) rotateX(0deg) translateY(0)';
-  }, []);
-
-  return { onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave };
-}
-
 /* ---------- Data ---------- */
-
-const features = [
-  {
-    icon: <BoltIcon sx={{ fontSize: 32 }} />,
-    title: 'Sparks',
-    description: 'Drop tasks in plain English. No code, no config — just say what you need done.',
-  },
-  {
-    icon: <RouteIcon sx={{ fontSize: 32 }} />,
-    title: 'Smart Routing',
-    description: 'Tasks route to the optimal device automatically based on your preferences and capabilities.',
-  },
-  {
-    icon: <AccountTreeIcon sx={{ fontSize: 32 }} />,
-    title: 'Tactics',
-    description: 'Complex tasks are decomposed into parallel subtasks that execute simultaneously.',
-  },
-  {
-    icon: <FactCheckIcon sx={{ fontSize: 32 }} />,
-    title: 'Checkpoints',
-    description: 'Review agent progress at key milestones. Stay in control without micromanaging.',
-  },
-  {
-    icon: <ShareIcon sx={{ fontSize: 32 }} />,
-    title: 'Social Publishing',
-    description: 'Publish results directly to your connected social accounts with one approval.',
-  },
-  {
-    icon: <DevicesIcon sx={{ fontSize: 32 }} />,
-    title: 'Multi-Device',
-    description: 'MacBook, iPhone, iPad — all your devices work together as a unified AI workforce.',
-  },
-];
 
 const steps = [
   {
     icon: <ChatBubbleOutlineIcon sx={{ fontSize: 40 }} />,
-    title: 'Describe your task',
-    description: 'Type what you need in plain English. No templates, no boilerplate.',
+    title: 'Describe your idea',
+    description: 'Tell Tacticl what you want to build in plain English. A mobile app, a marketing campaign, an API integration — anything.',
   },
   {
     icon: <HubIcon sx={{ fontSize: 40 }} />,
-    title: 'AI routes to the best device',
-    description: 'The cloud orchestrator classifies your Spark and sends it to the right machine.',
+    title: 'Your team assembles',
+    description: 'Tacticl spins up the right AI specialists for the job — from a single agent for quick tasks to a full 12-role development team for complex products.',
   },
   {
     icon: <CheckCircleOutlineIcon sx={{ fontSize: 40 }} />,
-    title: 'Review results and approve',
-    description: 'Agents work autonomously, then present results at checkpoints for your review.',
+    title: 'Review, steer, and ship',
+    description: 'Your team works autonomously but checks in at key milestones. Approve, redirect, or skip roles — you\'re the CEO of your own AI staffing company.',
   },
 ];
 
@@ -267,10 +209,11 @@ export default function LandingPage() {
   const { gridRef, helixRef, dotsRef } = useParallax();
   const orb1Ref = useRef<HTMLDivElement>(null);
   const orb2Ref = useRef<HTMLDivElement>(null);
-  const featuresReveal = useScrollReveal();
   const howItWorksReveal = useScrollReveal();
+  const teamReveal = useScrollReveal();
+  const scaleReveal = useScrollReveal();
+  const connectorsReveal = useScrollReveal();
   const ctaReveal = useScrollReveal();
-  const tilt = useTilt3D(5);
 
   const handleHeroMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (window.innerWidth < 768) return;
@@ -412,7 +355,7 @@ export default function LandingPage() {
               WebkitTextFillColor: 'transparent',
             }}
           >
-            {'Your AI Agents,\nDistributed Everywhere'}
+            {'One Person. Any Idea.\nA Full Team to Build It.'}
           </Typography>
 
           <Typography
@@ -427,7 +370,9 @@ export default function LandingPage() {
               lineHeight: 1.6,
             }}
           >
-            Drop a Spark. Route it to the right device. Let AI agents handle the rest.
+            Tacticl gives you an AI-powered development team on demand. Describe what you want
+            to build — from a social post to a full product — and your team assembles, executes,
+            and delivers.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -454,7 +399,7 @@ export default function LandingPage() {
             <Button
               variant="outlined"
               size="large"
-              disabled
+              href="#how-it-works"
               sx={{
                 px: 4,
                 py: 1.5,
@@ -463,127 +408,15 @@ export default function LandingPage() {
                 borderRadius: '12px',
                 borderColor: 'rgba(108,99,255,0.5)',
                 color: '#9D97FF',
-                '&.Mui-disabled': {
-                  borderColor: 'rgba(108,99,255,0.25)',
-                  color: 'rgba(157,151,255,0.4)',
+                '&:hover': {
+                  borderColor: 'rgba(108,99,255,0.8)',
+                  bgcolor: 'rgba(108,99,255,0.08)',
                 },
               }}
             >
-              Watch Demo — Coming Soon
+              See How It Works
             </Button>
           </Box>
-        </Container>
-      </Box>
-
-      {/* ========== Features Section ========== */}
-      <Box
-        component="section"
-        id="features"
-        ref={featuresReveal.ref}
-        sx={{ bgcolor: '#0F0F23', py: { xs: 8, md: 12 } }}
-      >
-        <Container maxWidth="lg">
-          <Box
-            sx={{
-              opacity: featuresReveal.isVisible ? 1 : 0,
-              transform: featuresReveal.isVisible ? 'translateY(0)' : 'translateY(40px)',
-              transition: 'opacity 0.6s ease-out, transform 0.6s ease-out',
-            }}
-          >
-            <Typography
-              variant="h3"
-              sx={{
-                textAlign: 'center',
-                fontWeight: 700,
-                fontSize: { xs: '1.75rem', md: '2.25rem' },
-                mb: 2,
-                letterSpacing: '-0.02em',
-              }}
-            >
-              Everything you need to orchestrate AI
-            </Typography>
-            <Typography
-              sx={{
-                textAlign: 'center',
-                color: 'rgba(255,255,255,0.5)',
-                mb: { xs: 5, md: 8 },
-                maxWidth: 560,
-                mx: 'auto',
-              }}
-            >
-              Six primitives that turn your devices into a distributed AI workforce.
-            </Typography>
-          </Box>
-
-          <Grid container spacing={3}>
-            {features.map((f, i) => (
-              <Grid key={f.title} size={{ xs: 12, sm: 6, md: 4 }}>
-                <Box
-                  {...tilt}
-                  sx={{
-                    p: 4,
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    bgcolor: 'rgba(255,255,255,0.02)',
-                    height: '100%',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease',
-                    opacity: featuresReveal.isVisible ? 1 : 0,
-                    transform: featuresReveal.isVisible ? undefined : 'translateY(40px)',
-                    transitionDelay: featuresReveal.isVisible ? `${i * 100}ms` : '0ms',
-                    '&:hover': {
-                      border: '1px solid rgba(108,99,255,0.3)',
-                      bgcolor: 'rgba(108,99,255,0.05)',
-                      boxShadow: '0 0 30px rgba(108,99,255,0.1)',
-                    },
-                    '&::after': {
-                      content: '""',
-                      position: 'absolute',
-                      inset: 0,
-                      borderRadius: 'inherit',
-                      background:
-                        'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.03) 45%, transparent 50%)',
-                      pointerEvents: 'none',
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease',
-                    },
-                    '@media (hover: hover)': {
-                      '&:hover::after': { opacity: 1 },
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: '14px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      mb: 2.5,
-                      background: `linear-gradient(135deg, ${
-                        i % 3 === 0
-                          ? 'rgba(6,182,212,0.15), rgba(6,182,212,0.05)'
-                          : i % 3 === 1
-                            ? 'rgba(139,92,246,0.15), rgba(139,92,246,0.05)'
-                            : 'rgba(236,72,153,0.15), rgba(236,72,153,0.05)'
-                      })`,
-                      color: i % 3 === 0 ? '#06b6d4' : i % 3 === 1 ? '#8b5cf6' : '#ec4899',
-                    }}
-                  >
-                    {f.icon}
-                  </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1, fontSize: '1.1rem' }}>
-                    {f.title}
-                  </Typography>
-                  <Typography sx={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.9rem', lineHeight: 1.6 }}>
-                    {f.description}
-                  </Typography>
-                </Box>
-              </Grid>
-            ))}
-          </Grid>
         </Container>
       </Box>
 
@@ -623,7 +456,7 @@ export default function LandingPage() {
                 mx: 'auto',
               }}
             >
-              Three steps from idea to execution.
+              Three steps from idea to reality.
             </Typography>
           </Box>
 
@@ -751,8 +584,14 @@ export default function LandingPage() {
         </Container>
       </Box>
 
-      {/* ========== Pricing Section ========== */}
-      <PricingSection id="pricing" />
+      {/* ========== Meet Your Team Section ========== */}
+      <PdlcPipelineShowcase scrollReveal={teamReveal} />
+
+      {/* ========== Scale To Fit Section ========== */}
+      <ScaleToFitSection scrollReveal={scaleReveal} />
+
+      {/* ========== Connectors Section ========== */}
+      <ConnectorsSection scrollReveal={connectorsReveal} />
 
       {/* ========== CTA Section ========== */}
       <Box
@@ -797,10 +636,10 @@ export default function LandingPage() {
               letterSpacing: '-0.02em',
             }}
           >
-            Ready to deploy your AI agents?
+            What will you build?
           </Typography>
           <Typography sx={{ color: 'rgba(255,255,255,0.5)', mb: 4, maxWidth: 420, mx: 'auto' }}>
-            Start with a single Spark and scale to a fleet of autonomous agents across all your devices.
+            Your AI team is ready. Describe your first idea and watch it come to life.
           </Typography>
           <Button
             variant="contained"
@@ -820,7 +659,7 @@ export default function LandingPage() {
               },
             }}
           >
-            Sign Up Free
+            Get Started Free
           </Button>
         </Container>
       </Box>
