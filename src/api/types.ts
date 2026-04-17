@@ -467,3 +467,30 @@ export interface Playbook {
   stages: string[];
   isSystemPlaybook: boolean;
 }
+
+// ─── Conversation API ────────────────────────────────────────────────────────
+
+export type ConversationStatus = 'GATHERING' | 'PROPOSING' | 'ACTIVE' | 'COMPLETED';
+
+export interface ConversationMessageItem {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+}
+
+export interface ConversationResponse {
+  id: string;
+  title: string;
+  status: ConversationStatus;
+  sparkId?: string;
+  messages: ConversationMessageItem[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MessageResponse {
+  content: string;
+  sessionStatus: ConversationStatus;
+  sparkId?: string;
+  pipelineRunId?: string;
+}
