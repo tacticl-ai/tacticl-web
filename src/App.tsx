@@ -9,6 +9,7 @@ import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
 import ChatPage from './pages/ChatPage';
 import SparkListPage from './pages/SparkListPage';
+import PipelineListPage from './pages/PipelineListPage';
 import SparkDetailPage from './pages/SparkDetailPage';
 import DeviceListPage from './pages/DeviceListPage';
 import DeviceDetailPage from './pages/DeviceDetailPage';
@@ -68,6 +69,7 @@ function AppInner() {
           <Route path="/chat" element={<ChatPage />} />
           <Route path="/sparks" element={<SparkListPage />} />
           <Route path="/sparks/:id" element={<SparkDetailPage />} />
+          <Route path="/pipelines" element={<PipelineListPage />} />
           <Route path="/devices" element={<DeviceListPage />} />
           <Route path="/devices/:id" element={<DeviceDetailPage />} />
           <Route path="/repos" element={<RepoListPage />} />

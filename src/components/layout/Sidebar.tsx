@@ -13,6 +13,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import ChatIcon from '@mui/icons-material/Chat';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import DevicesIcon from '@mui/icons-material/Devices';
 import FolderIcon from '@mui/icons-material/Folder';
 import KeyIcon from '@mui/icons-material/Key';
@@ -30,6 +31,7 @@ export const SIDEBAR_COLLAPSED_WIDTH = 64;
 const navItems = [
   { label: 'Chat', path: '/chat', icon: ChatIcon },
   { label: 'Sparks', path: '/sparks', icon: AutoAwesomeIcon },
+  { label: 'Pipelines', path: '/pipelines', icon: AccountTreeIcon },
   { label: 'Devices', path: '/devices', icon: DevicesIcon },
   { label: 'Repos', path: '/repos', icon: FolderIcon },
   { label: 'Tokens', path: '/tokens', icon: KeyIcon },
