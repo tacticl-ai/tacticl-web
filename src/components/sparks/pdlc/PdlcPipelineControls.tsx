@@ -88,7 +88,7 @@ export default function PdlcPipelineControls({ sparkId, pipelineRun }: PdlcPipel
   const hasPendingChanges = pendingSkips.size > 0;
 
   // Cost ceiling bar
-  const totalCost = pipelineRun.totalCost;
+  const totalCost = pipelineRun.totalCostUsd;
   const costPercentage = Math.min((totalCost / DEFAULT_COST_CEILING) * 100, 100);
   const costColor = getCostColor(costPercentage);
 

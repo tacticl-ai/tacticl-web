@@ -382,8 +382,7 @@ export interface AgentAction {
 export type PipelineTier = 'SIMPLE' | 'PLAYBOOK' | 'FULL_PDLC';
 
 export type PipelineStatus =
-  | 'CREATED' | 'CLASSIFYING' | 'AWAITING_CONFIRMATION'
-  | 'EXECUTING' | 'CHECKPOINT'
+  | 'PENDING' | 'RUNNING' | 'PAUSED_AT_CHECKPOINT'
   | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export type PdlcRole =
@@ -406,32 +405,31 @@ export type PipelineEventType =
   | 'COST_THRESHOLD_WARNING' | 'COST_CEILING_REACHED';
 
 export interface RoleResultSummary {
-  childSparkId: string | null;
   status: RoleStatus;
-  artifactId: string | null;
   iteration: number;
-  tokens: number;
   cost: number;
-  durationMs: number;
-  model: string;
-  engine: string | null;
+  tokens?: number;
+  durationMs?: number;
+  model?: string;
+  engine?: string | null;
+  childSparkId?: string | null;
+  artifactId?: string | null;
 }
 
 export interface PipelineRun {
   id: string;
   sparkId: string;
   playbook: string;
-  pipelineTier: PipelineTier;
   status: PipelineStatus;
+  totalCostUsd: number;
+  currentCheckpointId: string | null;
+  failureReason: string | null;
   activatedRoles: PdlcRole[];
   currentRole: PdlcRole | null;
   roleResults: Record<string, RoleResultSummary>;
-  skippedRequiredRoles: string[];
-  reworkCount: number;
-  totalTokens: number;
-  totalCost: number;
+  skippedRoles: string[];
   createdAt: string;
-  startedAt: string | null;
+  updatedAt: string;
   completedAt: string | null;
 }
 

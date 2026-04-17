@@ -21,7 +21,7 @@ export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineV
   );
 
   const isPipelineActive =
-    pipelineRun.status === 'EXECUTING' || pipelineRun.status === 'CHECKPOINT';
+    pipelineRun.status === 'RUNNING' || pipelineRun.status === 'PAUSED_AT_CHECKPOINT';
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRoleClick = (_role: PdlcRole) => {
@@ -35,7 +35,7 @@ export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineV
         activatedRoles={pipelineRun.activatedRoles}
         roleResults={pipelineRun.roleResults}
         currentRole={pipelineRun.currentRole}
-        skippedRequiredRoles={pipelineRun.skippedRequiredRoles}
+        skippedRequiredRoles={pipelineRun.skippedRoles}
         onRoleClick={handleRoleClick}
       />
 
@@ -68,8 +68,8 @@ export default function PdlcPipelineView({ sparkId, pipelineRun }: PdlcPipelineV
       {/* 5. Artifact tabs (full width) */}
       <ArtifactTabs
         sparkId={sparkId}
-        activatedRoles={pipelineRun.activatedRoles}
-        roleResults={pipelineRun.roleResults}
+        activatedRoles={pipelineRun.activatedRoles ?? []}
+        roleResults={pipelineRun.roleResults ?? {}}
       />
     </Box>
   );

@@ -20,29 +20,22 @@ import type { Spark, PipelineRun } from '../api/types';
 
 // ─── Helpers ──────────────────────────────────────────────
 
-function formatTokens(tokens: number): string {
-  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
-  if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}K`;
-  return String(tokens);
-}
-
 function formatElapsed(isoDate: string): string {
   return formatDistanceToNow(new Date(isoDate), { addSuffix: false });
 }
 
 function buildPdlcMetrics(run: PipelineRun) {
-  const completed = Object.values(run.roleResults).filter(
-    (r) => r.status === 'COMPLETED',
-  ).length;
+  const results = Object.values(run.roleResults ?? {});
+  const completed = results.filter((r) => r.status === 'COMPLETED').length;
+  const reworks = results.reduce((sum, r) => sum + (r.iteration > 1 ? r.iteration - 1 : 0), 0);
   return [
-    { label: 'Roles Done', value: `${completed}/${run.activatedRoles.length}` },
-    { label: 'Cost', value: `$${Number(run.totalCost).toFixed(2)}`, color: '#03DAC6' },
-    { label: 'Tokens', value: formatTokens(run.totalTokens) },
-    { label: 'Elapsed', value: formatElapsed(run.startedAt || run.createdAt) },
+    { label: 'Roles Done', value: `${completed}/${(run.activatedRoles ?? []).length}` },
+    { label: 'Cost', value: `$${Number(run.totalCostUsd).toFixed(2)}`, color: '#03DAC6' },
+    { label: 'Elapsed', value: formatElapsed(run.updatedAt || run.createdAt) },
     {
       label: 'Reworks',
-      value: String(run.reworkCount),
-      color: run.reworkCount > 0 ? '#FF9800' : undefined,
+      value: String(reworks),
+      color: reworks > 0 ? '#FF9800' : undefined,
     },
   ];
 }

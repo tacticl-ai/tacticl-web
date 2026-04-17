@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { pipelineApi } from '../api/pipeline';
 import type { PdlcRole, CheckpointResolution, PipelineRun } from '../api/types';
 
-const ACTIVE_STATUSES = ['CREATED', 'CLASSIFYING', 'AWAITING_CONFIRMATION', 'EXECUTING', 'CHECKPOINT'];
+const ACTIVE_STATUSES = ['PENDING', 'RUNNING', 'PAUSED_AT_CHECKPOINT'];
 
 function isActive(run: PipelineRun | undefined): boolean {
   return run != null && ACTIVE_STATUSES.includes(run.status);
