@@ -22,8 +22,8 @@ import PendingActionsIcon from '@mui/icons-material/PendingActions';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import { formatDistanceToNow } from 'date-fns';
-import { agentApi } from '../api/agent';
-import type { AgentCommandResponse, AgentAsk, SparkType, AgentAction } from '../api/types';
+import { conversationsApi } from '../api/conversations';
+import type { AgentAsk, SparkType, AgentAction, ConversationStatus } from '../api/types';
 import { useAgentHistory, useAgentActivity, useAgentModels, useConfirmAction, usePendingAsks, useCancelAsk } from '../hooks/useAgent';
 import TopBar from '../components/layout/TopBar';
 import TacticlLogo from '../components/TacticlLogo';
@@ -41,6 +41,7 @@ interface ChatMessage {
   toolsInvoked?: string[];
   sparkId?: string;
   sparkStatus?: string;
+  conversationStatus?: ConversationStatus;
   confirmationId?: string;
   confirmationHandled?: boolean;
   loading?: boolean;
@@ -58,8 +59,6 @@ const SUGGESTIONS = [
   'Review open PRs and summarize changes',
   'Run security scan on all repos',
 ];
-
-const SESSION_ID = crypto.randomUUID();
 
 const PENDING_ACTION_KEY = 'tacticl_chat_pending_action';
 
@@ -94,6 +93,7 @@ export default function ChatPage() {
   const [selectedModel, setSelectedModel] = useState('');
   const [sparkType, setSparkType] = useState<SparkType | ''>('');
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -243,30 +243,25 @@ export default function ChatPage() {
     setSending(true);
 
     try {
-      const response: AgentCommandResponse = await agentApi.command({
-        text: msg,
-        sessionId: SESSION_ID,
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        ...(selectedModel ? { model: selectedModel } : {}),
-        ...(sparkType ? { sparkType } : {}),
-      });
+      let currentConversationId = conversationId;
+      if (!currentConversationId) {
+        const session = await conversationsApi.create(msg);
+        currentConversationId = session.id;
+        setConversationId(session.id);
+      }
+
+      const response = await conversationsApi.sendMessage(currentConversationId, msg);
 
       setMessages((prev) =>
         prev.map((m) =>
           m.id === loadingMsg.id
             ? {
                 ...m,
-                text: response.responseText,
-                toolsInvoked: response.toolsInvoked,
+                text: response.content,
                 sparkId: response.sparkId,
-                sparkStatus: response.sparkStatus,
-                confirmationId: response.confirmationId,
-                delegated: response.delegated,
-                deviceName: response.deviceName,
-                loading: response.delegated ? true : false,
-                actions: response.actions,
-                originalCommand: response.actions?.length ? msg : undefined,
-                completedActions: response.actions?.length ? new Set<number>() : undefined,
+                sparkStatus: response.sparkId ? response.sessionStatus : undefined,
+                conversationStatus: response.sessionStatus,
+                loading: false,
               }
             : m,
         ),
@@ -726,6 +721,18 @@ function MessageBubble({ message, onConfirm, onActionComplete }: MessageBubblePr
                   label={`Spark: ${message.sparkStatus || 'created'}`}
                   size="small"
                   color="primary"
+                  variant="outlined"
+                  sx={{ height: 24, fontSize: '0.6875rem' }}
+                />
+              </Box>
+            )}
+            {!message.sparkId && message.conversationStatus === 'PROPOSING' && (
+              <Box sx={{ mt: 1 }}>
+                <Chip
+                  icon={<AutoAwesomeIcon sx={{ fontSize: 14 }} />}
+                  label="Plan ready — reply to approve"
+                  size="small"
+                  color="secondary"
                   variant="outlined"
                   sx={{ height: 24, fontSize: '0.6875rem' }}
                 />
