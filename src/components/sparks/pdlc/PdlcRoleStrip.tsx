@@ -237,24 +237,30 @@ export default function PdlcRoleStrip({
               <Box sx={{ mt: 0.5, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 {status === 'completed' && result && (
                   <>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary', fontSize: '0.6rem', lineHeight: 1.2 }}
-                    >
-                      {formatDuration(result.durationMs)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary', fontSize: '0.55rem', lineHeight: 1.2 }}
-                    >
-                      {shortModelName(result.model)}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary', fontSize: '0.55rem', lineHeight: 1.2 }}
-                    >
-                      {formatTokens(result.tokens)}
-                    </Typography>
+                    {result.durationMs != null && (
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'text.secondary', fontSize: '0.6rem', lineHeight: 1.2 }}
+                      >
+                        {formatDuration(result.durationMs)}
+                      </Typography>
+                    )}
+                    {result.model && (
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'text.secondary', fontSize: '0.55rem', lineHeight: 1.2 }}
+                      >
+                        {shortModelName(result.model)}
+                      </Typography>
+                    )}
+                    {result.tokens != null && (
+                      <Typography
+                        variant="caption"
+                        sx={{ color: 'text.secondary', fontSize: '0.55rem', lineHeight: 1.2 }}
+                      >
+                        {formatTokens(result.tokens)}
+                      </Typography>
+                    )}
                   </>
                 )}
                 {status === 'active' && <ElapsedTimer />}

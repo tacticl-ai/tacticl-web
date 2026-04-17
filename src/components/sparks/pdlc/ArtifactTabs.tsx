@@ -133,7 +133,7 @@ export default function ArtifactTabs({
               label={
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                   <span>{ROLE_SHORT_NAMES[role]}</span>
-                  {result && (
+                  {result?.tokens != null && (
                     <Typography
                       component="span"
                       sx={{
@@ -180,12 +180,14 @@ export default function ArtifactTabs({
                     fontSize: '0.65rem',
                   }}
                 />
-                <Chip
-                  label={`${formatTokens(selectedResult.tokens)} tokens`}
-                  size="small"
-                  variant="outlined"
-                  sx={{ fontSize: '0.65rem' }}
-                />
+                {selectedResult.tokens != null && (
+                  <Chip
+                    label={`${formatTokens(selectedResult.tokens)} tokens`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: '0.65rem' }}
+                  />
+                )}
                 {selectedResult.iteration > 1 && (
                   <Chip
                     label={`iteration ${selectedResult.iteration}`}

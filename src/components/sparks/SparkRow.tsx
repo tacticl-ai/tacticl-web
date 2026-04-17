@@ -56,7 +56,7 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
   const isActive = spark.status === 'EXECUTING' || spark.status === 'ROUTING' || spark.status === 'CHECKPOINT';
   const { data: pipelineRun } = usePipelineRun(isPipelineType ? spark.id : undefined);
 
-  const hasPipeline = pipelineRun != null && (pipelineRun.pipelineTier === 'PLAYBOOK' || pipelineRun.pipelineTier === 'FULL_PDLC');
+  const hasPipeline = pipelineRun != null && (pipelineRun.activatedRoles ?? []).length > 0;
 
   const displayTactics = tactics ?? [];
   const sparkCheckpoints = (allCheckpoints ?? []).filter((cp) => cp.sparkId === spark.id);
@@ -139,7 +139,7 @@ export default function SparkRow({ spark, devices, isExpanded, onToggle }: Spark
               roleResults={pipelineRun.roleResults}
               currentRole={pipelineRun.currentRole}
             />
-          ) : isPipelineType && pipelineRun?.pipelineTier === 'SIMPLE' ? (
+          ) : isPipelineType && pipelineRun ? (
             <SparkExecutionSummary totalTokens={spark.totalTokens} estimatedCost={spark.estimatedCost} />
           ) : (
             <>
