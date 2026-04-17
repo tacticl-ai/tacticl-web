@@ -1,12 +1,10 @@
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
 import Box from '@mui/material/Box';
-import LogoutIcon from '@mui/icons-material/Logout';
-import { useAuth } from '../../hooks/useAuth';
 import { SIDEBAR_WIDTH, SIDEBAR_COLLAPSED_WIDTH } from './Sidebar';
 import { useSidebar } from './SidebarContext';
+import ProfileAvatar from './ProfileAvatar';
 
 interface TopBarProps {
   title: string;
@@ -14,7 +12,6 @@ interface TopBarProps {
 }
 
 export default function TopBar({ title, actions }: TopBarProps) {
-  const { logout } = useAuth();
   const { collapsed } = useSidebar();
   const currentWidth = collapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH;
 
@@ -37,9 +34,7 @@ export default function TopBar({ title, actions }: TopBarProps) {
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           {actions}
-          <IconButton onClick={logout} size="small" title="Logout">
-            <LogoutIcon fontSize="small" />
-          </IconButton>
+          <ProfileAvatar />
         </Box>
       </Toolbar>
     </AppBar>
