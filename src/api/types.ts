@@ -492,3 +492,11 @@ export interface MessageResponse {
   sparkId?: string;
   pipelineRunId?: string;
 }
+
+// ─── Profile ────────────────────────────────────────────
+
+export interface UserProfileResponse {
+  displayName: string;
+  email: string;
+  avatarUrl: string | null;
+}

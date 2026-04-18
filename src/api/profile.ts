@@ -1,10 +1,7 @@
 import { api } from './client';
+import type { UserProfileResponse } from './types';
 
-export interface UserProfileResponse {
-  displayName: string;
-  email: string;
-  avatarUrl: string | null;
-}
+export type { UserProfileResponse };
 
 export const profileApi = {
   me: () => api.get<UserProfileResponse>('/v1/users/me'),

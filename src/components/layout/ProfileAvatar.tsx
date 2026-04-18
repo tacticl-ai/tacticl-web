@@ -25,22 +25,22 @@ export default function ProfileAvatar() {
     );
   }
 
-  const initial = profile.displayName.charAt(0).toUpperCase();
+  const initial = (profile.displayName || profile.email || '?').charAt(0).toUpperCase();
 
   return (
     <>
       <IconButton onClick={(e) => setAnchorEl(e.currentTarget)} size="small" sx={{ p: 0 }}>
         {profile.avatarUrl ? (
-          <Avatar src={profile.avatarUrl} sx={{ width: 32, height: 32 }} />
+          <Avatar src={profile.avatarUrl} alt={profile.displayName} sx={{ width: 32, height: 32 }} />
         ) : (
           <Avatar
-            sx={{
+            sx={(theme) => ({
               width: 32,
               height: 32,
-              background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.light} 100%)`,
               fontSize: 14,
               fontWeight: 700,
-            }}
+            })}
           >
             {initial}
           </Avatar>
