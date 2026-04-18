@@ -1,4 +1,5 @@
 import { api } from './client';
+import { getAccessToken } from '../stores/auth-store';
 import type { AuditLogEntry, ActivityResponse, TranscribeResponse, AgentCommandRequest, AgentCommandResponse, AgentAsk } from './types';
 
 export const agentApi = {
@@ -30,9 +31,13 @@ export const agentApi = {
     const formData = new FormData();
     formData.append('file', file);
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'https://api.tacticl.ai';
+    const headers: Record<string, string> = {};
+    const token = getAccessToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
     const res = await fetch(`${baseUrl}/v1/agent/transcribe`, {
       method: 'POST',
       body: formData,
+      headers,
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Transcription failed');

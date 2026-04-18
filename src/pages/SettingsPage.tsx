@@ -1,152 +1,193 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Typography from '@mui/material/Typography';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import Switch from '@mui/material/Switch';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import InputAdornment from '@mui/material/InputAdornment';
 import TopBar from '../components/layout/TopBar';
-import type { CheckpointPolicy } from '../api/types';
+import { settingsApi } from '../api/settings';
+import type { UserConfig } from '../api/settings';
+
+function DomainListEditor({
+  label,
+  domains,
+  onChange,
+}: {
+  label: string;
+  domains: string[];
+  onChange: (domains: string[]) => void;
+}) {
+  const [input, setInput] = useState('');
+
+  const add = () => {
+    const trimmed = input.trim().toLowerCase();
+    if (trimmed && !domains.includes(trimmed)) {
+      onChange([...domains, trimmed]);
+      setInput('');
+    }
+  };
+
+  const remove = (domain: string) => onChange(domains.filter((d) => d !== domain));
+
+  return (
+    <Box>
+      <Typography variant="subtitle2" sx={{ mb: 1 }}>{label}</Typography>
+      <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+        <TextField
+          size="small"
+          placeholder="e.g. example.com"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && add()}
+          sx={{ flex: 1 }}
+        />
+        <Button variant="outlined" size="small" onClick={add} disabled={!input.trim()}>
+          Add
+        </Button>
+      </Box>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+        {domains.length === 0 && (
+          <Typography variant="caption" color="text.disabled">None</Typography>
+        )}
+        {domains.map((d) => (
+          <Chip key={d} label={d} size="small" onDelete={() => remove(d)} />
+        ))}
+      </Box>
+    </Box>
+  );
+}
 
 export default function SettingsPage() {
-  const [defaultCheckpointPolicy, setDefaultCheckpointPolicy] =
-    useState<CheckpointPolicy>('CHECKPOINT_MAJOR');
-  const [emailNotifications, setEmailNotifications] = useState(true);
-  const [pushNotifications, setPushNotifications] = useState(true);
-  const [checkpointNotifications, setCheckpointNotifications] = useState(true);
-  const [completionNotifications, setCompletionNotifications] = useState(true);
-  const [failureNotifications, setFailureNotifications] = useState(true);
+  const qc = useQueryClient();
+  const { data: saved, isLoading } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => settingsApi.get(),
+    staleTime: 30_000,
+  });
+
+  const [local, setLocal] = useState<UserConfig | null>(null);
+  useEffect(() => { if (saved) setLocal(saved); }, [saved]);
+
+  const update = useMutation({
+    mutationFn: (cfg: Partial<UserConfig>) => settingsApi.update(cfg),
+    onSuccess: (updated) => {
+      qc.setQueryData(['settings'], updated);
+      setLocal(updated);
+    },
+  });
+
+  const dirty = local && saved && JSON.stringify(local) !== JSON.stringify(saved);
+
+  if (isLoading || !local) {
+    return (
+      <>
+        <TopBar title="Settings" />
+        <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </>
+    );
+  }
 
   return (
     <>
       <TopBar title="Settings" />
 
       <Box sx={{ maxWidth: 640, mx: 'auto' }}>
-        {/* Checkpoint Defaults */}
+        {/* Agent Limits */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Default Checkpoint Policy
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              New sparks will use this checkpoint policy unless overridden.
-            </Typography>
-            <FormControl fullWidth>
-              <InputLabel>Default Policy</InputLabel>
-              <Select
-                value={defaultCheckpointPolicy}
-                label="Default Policy"
-                onChange={(e) =>
-                  setDefaultCheckpointPolicy(
-                    e.target.value as CheckpointPolicy,
-                  )
-                }
-              >
-                <MenuItem value="AUTO">
-                  Auto — fully autonomous, no pauses
-                </MenuItem>
-                <MenuItem value="CHECKPOINT_MAJOR">
-                  Major actions — pause before PRs, pushes, deletes
-                </MenuItem>
-                <MenuItem value="CHECKPOINT_ALL">
-                  All decisions — pause at every decision point
-                </MenuItem>
-              </Select>
-            </FormControl>
+            <Typography variant="h6" sx={{ mb: 2 }}>Agent Limits</Typography>
+
+            <TextField
+              label="Max Concurrent Sparks"
+              type="number"
+              size="small"
+              fullWidth
+              sx={{ mb: 2 }}
+              value={local.maxConcurrentSparks}
+              onChange={(e) =>
+                setLocal({ ...local, maxConcurrentSparks: Math.max(1, parseInt(e.target.value) || 1) })
+              }
+              inputProps={{ min: 1, max: 20 }}
+              helperText="How many sparks can run at the same time"
+            />
+
+            <TextField
+              label="Monthly Spending Limit"
+              type="number"
+              size="small"
+              fullWidth
+              value={local.spendingLimit}
+              onChange={(e) =>
+                setLocal({ ...local, spendingLimit: Math.max(0, parseFloat(e.target.value) || 0) })
+              }
+              InputProps={{ startAdornment: <InputAdornment position="start">$</InputAdornment> }}
+              inputProps={{ min: 0, step: 5 }}
+              helperText="Set to 0 to block all spending"
+            />
           </CardContent>
         </Card>
 
-        {/* Notifications */}
+        {/* Domain Controls */}
         <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Notifications
+            <Typography variant="h6" sx={{ mb: 0.5 }}>Domain Controls</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Control which websites the agent can access. Allowlist takes precedence.
             </Typography>
 
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Channels
-            </Typography>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={emailNotifications}
-                  onChange={(e) => setEmailNotifications(e.target.checked)}
-                />
-              }
-              label="Email notifications"
-              sx={{ display: 'block', mb: 0.5 }}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={pushNotifications}
-                  onChange={(e) => setPushNotifications(e.target.checked)}
-                />
-              }
-              label="Push notifications (mobile)"
-              sx={{ display: 'block' }}
-            />
+            <Box sx={{ mb: 2 }}>
+              <DomainListEditor
+                label="Allowlist (agent can always access)"
+                domains={local.domainAllowlist}
+                onChange={(d) => setLocal({ ...local, domainAllowlist: d })}
+              />
+            </Box>
 
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Events
-            </Typography>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={checkpointNotifications}
-                  onChange={(e) =>
-                    setCheckpointNotifications(e.target.checked)
-                  }
-                />
-              }
-              label="Checkpoint requires approval"
-              sx={{ display: 'block', mb: 0.5 }}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={completionNotifications}
-                  onChange={(e) =>
-                    setCompletionNotifications(e.target.checked)
-                  }
-                />
-              }
-              label="Spark completed"
-              sx={{ display: 'block', mb: 0.5 }}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={failureNotifications}
-                  onChange={(e) =>
-                    setFailureNotifications(e.target.checked)
-                  }
-                />
-              }
-              label="Spark failed"
-              sx={{ display: 'block' }}
+            <DomainListEditor
+              label="Blocklist (agent cannot access)"
+              domains={local.domainBlocklist}
+              onChange={(d) => setLocal({ ...local, domainBlocklist: d })}
             />
           </CardContent>
         </Card>
 
         {/* Account */}
-        <Card>
+        <Card sx={{ mb: 3 }}>
           <CardContent>
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              Account
-            </Typography>
+            <Typography variant="h6" sx={{ mb: 1 }}>Account</Typography>
             <Typography variant="body2" color="text.secondary">
               Account management is handled through the auth portal at auth.tacticl.ai.
             </Typography>
           </CardContent>
         </Card>
+
+        {/* Save bar */}
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          {dirty && (
+            <Button
+              variant="text"
+              onClick={() => setLocal(saved!)}
+              disabled={update.isPending}
+            >
+              Discard
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            disabled={!dirty || update.isPending}
+            onClick={() => update.mutate(local!)}
+            sx={{ bgcolor: '#6C63FF', '&:hover': { bgcolor: '#5A52D5' } }}
+          >
+            {update.isPending ? 'Saving…' : 'Save changes'}
+          </Button>
+        </Box>
       </Box>
     </>
   );

@@ -69,8 +69,8 @@ export default function DeviceDetailPage() {
                 <Chip label={device.state} size="small" />
               </Box>
               <Typography variant="body2" color="text.secondary">
-                {device.platform} &middot; {device.deviceType.toLowerCase()}
-                {device.daemonVersion && ` &middot; v${device.daemonVersion}`}
+                {device.platform} · {device.deviceType.toLowerCase()}
+                {device.daemonVersion && ` · v${device.daemonVersion}`}
               </Typography>
             </Box>
           </Box>
