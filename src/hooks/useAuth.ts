@@ -1,5 +1,6 @@
 import { useAuthStore } from '../stores/auth-store';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 const AUTH_API_URL =
   import.meta.env.VITE_AUTH_API_URL || 'https://auth-api.tacticl.ai';
@@ -7,6 +8,7 @@ const AUTH_API_URL =
 export function useAuth() {
   const { userId, isLoading, isAuthenticated, clearAuth } = useAuthStore();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const logout = async () => {
     try {
@@ -15,6 +17,7 @@ export function useAuth() {
         credentials: 'include',
       });
     } catch { /* best-effort */ }
+    queryClient.clear();
     clearAuth();
     navigate('/', { replace: true });
   };
