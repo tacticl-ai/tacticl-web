@@ -438,7 +438,6 @@ export interface PipelineEvent {
   pipelineRunId: string;
   eventType: PipelineEventType;
   role: PdlcRole | null;
-  roleIteration: number;
   metadata: Record<string, unknown>;
   timestamp: string;
 }

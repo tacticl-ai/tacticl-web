@@ -107,7 +107,7 @@ export default function DeviceDetailPage() {
           <Typography variant="caption" color="text.secondary">
             Registered{' '}
             {formatDistanceToNow(new Date(device.createdAt), { addSuffix: true })}
-            {' &middot; '}
+            {' · '}
             Last seen{' '}
             {formatDistanceToNow(new Date(device.lastSeenAt), { addSuffix: true })}
           </Typography>

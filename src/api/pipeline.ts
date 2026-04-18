@@ -8,12 +8,12 @@ export const pipelineApi = {
   getRun: (sparkId: string) =>
     api.get<PipelineRun>(`/v1/sparks/${sparkId}/pipeline`),
 
-  getEvents: (sparkId: string, params?: { limit?: number; offset?: number }) => {
+  getEvents: (sparkId: string, params?: { limit?: number; page?: number }) => {
     const qs = new URLSearchParams();
-    if (params?.limit) qs.set('limit', String(params.limit));
-    if (params?.offset) qs.set('offset', String(params.offset));
+    if (params?.page != null) qs.set('page', String(params.page));
+    if (params?.limit != null) qs.set('size', String(params.limit));
     const query = qs.toString();
-    return api.get<PipelineEvent[]>(`/v1/sparks/${sparkId}/pipeline/events${query ? `?${query}` : ''}`);
+    return api.get<{ content: PipelineEvent[] }>(`/v1/sparks/${sparkId}/pipeline/events/history${query ? `?${query}` : ''}`);
   },
 
   getArtifact: (sparkId: string, role: PdlcRole) =>

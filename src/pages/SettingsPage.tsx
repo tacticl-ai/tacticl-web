@@ -8,6 +8,7 @@ import TextField from '@mui/material/TextField';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Alert from '@mui/material/Alert';
 import InputAdornment from '@mui/material/InputAdornment';
 import TopBar from '../components/layout/TopBar';
 import { settingsApi } from '../api/settings';
@@ -64,10 +65,11 @@ function DomainListEditor({
 
 export default function SettingsPage() {
   const qc = useQueryClient();
-  const { data: saved, isLoading } = useQuery({
+  const { data: saved, isLoading, isError } = useQuery({
     queryKey: ['settings'],
     queryFn: () => settingsApi.get(),
     staleTime: 30_000,
+    retry: false,
   });
 
   const [local, setLocal] = useState<UserConfig | null>(null);
@@ -83,12 +85,25 @@ export default function SettingsPage() {
 
   const dirty = local && saved && JSON.stringify(local) !== JSON.stringify(saved);
 
-  if (isLoading || !local) {
+  if (isLoading) {
     return (
       <>
         <TopBar title="Settings" />
         <Box sx={{ display: 'flex', justifyContent: 'center', pt: 8 }}>
           <CircularProgress />
+        </Box>
+      </>
+    );
+  }
+
+  if (isError || !local) {
+    return (
+      <>
+        <TopBar title="Settings" />
+        <Box sx={{ maxWidth: 640, mx: 'auto', pt: 4 }}>
+          <Alert severity="error">
+            Settings could not be loaded. The settings endpoint may not be available yet.
+          </Alert>
         </Box>
       </>
     );
@@ -167,6 +182,11 @@ export default function SettingsPage() {
             </Typography>
           </CardContent>
         </Card>
+
+        {/* Save error */}
+        {update.isError && (
+          <Alert severity="error" sx={{ mb: 2 }}>Failed to save settings. Please try again.</Alert>
+        )}
 
         {/* Save bar */}
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1 }}>

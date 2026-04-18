@@ -20,7 +20,10 @@ export function usePipelineRun(sparkId: string | undefined) {
 export function usePipelineEvents(sparkId: string | undefined, active: boolean = false) {
   return useQuery({
     queryKey: ['pipeline-events', sparkId],
-    queryFn: () => pipelineApi.getEvents(sparkId!, { limit: 100 }),
+    queryFn: async () => {
+      const result = await pipelineApi.getEvents(sparkId!, { limit: 100 });
+      return result.content;
+    },
     enabled: !!sparkId,
     refetchInterval: active ? 5_000 : false,
   });
