@@ -62,9 +62,11 @@ export default function AddDeviceDialog({ open, onClose }: AddDeviceDialogProps)
   // Auto-refresh code before 5 min expiry
   useEffect(() => {
     if (!data || !open) return;
+    const expiresInMs = new Date(data.expiresAt).getTime() - Date.now();
+    const refreshDelay = Math.max(0, expiresInMs - 30 * 1000);
     refreshTimerRef.current = setTimeout(() => {
       generate();
-    }, (data.expiresIn - 30) * 1000);
+    }, refreshDelay);
     return () => {
       if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
     };
@@ -75,13 +77,13 @@ export default function AddDeviceDialog({ open, onClose }: AddDeviceDialogProps)
     initialDeviceCount.current !== null &&
     (devices?.length ?? 0) > initialDeviceCount.current;
 
-  const formattedCode = data?.code
-    ? `${data.code.slice(0, 3)} ${data.code.slice(3)}`
+  const formattedCode = data?.token
+    ? `${data.token.slice(0, 3)} ${data.token.slice(3)}`
     : '';
 
   const handleCopy = () => {
-    if (data?.code) {
-      navigator.clipboard.writeText(data.code);
+    if (data?.token) {
+      navigator.clipboard.writeText(data.token);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }

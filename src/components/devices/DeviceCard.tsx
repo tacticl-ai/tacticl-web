@@ -5,19 +5,22 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import ComputerIcon from '@mui/icons-material/Computer';
+import LaptopMacIcon from '@mui/icons-material/LaptopMac';
 import PhoneAndroidIcon from '@mui/icons-material/PhoneAndroid';
-import TabletIcon from '@mui/icons-material/Tablet';
-import WatchIcon from '@mui/icons-material/Watch';
+import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import PublicIcon from '@mui/icons-material/Public';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import DeviceStatusIndicator from './DeviceStatusIndicator';
 import type { Device, DeviceType } from '../../api/types';
 
 const deviceIcons: Record<DeviceType, typeof ComputerIcon> = {
-  COMPUTER: ComputerIcon,
-  PHONE: PhoneAndroidIcon,
-  TABLET: TabletIcon,
-  WATCH: WatchIcon,
+  MACOS: LaptopMacIcon,
+  WINDOWS: ComputerIcon,
+  LINUX: ComputerIcon,
+  IOS: PhoneIphoneIcon,
+  ANDROID: PhoneAndroidIcon,
+  WEB: PublicIcon,
 };
 
 interface DeviceCardProps {

@@ -1,16 +1,16 @@
 import { api } from './client';
-import type { Device, PairingCodeResponse } from './types';
+import type { Device, PairingTokenResponseDto } from './types';
 
 export const devicesApi = {
-  list: () => api.get<Device[]>('/v1/devices'),
+  list: () => api.get<Device[]>('/v1/connections/devices'),
 
-  get: (id: string) => api.get<Device>(`/v1/devices/${id}`),
+  get: (id: string) => api.get<Device>(`/v1/connections/devices/${id}`),
 
-  remove: (id: string) => api.delete<void>(`/v1/devices/${id}`),
+  remove: (id: string) => api.delete<void>(`/v1/connections/devices/${id}`),
 
   updatePreferences: (id: string, preferences: Record<string, boolean>) =>
-    api.put<Device>(`/v1/devices/${id}/preferences`, preferences),
+    api.put<Device>(`/v1/connections/devices/${id}/preferences`, preferences),
 
   createPairingCode: () =>
-    api.post<PairingCodeResponse>('/v1/devices/pairing-code'),
+    api.post<PairingTokenResponseDto>('/v1/connections/devices/pair'),
 };

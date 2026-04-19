@@ -17,7 +17,7 @@ export type CheckpointPolicy = 'AUTO' | 'CHECKPOINT_MAJOR' | 'CHECKPOINT_ALL';
 
 export type TacticStatus = 'PENDING' | 'EXECUTING' | 'COMPLETED' | 'FAILED';
 
-export type DeviceType = 'PHONE' | 'TABLET' | 'COMPUTER' | 'WATCH';
+export type DeviceType = 'MACOS' | 'WINDOWS' | 'LINUX' | 'IOS' | 'ANDROID' | 'WEB';
 
 export type DeviceState = 'ONLINE' | 'OFFLINE' | 'BUSY';
 
@@ -256,6 +256,11 @@ export interface PairingCodeResponse {
   expiresIn: number;
 }
 
+export interface PairingTokenResponseDto {
+  token: string;
+  expiresAt: string;
+}
+
 // ─── Paginated Response ──────────────────────────────────
 
 export interface PaginatedResponse<T> {
@@ -302,13 +307,18 @@ export interface CreatePostRequest {
 
 export interface OAuthAuthorizeResponse {
   authUrl: string;
-  codeVerifier: string;
+  state: string;
 }
 
 export interface OAuthCallbackResponse {
-  connectionId: string | null;
+  id: string;
   platform: string;
-  success: boolean;
+  platformUsername: string;
+  profileImageUrl?: string;
+  disabled: boolean;
+  tokenRefreshNeeded: boolean;
+  tokenExpiresAt?: string;
+  createdAt: string;
 }
 
 // ─── Agent ──────────────────────────────────────────────

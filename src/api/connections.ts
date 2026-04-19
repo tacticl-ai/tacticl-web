@@ -3,19 +3,19 @@ import type { Connection, OAuthAuthorizeResponse, OAuthCallbackResponse } from '
 
 export const connectionsApi = {
   list: () =>
-    api.get<Connection[]>('/v1/social/integrations'),
+    api.get<Connection[]>('/v1/connections'),
 
   getOAuthUrl: (platform: string, redirectUri: string) =>
     api.get<OAuthAuthorizeResponse>(
-      `/v1/social/oauth/${platform}/authorize?redirectUri=${encodeURIComponent(redirectUri)}`,
+      `/v1/connections/oauth/${platform}/url?redirectUri=${encodeURIComponent(redirectUri)}`,
     ),
 
-  handleOAuthCallback: (platform: string, code: string, redirectUri: string, codeVerifier?: string) => {
-    let url = `/v1/social/oauth/${platform}/callback?code=${encodeURIComponent(code)}&redirectUri=${encodeURIComponent(redirectUri)}`;
-    if (codeVerifier) url += `&codeVerifier=${encodeURIComponent(codeVerifier)}`;
-    return api.get<OAuthCallbackResponse>(url);
-  },
+  handleOAuthCallback: (platform: string, code: string, redirectUri: string, codeVerifier?: string) =>
+    api.post<OAuthCallbackResponse>(
+      `/v1/connections/oauth/${platform}/callback`,
+      { code, redirectUri, codeVerifier },
+    ),
 
   disconnect: (id: string) =>
-    api.delete<void>(`/v1/social/integrations/${id}`),
+    api.delete<void>(`/v1/connections/${id}`),
 };
