@@ -1,5 +1,9 @@
 # CLAUDE.md — Tacticl Web
 
+## Ecosystem Context (AUTO-LOAD)
+
+At the start of every session, read `/Users/cuztomizer/Documents/GitHub/tacticl-docs/CLAUDE.md` for complete cross-repo ecosystem context (API contracts, deploy targets, architecture, conventions). This is the source of truth for all cross-cutting concerns.
+
 ## Ecosystem (MUST READ before cross-cutting changes)
 
 | Repo | Role | Notes |
