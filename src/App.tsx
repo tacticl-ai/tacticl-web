@@ -16,6 +16,7 @@ import DeviceDetailPage from './pages/DeviceDetailPage';
 import RepoListPage from './pages/RepoListPage';
 import TokenListPage from './pages/TokenListPage';
 import TemplateListPage from './pages/TemplateListPage';
+import TelegramLinkPage from './pages/TelegramLinkPage';
 import ConnectionsOverviewPage from './pages/connections/ConnectionsOverviewPage';
 import SocialConnectionsPage from './pages/connections/SocialConnectionsPage';
 import MediaConnectionsPage from './pages/connections/MediaConnectionsPage';
@@ -81,6 +82,7 @@ function AppInner() {
           <Route path="/connections/developer" element={<DeveloperConnectionsPage />} />
           <Route path="/connections/productivity" element={<ProductivityConnectionsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/telegram/link" element={<TelegramLinkPage />} />
         </Route>
 
         {/* 404 catch-all */}
