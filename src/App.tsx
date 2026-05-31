@@ -23,6 +23,7 @@ import MediaConnectionsPage from './pages/connections/MediaConnectionsPage';
 import DeveloperConnectionsPage from './pages/connections/DeveloperConnectionsPage';
 import ProductivityConnectionsPage from './pages/connections/ProductivityConnectionsPage';
 import SettingsPage from './pages/SettingsPage';
+import CommandCenter from './components/command/CommandCenter';
 import ErrorBoundary from './components/auth/ErrorBoundary';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAuthStore } from './stores/auth-store';
@@ -57,7 +58,10 @@ function AppInner() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingOrDashboard />} />
-<Route path="/pricing" element={<PricingPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+
+        {/* Command center — full-bleed immersive HUD, no AppLayout chrome. Auth-gated. */}
+        <Route path="/command" element={<ProtectedRoute><CommandCenter /></ProtectedRoute>} />
 
         {/* Protected */}
         <Route
