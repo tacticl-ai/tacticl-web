@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import VoiceSphere from './VoiceSphere';
-import { useVoice, createMockVoiceBackend } from '../../voice/useVoice';
+import { useVoice } from '../../voice/useVoice';
+import { selectVoiceBackend } from '../../voice/selectVoiceBackend';
+import type { CheckpointDecision } from '../../voice/protocol';
 
 /* Jarvis command center — a glassy holographic HUD on near-black, the voice
    sphere as the hero. Cyan (#03DAC6) is the HUD accent, violet (#6C63FF) the
@@ -135,20 +137,138 @@ function TranscriptLog() {
   );
 }
 
-/** Representative PDLC operation strip — hosts the real PdlcPipelineView/RoleStrip when wired. */
+const PDLC_ROLES = ['Product Owner', 'Architect', 'Designer', 'Planner', 'Implementer', 'Reviewer', 'Test', 'DevOps'];
+
+/** HUD-styled human-in-the-loop gate. Renders when a checkpoint frame arrives. */
+function CheckpointGate() {
+  const checkpoint = useVoice((s) => s.checkpoint);
+  const decideCheckpoint = useVoice((s) => s.decideCheckpoint);
+  const [feedback, setFeedback] = useState('');
+
+  if (!checkpoint) return null;
+
+  const decide = (decision: CheckpointDecision) => {
+    decideCheckpoint(decision, feedback.trim() || undefined);
+    setFeedback('');
+  };
+
+  const palette: Record<CheckpointDecision, string> = {
+    APPROVE: ACCENT,
+    CHANGES: VIOLET,
+    REJECT: '#FF6B6B',
+  };
+
+  return (
+    <Box
+      sx={{
+        mt: 1,
+        p: 1.6,
+        borderRadius: 1.5,
+        border: `1px solid ${VIOLET}`,
+        background: 'rgba(108,99,255,0.08)',
+        boxShadow: `0 0 24px rgba(108,99,255,0.18)`,
+      }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: VIOLET, boxShadow: `0 0 10px ${VIOLET}`, animation: 'pulse 1.2s ease-in-out infinite' }} />
+        <Typography sx={{ fontFamily: DISP, fontSize: 11, letterSpacing: 2, color: VIOLET }}>
+          HUMAN GATE
+        </Typography>
+      </Stack>
+      <Typography sx={{ fontFamily: MONO, fontSize: 12.5, color: 'rgba(255,255,255,0.92)', mb: 1.4, lineHeight: 1.4 }}>
+        {checkpoint.title}
+      </Typography>
+      <Box
+        component="textarea"
+        value={feedback}
+        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFeedback(e.target.value)}
+        placeholder="optional feedback…"
+        rows={2}
+        sx={{
+          width: '100%',
+          resize: 'vertical',
+          mb: 1.2,
+          p: 1,
+          borderRadius: 1,
+          border: '1px solid rgba(108,99,255,0.35)',
+          background: 'rgba(8,11,13,0.6)',
+          color: 'rgba(255,255,255,0.9)',
+          fontFamily: MONO,
+          fontSize: 12,
+          outline: 'none',
+          '&:focus': { borderColor: VIOLET },
+          '&::placeholder': { color: 'rgba(255,255,255,0.3)' },
+        }}
+      />
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        {checkpoint.options.map((option) => {
+          const color = palette[option] ?? ACCENT;
+          return (
+            <Box
+              key={option}
+              role="button"
+              tabIndex={0}
+              aria-label={`${option} checkpoint`}
+              onClick={() => decide(option)}
+              onKeyDown={(e: React.KeyboardEvent) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  decide(option);
+                }
+              }}
+              sx={{
+                cursor: 'pointer',
+                userSelect: 'none',
+                px: 2,
+                py: 0.8,
+                borderRadius: 999,
+                border: `1px solid ${color}`,
+                color,
+                fontFamily: DISP,
+                fontSize: 11,
+                letterSpacing: 2,
+                background: `${color}14`,
+                transition: 'all .15s',
+                '&:hover': { background: `${color}28` },
+                outline: 'none',
+                '&:focus-visible': { boxShadow: `0 0 0 2px ${color}` },
+              }}
+            >
+              {option}
+            </Box>
+          );
+        })}
+      </Stack>
+    </Box>
+  );
+}
+
+/** PDLC operation strip — driven by the live HUD frames, with mock fallback copy. */
 function ActiveOperation() {
-  const roles = ['Product Owner', 'Architect', 'Designer', 'Planner', 'Implementer', 'Reviewer', 'Test', 'DevOps'];
-  const activeIdx = 4;
+  const operation = useVoice((s) => s.operation);
+  const checkpoint = useVoice((s) => s.checkpoint);
+
+  // The live HUD frame names the active role; map it onto the canonical strip.
+  const liveIdx = operation?.role
+    ? PDLC_ROLES.findIndex((r) => r.toLowerCase() === operation.role!.toLowerCase())
+    : -1;
+  const activeIdx = liveIdx >= 0 ? liveIdx : 4;
+
+  const title = operation?.phase || operation?.runId
+    ? [operation?.runId, operation?.phase].filter(Boolean).join(' · ')
+    : 'strategiz · passkey sign-in fix';
+  const tag = operation?.runId ? 'PDLC-RUN' : 'PDLC-FIX';
+
   return (
     <Stack spacing={2}>
       <Stack direction="row" justifyContent="space-between" alignItems="baseline">
         <Typography sx={{ fontFamily: DISP, fontSize: 13, color: '#fff', letterSpacing: 1 }}>
-          strategiz · passkey sign-in fix
+          {title}
         </Typography>
-        <Typography sx={{ fontFamily: MONO, fontSize: 10, color: ACCENT }}>PDLC-FIX</Typography>
+        <Typography sx={{ fontFamily: MONO, fontSize: 10, color: ACCENT }}>{tag}</Typography>
       </Stack>
       <Stack spacing={1}>
-        {roles.map((r, i) => {
+        {PDLC_ROLES.map((r, i) => {
           const done = i < activeIdx;
           const active = i === activeIdx;
           return (
@@ -174,11 +294,15 @@ function ActiveOperation() {
           );
         })}
       </Stack>
-      <Box sx={{ mt: 1, p: 1.4, border: '1px dashed rgba(108,99,255,0.4)', borderRadius: 1.5 }}>
-        <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-          ⏸ awaiting human gate — PR #142 ready for review
-        </Typography>
-      </Box>
+      {checkpoint ? (
+        <CheckpointGate />
+      ) : (
+        <Box sx={{ mt: 1, p: 1.4, border: '1px dashed rgba(108,99,255,0.4)', borderRadius: 1.5 }}>
+          <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
+            {operation?.note ?? '⏸ awaiting human gate — PR #142 ready for review'}
+          </Typography>
+        </Box>
+      )}
     </Stack>
   );
 }
@@ -186,12 +310,15 @@ function ActiveOperation() {
 export default function CommandCenter() {
   const state = useVoice((s) => s.state);
   const level = useVoice((s) => s.level);
+  const error = useVoice((s) => s.error);
   const setBackend = useVoice((s) => s.setBackend);
   const startListening = useVoice((s) => s.startListening);
   const stopListening = useVoice((s) => s.stopListening);
 
   useEffect(() => {
-    setBackend(createMockVoiceBackend());
+    const backend = selectVoiceBackend();
+    setBackend(backend);
+    return () => backend.dispose();
   }, [setBackend]);
 
   const copy = STATE_COPY[state];
@@ -227,7 +354,13 @@ export default function CommandCenter() {
         </Stack>
         <Stack direction="row" spacing={3} alignItems="center">
           <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>PRODUCT · STRATEGIZ</Typography>
-          <Typography sx={{ fontFamily: MONO, fontSize: 11, color: ACCENT }}>◈ ARBITER LINK ACTIVE</Typography>
+          {error ? (
+            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: '#FF6B6B' }} role="alert">
+              ⚠ {error}
+            </Typography>
+          ) : (
+            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: ACCENT }}>◈ ARBITER LINK ACTIVE</Typography>
+          )}
           <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{clock}</Typography>
         </Stack>
       </Stack>

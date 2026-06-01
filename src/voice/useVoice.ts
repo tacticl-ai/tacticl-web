@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { VoiceState } from '../components/command/VoiceSphere';
+import type { CheckpointDecision } from './protocol';
 
 export type { VoiceState };
 
@@ -9,6 +10,21 @@ export interface TranscriptTurn {
   text: string;
   partial?: boolean;
   ts: number;
+}
+
+/** Active human-in-the-loop gate awaiting an operator decision. */
+export interface ActiveCheckpoint {
+  checkpointId: string;
+  title: string;
+  options: CheckpointDecision[];
+}
+
+/** Current PDLC operation state for the ACTIVE OPERATION strip. */
+export interface ActiveOperationState {
+  role?: string;
+  phase?: string;
+  runId?: string;
+  note?: string;
 }
 
 /**
@@ -23,6 +39,8 @@ export interface VoiceBackend {
   start(): void;
   /** Stop capturing → backend transcribes, routes to the agent, speaks back. */
   stop(): void;
+  /** Send a HITL checkpoint decision upstream. Optional for the mock. */
+  decide?(checkpointId: string, decision: CheckpointDecision, feedback?: string): void;
   dispose(): void;
 }
 
@@ -31,15 +49,24 @@ interface VoiceStore {
   level: number;
   transcript: TranscriptTurn[];
   backend: VoiceBackend | null;
+  checkpoint: ActiveCheckpoint | null;
+  operation: ActiveOperationState | null;
+  error: string | null;
   // primitives the backend drives:
   setState: (s: VoiceState) => void;
   setLevel: (l: number) => void;
   pushTurn: (t: Omit<TranscriptTurn, 'id' | 'ts'>) => string;
-  patchTurn: (id: string, text: string, partial?: boolean) => void;
+  /** Patch by stable id; if the id is unseen, append it (server-driven ids). */
+  patchTurn: (id: string, text: string, partial?: boolean, role?: 'user' | 'assistant') => void;
+  setCheckpoint: (c: ActiveCheckpoint | null) => void;
+  setOperation: (o: ActiveOperationState | null) => void;
+  setError: (e: string | null) => void;
   // UI actions:
   startListening: () => void;
   stopListening: () => void;
   setBackend: (b: VoiceBackend) => void;
+  /** Resolve the active checkpoint with a decision and clear it. */
+  decideCheckpoint: (decision: CheckpointDecision, feedback?: string) => void;
 }
 
 let _seq = 0;
@@ -50,6 +77,9 @@ export const useVoice = create<VoiceStore>((set, get) => ({
   level: 0,
   transcript: [],
   backend: null,
+  checkpoint: null,
+  operation: null,
+  error: null,
 
   setState: (s) => set({ state: s }),
   setLevel: (l) => set({ level: l }),
@@ -58,14 +88,35 @@ export const useVoice = create<VoiceStore>((set, get) => ({
     set((st) => ({ transcript: [...st.transcript, { ...t, id, ts: Date.now() }] }));
     return id;
   },
-  patchTurn: (id, text, partial) =>
-    set((st) => ({
-      transcript: st.transcript.map((x) => (x.id === id ? { ...x, text, partial } : x)),
-    })),
+  patchTurn: (id, text, partial, role) =>
+    set((st) => {
+      const exists = st.transcript.some((x) => x.id === id);
+      if (exists) {
+        return {
+          transcript: st.transcript.map((x) => (x.id === id ? { ...x, text, partial } : x)),
+        };
+      }
+      // Server-assigned id we haven't seen — append it as a new turn.
+      return {
+        transcript: [
+          ...st.transcript,
+          { id, role: role ?? 'assistant', text, partial, ts: Date.now() },
+        ],
+      };
+    }),
+  setCheckpoint: (c) => set({ checkpoint: c }),
+  setOperation: (o) => set({ operation: o }),
+  setError: (e) => set({ error: e }),
 
   setBackend: (b) => set({ backend: b }),
   startListening: () => get().backend?.start(),
   stopListening: () => get().backend?.stop(),
+  decideCheckpoint: (decision, feedback) => {
+    const { backend, checkpoint } = get();
+    if (!checkpoint) return;
+    backend?.decide?.(checkpoint.checkpointId, decision, feedback);
+    set({ checkpoint: null });
+  },
 }));
 
 /* ────────────────────────────────────────────────────────────────────────
