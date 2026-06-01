@@ -7,7 +7,6 @@ import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
-import ChatPage from './pages/ChatPage';
 import SparkListPage from './pages/SparkListPage';
 import PipelineListPage from './pages/PipelineListPage';
 import SparkDetailPage from './pages/SparkDetailPage';
@@ -28,13 +27,13 @@ import ErrorBoundary from './components/auth/ErrorBoundary';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useAuthStore } from './stores/auth-store';
 
-/** Show landing page for unauthenticated visitors, redirect to /chat for authenticated users */
+/** Show landing page for unauthenticated visitors, land authenticated users in the command center */
 function LandingOrDashboard() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
 
   if (isLoading) return null;
-  if (isAuthenticated) return <Navigate to="/chat" replace />;
+  if (isAuthenticated) return <Navigate to="/command" replace />;
   return <LandingPage />;
 }
 
@@ -60,8 +59,10 @@ function AppInner() {
         <Route path="/" element={<LandingOrDashboard />} />
         <Route path="/pricing" element={<PricingPage />} />
 
-        {/* Command center — full-bleed immersive HUD, no AppLayout chrome. Auth-gated. */}
+        {/* Command center — full-bleed immersive HUD, no AppLayout chrome. Auth-gated.
+            This is now the primary chat surface; the old /chat redirects here. */}
         <Route path="/command" element={<ProtectedRoute><CommandCenter /></ProtectedRoute>} />
+        <Route path="/chat" element={<Navigate to="/command" replace />} />
 
         {/* Protected */}
         <Route
@@ -71,7 +72,6 @@ function AppInner() {
             </ProtectedRoute>
           }
         >
-          <Route path="/chat" element={<ChatPage />} />
           <Route path="/sparks" element={<SparkListPage />} />
           <Route path="/sparks/:id" element={<SparkDetailPage />} />
           <Route path="/pipelines" element={<PipelineListPage />} />

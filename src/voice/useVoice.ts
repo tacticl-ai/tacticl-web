@@ -39,6 +39,12 @@ export interface VoiceBackend {
   start(): void;
   /** Stop capturing → backend transcribes, routes to the agent, speaks back. */
   stop(): void;
+  /**
+   * Submit a typed command as a final user turn (no mic). Routes through the
+   * same agent path as a spoken turn and narrates the response back. Optional —
+   * a backend that supports only voice may omit it.
+   */
+  sendText?(text: string): void;
   /** Send a HITL checkpoint decision upstream. Optional for the mock. */
   decide?(checkpointId: string, decision: CheckpointDecision, feedback?: string): void;
   dispose(): void;
@@ -64,6 +70,8 @@ interface VoiceStore {
   // UI actions:
   startListening: () => void;
   stopListening: () => void;
+  /** Push a typed operator turn to the transcript and route it to the backend. */
+  sendText: (text: string) => void;
   setBackend: (b: VoiceBackend) => void;
   /** Resolve the active checkpoint with a decision and clear it. */
   decideCheckpoint: (decision: CheckpointDecision, feedback?: string) => void;
@@ -111,6 +119,15 @@ export const useVoice = create<VoiceStore>((set, get) => ({
   setBackend: (b) => set({ backend: b }),
   startListening: () => get().backend?.start(),
   stopListening: () => get().backend?.stop(),
+  sendText: (text) => {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    // The store owns the operator turn — single source of truth. Backends
+    // implement sendText only to drive the response (mock: think→speak loop;
+    // live: emit a {text} UP frame). They must NOT re-push the user turn.
+    get().pushTurn({ role: 'user', text: trimmed });
+    get().backend?.sendText?.(trimmed);
+  },
   decideCheckpoint: (decision, feedback) => {
     const { backend, checkpoint } = get();
     if (!checkpoint) return;
@@ -141,6 +158,37 @@ export function createMockVoiceBackend(): VoiceBackend {
     levelTimer = setInterval(() => useVoice.getState().setLevel(target()), 50);
   };
 
+  /** Drive a believable thinking→speaking→idle loop that narrates `reply`. */
+  const speakReply = (reply: string, thinkDelay = 900) => {
+    const s = useVoice.getState();
+    s.setState('thinking');
+    s.setLevel(0.1);
+    timers.push(
+      setTimeout(() => {
+        const cur = useVoice.getState();
+        cur.setState('speaking');
+        rampLevel(() => 0.3 + Math.random() * 0.55);
+        const id = cur.pushTurn({ role: 'assistant', text: '', partial: true });
+        const words = reply.split(' ');
+        words.forEach((_, i) =>
+          timers.push(
+            setTimeout(() => useVoice.getState().patchTurn(id, words.slice(0, i + 1).join(' '), true), 55 * (i + 1)),
+          ),
+        );
+        const dur = 55 * (words.length + 1);
+        timers.push(
+          setTimeout(() => {
+            const f = useVoice.getState();
+            f.patchTurn(id, reply, false);
+            clearLevel();
+            f.setLevel(0);
+            f.setState('idle');
+          }, dur + 200),
+        );
+      }, thinkDelay),
+    );
+  };
+
   return {
     start() {
       const s = useVoice.getState();
@@ -160,35 +208,15 @@ export function createMockVoiceBackend(): VoiceBackend {
     },
     stop() {
       clearLevel();
-      const s = useVoice.getState();
-      s.setLevel(0.1);
-      s.setState('thinking');
-      timers.push(
-        setTimeout(() => {
-          const reply = DEMO[turn % DEMO.length].agent;
-          const cur = useVoice.getState();
-          cur.setState('speaking');
-          rampLevel(() => 0.3 + Math.random() * 0.55);
-          const id = cur.pushTurn({ role: 'assistant', text: '', partial: true });
-          const words = reply.split(' ');
-          words.forEach((_, i) =>
-            timers.push(
-              setTimeout(() => useVoice.getState().patchTurn(id, words.slice(0, i + 1).join(' '), true), 55 * (i + 1)),
-            ),
-          );
-          const dur = 55 * (words.length + 1);
-          timers.push(
-            setTimeout(() => {
-              const f = useVoice.getState();
-              f.patchTurn(id, reply, false);
-              clearLevel();
-              f.setLevel(0);
-              f.setState('idle');
-              turn++;
-            }, dur + 200),
-          );
-        }, 900),
-      );
+      const reply = DEMO[turn % DEMO.length].agent;
+      turn++;
+      speakReply(reply);
+    },
+    sendText(text) {
+      // The store already pushed the operator turn — only narrate the response.
+      clearLevel();
+      const reply = `Copy that — “${text}”. Routing it through the agent now; I’ll bring the result back here and surface any human gate before it ships.`;
+      speakReply(reply, 700);
     },
     dispose() {
       clearLevel();

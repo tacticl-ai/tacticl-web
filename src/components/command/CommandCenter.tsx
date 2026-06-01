@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import VoiceSphere from './VoiceSphere';
 import { useVoice } from '../../voice/useVoice';
 import { selectVoiceBackend } from '../../voice/selectVoiceBackend';
+import { useAuthStore } from '../../stores/auth-store';
 import type { CheckpointDecision } from '../../voice/protocol';
 
 /* Jarvis command center — a glassy holographic HUD on near-black, the voice
@@ -307,6 +309,196 @@ function ActiveOperation() {
   );
 }
 
+/** Compact HUD nav — keeps the rest of the app reachable from the full-bleed HUD. */
+const NAV_LINKS: { label: string; to: string }[] = [
+  { label: 'SPARKS', to: '/sparks' },
+  { label: 'PIPELINES', to: '/pipelines' },
+  { label: 'LINKS', to: '/connections' },
+  { label: 'CONFIG', to: '/settings' },
+];
+
+function HudNav() {
+  const navigate = useNavigate();
+  const clearAuth = useAuthStore((s) => s.clearAuth);
+
+  const signOut = () => {
+    clearAuth();
+    navigate('/', { replace: true });
+  };
+
+  const chipSx = {
+    cursor: 'pointer',
+    userSelect: 'none' as const,
+    textDecoration: 'none',
+    px: 1.4,
+    py: 0.55,
+    borderRadius: 999,
+    border: '1px solid rgba(3,218,198,0.32)',
+    fontFamily: DISP,
+    fontSize: 10.5,
+    letterSpacing: 2,
+    color: 'rgba(3,218,198,0.85)',
+    background: 'rgba(3,218,198,0.04)',
+    transition: 'all .15s',
+    lineHeight: 1.6,
+    '&:hover': { background: 'rgba(3,218,198,0.14)', color: ACCENT, borderColor: ACCENT },
+    outline: 'none',
+    '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
+  };
+
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+      {NAV_LINKS.map((l) => (
+        <Box key={l.to} component={RouterLink} to={l.to} sx={chipSx}>
+          {l.label}
+        </Box>
+      ))}
+      <Box
+        role="button"
+        tabIndex={0}
+        aria-label="Sign out"
+        onClick={signOut}
+        onKeyDown={(e: React.KeyboardEvent) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            signOut();
+          }
+        }}
+        sx={{
+          ...chipSx,
+          border: '1px solid rgba(255,107,107,0.4)',
+          color: 'rgba(255,107,107,0.85)',
+          background: 'rgba(255,107,107,0.05)',
+          '&:hover': { background: 'rgba(255,107,107,0.16)', color: '#FF6B6B', borderColor: '#FF6B6B' },
+          '&:focus-visible': { boxShadow: '0 0 0 2px #FF6B6B' },
+        }}
+      >
+        SIGN OUT
+      </Box>
+    </Stack>
+  );
+}
+
+/**
+ * HUD command bar — typed input pinned at the bottom-center. Coexists with
+ * push-to-talk: both routes push an operator turn and drive the same response.
+ */
+function TextComposer() {
+  const sendText = useVoice((s) => s.sendText);
+  const state = useVoice((s) => s.state);
+  const [value, setValue] = useState('');
+  const taRef = useRef<HTMLTextAreaElement>(null);
+
+  const canSend = value.trim().length > 0;
+
+  const submit = () => {
+    const text = value.trim();
+    if (!text) return;
+    sendText(text);
+    setValue('');
+    // keep focus for rapid commands
+    requestAnimationFrame(() => taRef.current?.focus());
+  };
+
+  return (
+    <Box
+      sx={{
+        position: 'relative',
+        zIndex: 3,
+        px: 4,
+        pb: 3,
+        pt: 1,
+        display: 'flex',
+        justifyContent: 'center',
+      }}
+    >
+      <Stack
+        direction="row"
+        alignItems="flex-end"
+        spacing={1.2}
+        sx={{
+          width: '100%',
+          maxWidth: 880,
+          p: 1,
+          pl: 2,
+          borderRadius: 3,
+          border: `1px solid rgba(3,218,198,0.28)`,
+          background: 'linear-gradient(180deg, rgba(20,26,30,0.78), rgba(12,16,20,0.78))',
+          backdropFilter: 'blur(14px)',
+          boxShadow: 'inset 0 0 30px rgba(3,218,198,0.05), 0 8px 40px rgba(0,0,0,0.5)',
+        }}
+      >
+        <Typography sx={{ fontFamily: MONO, fontSize: 14, color: ACCENT, pb: 1.1, flexShrink: 0 }}>
+          &gt;
+        </Typography>
+        <Box
+          component="textarea"
+          ref={taRef}
+          value={value}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setValue(e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          rows={1}
+          placeholder="Type a command — Enter to send, Shift+Enter for a new line"
+          aria-label="Command input"
+          sx={{
+            flex: 1,
+            resize: 'none',
+            maxHeight: 120,
+            py: 1,
+            border: 'none',
+            background: 'transparent',
+            color: 'rgba(255,255,255,0.92)',
+            fontFamily: MONO,
+            fontSize: 13.5,
+            lineHeight: 1.5,
+            outline: 'none',
+            '&::placeholder': { color: 'rgba(255,255,255,0.32)' },
+          }}
+        />
+        <Box
+          role="button"
+          tabIndex={canSend ? 0 : -1}
+          aria-label="Send command"
+          aria-disabled={!canSend}
+          onClick={() => canSend && submit()}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if ((e.key === 'Enter' || e.key === ' ') && canSend) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+          sx={{
+            flexShrink: 0,
+            cursor: canSend ? 'pointer' : 'default',
+            userSelect: 'none',
+            px: 2.4,
+            py: 1.1,
+            borderRadius: 2,
+            border: `1px solid ${canSend ? ACCENT : 'rgba(3,218,198,0.2)'}`,
+            fontFamily: DISP,
+            fontSize: 12,
+            letterSpacing: 2,
+            color: canSend ? ACCENT : 'rgba(3,218,198,0.3)',
+            background: canSend ? 'rgba(3,218,198,0.12)' : 'transparent',
+            opacity: canSend ? 1 : 0.5,
+            transition: 'all .15s',
+            '&:hover': canSend ? { background: 'rgba(3,218,198,0.22)' } : {},
+            outline: 'none',
+            '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
+          }}
+        >
+          {state === 'thinking' ? 'SENDING…' : 'SEND'}
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
 export default function CommandCenter() {
   const state = useVoice((s) => s.state);
   const level = useVoice((s) => s.level);
@@ -352,30 +544,42 @@ export default function CommandCenter() {
             TACTICL <Box component="span" sx={{ color: ACCENT }}>//</Box> COMMAND
           </Typography>
         </Stack>
-        <Stack direction="row" spacing={3} alignItems="center">
-          <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>PRODUCT · STRATEGIZ</Typography>
-          {error ? (
-            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: '#FF6B6B' }} role="alert">
-              ⚠ {error}
-            </Typography>
-          ) : (
-            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: ACCENT }}>◈ ARBITER LINK ACTIVE</Typography>
-          )}
-          <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{clock}</Typography>
+        <Stack direction="row" spacing={2.5} alignItems="center" flexWrap="wrap" useFlexGap justifyContent="flex-end">
+          <Stack direction="row" spacing={2.5} alignItems="center">
+            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)', display: { xs: 'none', md: 'block' } }}>PRODUCT · STRATEGIZ</Typography>
+            {error ? (
+              <Typography sx={{ fontFamily: MONO, fontSize: 11, color: '#FF6B6B' }} role="alert">
+                ⚠ {error}
+              </Typography>
+            ) : (
+              <Typography sx={{ fontFamily: MONO, fontSize: 11, color: ACCENT, display: { xs: 'none', sm: 'block' } }}>◈ ARBITER LINK ACTIVE</Typography>
+            )}
+            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)', display: { xs: 'none', sm: 'block' } }}>{clock}</Typography>
+          </Stack>
+          <HudNav />
         </Stack>
       </Stack>
 
-      {/* main grid: transcript · sphere · operation */}
+      {/* body column: main grid grows, command bar pinned at the bottom */}
       <Box
         sx={{
           position: 'relative',
           zIndex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - 84px)',
+        }}
+      >
+      {/* main grid: transcript · sphere · operation */}
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
           display: 'grid',
           gridTemplateColumns: { xs: '1fr', lg: '1fr 1.3fr 1fr' },
           gap: 3,
           px: 4,
           py: 2,
-          height: 'calc(100vh - 84px)',
         }}
       >
         <HudPanel title="COMMS LOG" tag="LIVE" sx={{ display: { xs: 'none', lg: 'flex' } }}>
@@ -425,6 +629,10 @@ export default function CommandCenter() {
         <HudPanel title="ACTIVE OPERATION" tag="PDLC" sx={{ display: { xs: 'none', lg: 'flex' } }}>
           <ActiveOperation />
         </HudPanel>
+      </Box>
+
+        {/* command bar — typed commands, pinned bottom-center, coexists with voice */}
+        <TextComposer />
       </Box>
     </Box>
   );

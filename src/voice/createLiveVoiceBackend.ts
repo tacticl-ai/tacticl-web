@@ -284,6 +284,35 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
       }
     },
 
+    sendText(text: string) {
+      if (disposed) return;
+      const trimmed = text.trim();
+      if (!trimmed) return;
+      // Interrupt any in-flight TTS — a new typed command supersedes the reply.
+      tts.flush();
+      const s = store.getState();
+      s.setError(null);
+      // Hand off to the server: tacticl-core treats the {text} frame as a final
+      // user turn (no STT, no {start}/{stop}) and narrates the response back via
+      // transcript/state/hud/checkpoint frames + TTS — same as a spoken turn.
+      s.setState('thinking');
+      s.setLevel(0.1);
+      void (async () => {
+        try {
+          await connect();
+          if (!sendControl({ type: 'text', text: trimmed })) {
+            store.getState().setError('Voice link not ready — command not sent.');
+            store.getState().setState('idle');
+          }
+        } catch (err) {
+          store.getState().setState('idle');
+          store.getState().setError(
+            err instanceof Error ? err.message : 'Voice link failed.',
+          );
+        }
+      })();
+    },
+
     decide(checkpointId: string, decision: CheckpointDecision, feedback?: string) {
       sendControl({ type: 'decision', checkpointId, decision, feedback });
     },

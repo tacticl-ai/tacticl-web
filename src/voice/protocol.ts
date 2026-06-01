@@ -121,6 +121,18 @@ export interface StartFrame {
   type: 'start';
 }
 
+/**
+ * A typed command — the operator submitted text via the HUD composer instead of
+ * speaking. tacticl-core MUST treat this as a complete, final user turn: skip
+ * STT, route the text straight to ingress dispatch → arbiter → PDLC, and narrate
+ * the response back over TTS + transcript/hud/checkpoint frames exactly as for a
+ * voice turn. No {start}/{stop} bracketing — a TextFrame is self-contained.
+ */
+export interface TextFrame {
+  type: 'text';
+  text: string;
+}
+
 /** Push-to-talk released — close capture; server transcribes + routes. */
 export interface StopFrame {
   type: 'stop';
@@ -140,7 +152,12 @@ export interface DecisionFrame {
 }
 
 /** Discriminated union of all browser -> server control frames. */
-export type UpControlMessage = StartFrame | StopFrame | BargeInFrame | DecisionFrame;
+export type UpControlMessage =
+  | StartFrame
+  | StopFrame
+  | TextFrame
+  | BargeInFrame
+  | DecisionFrame;
 
 /* ────────────────────────────────────────────────────────────────────────
    Token exchange — short-lived session token issued before the WS opens.
