@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import VoiceSphere from './VoiceSphere';
 import { useVoice } from '../../voice/useVoice';
@@ -8,32 +10,82 @@ import { useAuthStore } from '../../stores/auth-store';
 import type { CheckpointDecision } from '../../voice/protocol';
 
 /* Jarvis command center — a glassy holographic HUD on near-black, the voice
-   sphere as the hero. Cyan (#03DAC6) is the HUD accent, violet (#6C63FF) the
-   depth. The existing chat + Sparks/PDLC views drop into the framed panels. */
+   sphere as the hero. Violet (#6C63FF) is the brand HUD accent throughout;
+   cyan (#03DAC6) is demoted to a sparing secondary highlight (the arbiter-link
+   indicator). The existing chat + Sparks/PDLC views drop into the framed
+   panels. */
 
-const ACCENT = '#03DAC6';
-const VIOLET = '#6C63FF';
+const ACCENT = '#6C63FF'; // brand violet — primary HUD accent everywhere
+const VIOLET = '#6C63FF'; // alias kept for existing call sites
+const MAGENTA = '#B25CFF'; // 'thinking' shift — brighter violet→magenta (mirrors the orb)
+const CYAN = '#03DAC6'; // secondary — sparing contrast highlight only
 const DISP = '"Chakra Petch", "Inter", sans-serif';
 const MONO = '"JetBrains Mono", ui-monospace, monospace';
 
 const STATE_COPY: Record<string, { label: string; hint: string }> = {
-  idle: { label: 'STANDBY', hint: 'Hold to speak' },
+  idle: { label: 'READY', hint: 'Hold to speak' },
   listening: { label: 'LISTENING', hint: 'Release to send' },
-  thinking: { label: 'PROCESSING', hint: 'Routing to the agent…' },
-  speaking: { label: 'RESPONDING', hint: 'Tacticl is speaking' },
+  thinking: { label: 'THINKING', hint: 'Working it through…' },
+  speaking: { label: 'SPEAKING', hint: 'Tacticl is responding' },
 };
 
-/** Glassy HUD panel with corner brackets. */
-function HudPanel({ title, tag, children, sx }: { title: string; tag?: string; children: React.ReactNode; sx?: object }) {
+const LEFT_PANEL_KEY = 'tacticl.command.leftPanel';
+const RIGHT_PANEL_KEY = 'tacticl.command.rightPanel';
+
+/** Boolean panel-open state persisted to localStorage. Default: open (true). */
+function usePersistentPanel(key: string): [boolean, () => void, (next: boolean) => void] {
+  const [open, setOpenState] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem(key) !== 'closed';
+    } catch {
+      return true;
+    }
+  });
+
+  const setOpen = useCallback(
+    (next: boolean) => {
+      setOpenState(next);
+      try {
+        window.localStorage.setItem(key, next ? 'open' : 'closed');
+      } catch {
+        /* storage unavailable — keep in-memory state only */
+      }
+    },
+    [key],
+  );
+
+  const toggle = useCallback(() => setOpen(!open), [open, setOpen]);
+
+  return [open, toggle, setOpen];
+}
+
+/** Glassy HUD panel with corner brackets. Optionally renders a collapse control
+ *  in the header — the chevron points "outward" (toward the screen edge) so the
+ *  collapse direction reads at a glance. */
+function HudPanel({
+  title,
+  tag,
+  children,
+  sx,
+  side,
+  onCollapse,
+}: {
+  title: string;
+  tag?: string;
+  children: React.ReactNode;
+  sx?: object;
+  side?: 'left' | 'right';
+  onCollapse?: () => void;
+}) {
   return (
     <Box
       sx={{
         position: 'relative',
         background: 'linear-gradient(180deg, rgba(20,26,30,0.72), rgba(12,16,20,0.72))',
         backdropFilter: 'blur(14px)',
-        border: '1px solid rgba(3,218,198,0.18)',
+        border: '1px solid rgba(108,99,255,0.18)',
         borderRadius: 2,
-        boxShadow: 'inset 0 0 40px rgba(3,218,198,0.04), 0 8px 40px rgba(0,0,0,0.5)',
+        boxShadow: 'inset 0 0 40px rgba(108,99,255,0.04), 0 8px 40px rgba(0,0,0,0.5)',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
@@ -53,7 +105,7 @@ function HudPanel({ title, tag, children, sx }: { title: string; tag?: string; c
             position: 'absolute',
             width: 14,
             height: 14,
-            borderColor: 'rgba(3,218,198,0.55)',
+            borderColor: 'rgba(108,99,255,0.55)',
             borderStyle: 'solid',
             borderWidth: 0,
             ...(c.b.includes('borderTop') && { borderTopWidth: 1.5 }),
@@ -71,18 +123,140 @@ function HudPanel({ title, tag, children, sx }: { title: string; tag?: string; c
         direction="row"
         alignItems="center"
         justifyContent="space-between"
-        sx={{ px: 2, py: 1.1, borderBottom: '1px solid rgba(3,218,198,0.12)' }}
+        spacing={1}
+        sx={{ px: 2, py: 1.1, borderBottom: '1px solid rgba(108,99,255,0.12)' }}
       >
-        <Typography sx={{ fontFamily: DISP, fontSize: 12, letterSpacing: 3, color: ACCENT, fontWeight: 600 }}>
+        <Typography sx={{ fontFamily: DISP, fontSize: 12, letterSpacing: 3, color: ACCENT, fontWeight: 600, flex: 1, minWidth: 0 }}>
           {title}
         </Typography>
         {tag && (
-          <Typography sx={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1, color: 'rgba(255,255,255,0.4)' }}>
+          <Typography sx={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1, color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
             {tag}
           </Typography>
         )}
+        {onCollapse && (
+          <Box
+            role="button"
+            tabIndex={0}
+            aria-label={`Collapse ${title} panel`}
+            aria-expanded={true}
+            onClick={onCollapse}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onCollapse();
+              }
+            }}
+            sx={{
+              flexShrink: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              userSelect: 'none',
+              width: 24,
+              height: 24,
+              borderRadius: 1,
+              border: '1px solid rgba(108,99,255,0.32)',
+              color: 'rgba(108,99,255,0.85)',
+              background: 'rgba(108,99,255,0.05)',
+              transition: 'all .15s',
+              '&:hover': { background: 'rgba(108,99,255,0.16)', color: ACCENT, borderColor: ACCENT },
+              outline: 'none',
+              '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
+            }}
+          >
+            {side === 'right' ? (
+              <ChevronRightIcon sx={{ fontSize: 18 }} />
+            ) : (
+              <ChevronLeftIcon sx={{ fontSize: 18 }} />
+            )}
+          </Box>
+        )}
       </Stack>
       <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2 }}>{children}</Box>
+    </Box>
+  );
+}
+
+/** Slim, always-visible re-open affordance shown in place of a collapsed panel.
+ *  A thin vertical HUD rail with the panel label running vertically and a chevron
+ *  tab — one click brings the panel back. The chevron points "inward" (toward the
+ *  orb) to signal it will expand back into view. */
+function ReopenRail({
+  title,
+  side,
+  onExpand,
+}: {
+  title: string;
+  side: 'left' | 'right';
+  onExpand: () => void;
+}) {
+  return (
+    <Box
+      role="button"
+      tabIndex={0}
+      aria-label={`Expand ${title} panel`}
+      aria-expanded={false}
+      onClick={onExpand}
+      onKeyDown={(e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onExpand();
+        }
+      }}
+      sx={{
+        position: 'relative',
+        cursor: 'pointer',
+        userSelect: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 1.5,
+        py: 2,
+        background: 'linear-gradient(180deg, rgba(20,26,30,0.72), rgba(12,16,20,0.72))',
+        backdropFilter: 'blur(14px)',
+        border: '1px solid rgba(108,99,255,0.18)',
+        borderRadius: 2,
+        boxShadow: 'inset 0 0 40px rgba(108,99,255,0.04), 0 8px 40px rgba(0,0,0,0.5)',
+        transition: 'all .15s',
+        '&:hover': { borderColor: 'rgba(108,99,255,0.5)', background: 'linear-gradient(180deg, rgba(28,34,42,0.8), rgba(16,22,28,0.8))' },
+        outline: 'none',
+        '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
+      }}
+    >
+      {/* chevron tab — points inward, toward the stage */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          width: 24,
+          height: 24,
+          borderRadius: 1,
+          border: '1px solid rgba(108,99,255,0.32)',
+          color: 'rgba(108,99,255,0.85)',
+          background: 'rgba(108,99,255,0.05)',
+        }}
+      >
+        {side === 'left' ? <ChevronRightIcon sx={{ fontSize: 18 }} /> : <ChevronLeftIcon sx={{ fontSize: 18 }} />}
+      </Box>
+      {/* vertical label */}
+      <Typography
+        sx={{
+          fontFamily: DISP,
+          fontSize: 11,
+          letterSpacing: 3,
+          color: ACCENT,
+          fontWeight: 600,
+          writingMode: 'vertical-rl',
+          transform: side === 'left' ? 'rotate(180deg)' : 'none',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {title}
+      </Typography>
     </Box>
   );
 }
@@ -123,8 +297,8 @@ function TranscriptLog() {
                 fontSize: 13.5,
                 lineHeight: 1.5,
                 color: 'rgba(255,255,255,0.92)',
-                border: `1px solid ${me ? 'rgba(255,255,255,0.12)' : 'rgba(3,218,198,0.3)'}`,
-                background: me ? 'rgba(255,255,255,0.04)' : 'rgba(3,218,198,0.07)',
+                border: `1px solid ${me ? 'rgba(255,255,255,0.12)' : 'rgba(108,99,255,0.3)'}`,
+                background: me ? 'rgba(255,255,255,0.04)' : 'rgba(108,99,255,0.07)',
                 opacity: t.partial ? 0.7 : 1,
               }}
             >
@@ -155,7 +329,7 @@ function CheckpointGate() {
   };
 
   const palette: Record<CheckpointDecision, string> = {
-    APPROVE: ACCENT,
+    APPROVE: CYAN, // positive confirm — the sparing cyan accent
     CHANGES: VIOLET,
     REJECT: '#FF6B6B',
   };
@@ -281,15 +455,15 @@ function ActiveOperation() {
                   height: 8,
                   borderRadius: '50%',
                   flexShrink: 0,
-                  bgcolor: done ? ACCENT : active ? VIOLET : 'rgba(255,255,255,0.15)',
-                  boxShadow: active ? `0 0 10px ${VIOLET}` : done ? `0 0 8px ${ACCENT}` : 'none',
+                  bgcolor: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.15)',
+                  boxShadow: active ? `0 0 10px ${VIOLET}` : done ? `0 0 8px ${CYAN}` : 'none',
                   ...(active && { animation: 'pulse 1.4s ease-in-out infinite' }),
                 }}
               />
               <Typography sx={{ fontFamily: MONO, fontSize: 12, color: done || active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)', flex: 1 }}>
                 {r}
               </Typography>
-              <Typography sx={{ fontFamily: MONO, fontSize: 10, color: done ? ACCENT : active ? VIOLET : 'rgba(255,255,255,0.25)' }}>
+              <Typography sx={{ fontFamily: MONO, fontSize: 10, color: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.25)' }}>
                 {done ? 'DONE' : active ? 'RUNNING' : 'QUEUED'}
               </Typography>
             </Stack>
@@ -333,15 +507,15 @@ function HudNav() {
     px: 1.4,
     py: 0.55,
     borderRadius: 999,
-    border: '1px solid rgba(3,218,198,0.32)',
+    border: '1px solid rgba(108,99,255,0.32)',
     fontFamily: DISP,
     fontSize: 10.5,
     letterSpacing: 2,
-    color: 'rgba(3,218,198,0.85)',
-    background: 'rgba(3,218,198,0.04)',
+    color: 'rgba(108,99,255,0.85)',
+    background: 'rgba(108,99,255,0.04)',
     transition: 'all .15s',
     lineHeight: 1.6,
-    '&:hover': { background: 'rgba(3,218,198,0.14)', color: ACCENT, borderColor: ACCENT },
+    '&:hover': { background: 'rgba(108,99,255,0.14)', color: ACCENT, borderColor: ACCENT },
     outline: 'none',
     '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
   };
@@ -422,10 +596,10 @@ function TextComposer() {
           p: 1,
           pl: 2,
           borderRadius: 3,
-          border: `1px solid rgba(3,218,198,0.28)`,
+          border: `1px solid rgba(108,99,255,0.28)`,
           background: 'linear-gradient(180deg, rgba(20,26,30,0.78), rgba(12,16,20,0.78))',
           backdropFilter: 'blur(14px)',
-          boxShadow: 'inset 0 0 30px rgba(3,218,198,0.05), 0 8px 40px rgba(0,0,0,0.5)',
+          boxShadow: 'inset 0 0 30px rgba(108,99,255,0.05), 0 8px 40px rgba(0,0,0,0.5)',
         }}
       >
         <Typography sx={{ fontFamily: MONO, fontSize: 14, color: ACCENT, pb: 1.1, flexShrink: 0 }}>
@@ -479,15 +653,15 @@ function TextComposer() {
             px: 2.4,
             py: 1.1,
             borderRadius: 2,
-            border: `1px solid ${canSend ? ACCENT : 'rgba(3,218,198,0.2)'}`,
+            border: `1px solid ${canSend ? ACCENT : 'rgba(108,99,255,0.2)'}`,
             fontFamily: DISP,
             fontSize: 12,
             letterSpacing: 2,
-            color: canSend ? ACCENT : 'rgba(3,218,198,0.3)',
-            background: canSend ? 'rgba(3,218,198,0.12)' : 'transparent',
+            color: canSend ? ACCENT : 'rgba(108,99,255,0.3)',
+            background: canSend ? 'rgba(108,99,255,0.12)' : 'transparent',
             opacity: canSend ? 1 : 0.5,
             transition: 'all .15s',
-            '&:hover': canSend ? { background: 'rgba(3,218,198,0.22)' } : {},
+            '&:hover': canSend ? { background: 'rgba(108,99,255,0.22)' } : {},
             outline: 'none',
             '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
           }}
@@ -507,14 +681,45 @@ export default function CommandCenter() {
   const startListening = useVoice((s) => s.startListening);
   const stopListening = useVoice((s) => s.stopListening);
 
+  const [leftOpen, toggleLeft] = usePersistentPanel(LEFT_PANEL_KEY);
+  const [rightOpen, toggleRight] = usePersistentPanel(RIGHT_PANEL_KEY);
+
   useEffect(() => {
     const backend = selectVoiceBackend();
     setBackend(backend);
     return () => backend.dispose();
   }, [setBackend]);
 
+  // Keyboard toggles — "[" flips the left panel, "]" flips the right. Ignore
+  // when a text field/composer has focus so typing brackets still works.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      const tag = el?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || el?.isContentEditable) return;
+      if (e.key === '[') {
+        e.preventDefault();
+        toggleLeft();
+      } else if (e.key === ']') {
+        e.preventDefault();
+        toggleRight();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [toggleLeft, toggleRight]);
+
   const copy = STATE_COPY[state];
   const clock = useMemo(() => new Date().toLocaleTimeString('en-US', { hour12: false }), []);
+
+  // The grid reflows on what's open: a collapsed side becomes a slim rail track,
+  // an open side gets a full panel column. Both closed → orb owns the stage.
+  const RAIL = '52px';
+  const gridTemplateColumns = {
+    xs: '1fr',
+    lg: `${leftOpen ? '1fr' : RAIL} 1.3fr ${rightOpen ? '1fr' : RAIL}`,
+  };
 
   return (
     <Box
@@ -525,16 +730,19 @@ export default function CommandCenter() {
         color: '#fff',
         overflow: 'hidden',
         background:
-          'radial-gradient(1200px 800px at 50% 38%, rgba(3,218,198,0.08), transparent 60%),' +
+          // violet-dominant ambient glows; a faint cyan kiss in one corner
+          // for occasional brand contrast, never the main hue.
+          'radial-gradient(1200px 800px at 50% 38%, rgba(108,99,255,0.13), transparent 60%),' +
           'radial-gradient(900px 700px at 80% 90%, rgba(108,99,255,0.10), transparent 60%),' +
+          'radial-gradient(700px 600px at 12% 6%, rgba(3,218,198,0.05), transparent 62%),' +
           '#080b0d',
         '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } },
         '@keyframes scan': { '0%': { transform: 'translateY(-100%)' }, '100%': { transform: 'translateY(100vh)' } },
       }}
     >
       {/* faint grid + scanline atmosphere */}
-      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.5, backgroundImage: 'linear-gradient(rgba(3,218,198,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(3,218,198,0.05) 1px, transparent 1px)', backgroundSize: '48px 48px', maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 75%)' }} />
-      <Box sx={{ position: 'absolute', left: 0, right: 0, height: 120, pointerEvents: 'none', background: 'linear-gradient(rgba(3,218,198,0.06), transparent)', animation: 'scan 7s linear infinite' }} />
+      <Box sx={{ position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.5, backgroundImage: 'linear-gradient(rgba(108,99,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(108,99,255,0.05) 1px, transparent 1px)', backgroundSize: '48px 48px', maskImage: 'radial-gradient(ellipse at center, black 30%, transparent 75%)' }} />
+      <Box sx={{ position: 'absolute', left: 0, right: 0, height: 120, pointerEvents: 'none', background: 'linear-gradient(rgba(108,99,255,0.06), transparent)', animation: 'scan 7s linear infinite' }} />
 
       {/* top HUD bar */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 4, pt: 3, pb: 1, position: 'relative', zIndex: 2 }}>
@@ -552,7 +760,7 @@ export default function CommandCenter() {
                 ⚠ {error}
               </Typography>
             ) : (
-              <Typography sx={{ fontFamily: MONO, fontSize: 11, color: ACCENT, display: { xs: 'none', sm: 'block' } }}>◈ ARBITER LINK ACTIVE</Typography>
+              <Typography sx={{ fontFamily: MONO, fontSize: 11, color: CYAN, display: { xs: 'none', sm: 'block' }, textShadow: `0 0 10px ${CYAN}55` }}>◈ ARBITER LINK ACTIVE</Typography>
             )}
             <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)', display: { xs: 'none', sm: 'block' } }}>{clock}</Typography>
           </Stack>
@@ -570,26 +778,39 @@ export default function CommandCenter() {
           height: 'calc(100vh - 84px)',
         }}
       >
-      {/* main grid: transcript · sphere · operation */}
+      {/* main grid: transcript · sphere · operation — reflows on panel toggles */}
       <Box
         sx={{
           flex: 1,
           minHeight: 0,
           display: 'grid',
-          gridTemplateColumns: { xs: '1fr', lg: '1fr 1.3fr 1fr' },
+          gridTemplateColumns,
           gap: 3,
           px: 4,
           py: 2,
+          transition: 'grid-template-columns .35s cubic-bezier(0.4, 0, 0.2, 1)',
         }}
       >
-        <HudPanel title="COMMS LOG" tag="LIVE" sx={{ display: { xs: 'none', lg: 'flex' } }}>
-          <TranscriptLog />
-        </HudPanel>
+        {leftOpen ? (
+          <HudPanel
+            title="COMMS LOG"
+            tag="LIVE"
+            side="left"
+            onCollapse={toggleLeft}
+            sx={{ display: { xs: 'none', lg: 'flex' } }}
+          >
+            <TranscriptLog />
+          </HudPanel>
+        ) : (
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            <ReopenRail title="COMMS LOG" side="left" onExpand={toggleLeft} />
+          </Box>
+        )}
 
         {/* hero */}
         <Stack alignItems="center" justifyContent="center" spacing={2}>
           <VoiceSphere state={state} level={level} size={380} />
-          <Typography sx={{ fontFamily: DISP, fontSize: 22, letterSpacing: 8, color: state === 'thinking' ? VIOLET : ACCENT, textShadow: `0 0 20px ${state === 'thinking' ? VIOLET : ACCENT}55` }}>
+          <Typography sx={{ fontFamily: DISP, fontSize: 22, letterSpacing: 8, color: state === 'thinking' ? MAGENTA : ACCENT, textShadow: `0 0 20px ${state === 'thinking' ? MAGENTA : ACCENT}55` }}>
             {copy.label}
           </Typography>
           <Box
@@ -614,10 +835,10 @@ export default function CommandCenter() {
               fontSize: 13,
               letterSpacing: 3,
               color: ACCENT,
-              background: state === 'listening' ? 'rgba(3,218,198,0.18)' : 'rgba(3,218,198,0.04)',
+              background: state === 'listening' ? 'rgba(108,99,255,0.18)' : 'rgba(108,99,255,0.04)',
               boxShadow: state === 'listening' ? `0 0 24px ${ACCENT}66` : 'none',
               transition: 'all .15s',
-              '&:hover': { background: 'rgba(3,218,198,0.12)' },
+              '&:hover': { background: 'rgba(108,99,255,0.12)' },
               outline: 'none',
               '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
             }}
@@ -626,9 +847,21 @@ export default function CommandCenter() {
           </Box>
         </Stack>
 
-        <HudPanel title="ACTIVE OPERATION" tag="PDLC" sx={{ display: { xs: 'none', lg: 'flex' } }}>
-          <ActiveOperation />
-        </HudPanel>
+        {rightOpen ? (
+          <HudPanel
+            title="ACTIVE OPERATION"
+            tag="PDLC"
+            side="right"
+            onCollapse={toggleRight}
+            sx={{ display: { xs: 'none', lg: 'flex' } }}
+          >
+            <ActiveOperation />
+          </HudPanel>
+        ) : (
+          <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
+            <ReopenRail title="ACTIVE OPERATION" side="right" onExpand={toggleRight} />
+          </Box>
+        )}
       </Box>
 
         {/* command bar — typed commands, pinned bottom-center, coexists with voice */}
