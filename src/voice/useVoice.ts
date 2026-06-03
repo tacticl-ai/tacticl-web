@@ -140,8 +140,8 @@ export const useVoice = create<VoiceStore>((set, get) => ({
    MOCK backend — design/review driver. Replace with a WebSocket-backed impl.
    ──────────────────────────────────────────────────────────────────────── */
 const DEMO = [
-  { user: 'There’s a bug in the strategiz sign-in — the passkey sheet gets stuck.', agent: 'On it. That reads as a WebAuthn concurrency issue — a second credentials.get() while one’s pending. I’ll open a fix PR against strategiz-core and walk you through it.' },
-  { user: 'Also, draft a new feature: weekly portfolio digest email.', agent: 'Got it. Routing that to the strategiz feature pipeline — I’ll draft a PRD first and bring it back for your approval before any code.' },
+  { user: 'Add a /health endpoint to the API and wire it into the readiness probe.', agent: 'On it. I’ll add a lightweight health controller, wire it to the readiness probe, and open a fix PR — I’ll bring it back for your approval before anything ships.' },
+  { user: 'Also, draft a new feature: a weekly activity digest.', agent: 'Got it. Routing that to the feature pipeline — I’ll draft a PRD first and bring it back for your approval before any code.' },
 ];
 
 export function createMockVoiceBackend(): VoiceBackend {

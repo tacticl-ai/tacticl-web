@@ -54,7 +54,7 @@ interface ChatMessage {
 }
 
 const SUGGESTIONS = [
-  'Clean up dead code in strategiz-core',
+  'Add a /health endpoint to the API',
   'Audit cloud costs and find savings',
   'Review open PRs and summarize changes',
   'Run security scan on all repos',

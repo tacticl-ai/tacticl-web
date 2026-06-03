@@ -419,66 +419,81 @@ function CheckpointGate() {
   );
 }
 
-/** PDLC operation strip — driven by the live HUD frames, with mock fallback copy. */
+/** PDLC operation strip — driven purely by live HUD frames. No fabricated
+ *  progress: with no live operation it shows an honest idle state, and the
+ *  pipeline role strip only renders once a real role arrives. */
 function ActiveOperation() {
   const operation = useVoice((s) => s.operation);
   const checkpoint = useVoice((s) => s.checkpoint);
 
   // The live HUD frame names the active role; map it onto the canonical strip.
-  const liveIdx = operation?.role
+  // -1 means "no live role yet" → we render no strip rather than guessing one.
+  const activeIdx = operation?.role
     ? PDLC_ROLES.findIndex((r) => r.toLowerCase() === operation.role!.toLowerCase())
     : -1;
-  const activeIdx = liveIdx >= 0 ? liveIdx : 4;
 
-  const title = operation?.phase || operation?.runId
-    ? [operation?.runId, operation?.phase].filter(Boolean).join(' · ')
-    : 'strategiz · passkey sign-in fix';
-  const tag = operation?.runId ? 'PDLC-RUN' : 'PDLC-FIX';
+  const hasOperation = Boolean(operation?.role || operation?.phase || operation?.runId);
+
+  // Idle: nothing running and no gate pending — say so honestly.
+  if (!hasOperation && !checkpoint) {
+    return (
+      <Typography sx={{ fontFamily: MONO, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+        // no active operation — start a build to see the pipeline here
+      </Typography>
+    );
+  }
+
+  const title = [operation?.runId, operation?.phase].filter(Boolean).join(' · ');
+  const tag = operation?.runId ? 'PDLC-RUN' : 'PDLC';
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-        <Typography sx={{ fontFamily: DISP, fontSize: 13, color: '#fff', letterSpacing: 1 }}>
-          {title}
-        </Typography>
-        <Typography sx={{ fontFamily: MONO, fontSize: 10, color: ACCENT }}>{tag}</Typography>
-      </Stack>
-      <Stack spacing={1}>
-        {PDLC_ROLES.map((r, i) => {
-          const done = i < activeIdx;
-          const active = i === activeIdx;
-          return (
-            <Stack key={r} direction="row" alignItems="center" spacing={1.5}>
-              <Box
-                sx={{
-                  width: 8,
-                  height: 8,
-                  borderRadius: '50%',
-                  flexShrink: 0,
-                  bgcolor: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.15)',
-                  boxShadow: active ? `0 0 10px ${VIOLET}` : done ? `0 0 8px ${CYAN}` : 'none',
-                  ...(active && { animation: 'pulse 1.4s ease-in-out infinite' }),
-                }}
-              />
-              <Typography sx={{ fontFamily: MONO, fontSize: 12, color: done || active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)', flex: 1 }}>
-                {r}
-              </Typography>
-              <Typography sx={{ fontFamily: MONO, fontSize: 10, color: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.25)' }}>
-                {done ? 'DONE' : active ? 'RUNNING' : 'QUEUED'}
-              </Typography>
-            </Stack>
-          );
-        })}
-      </Stack>
+      {(title || tag) && (
+        <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+          <Typography sx={{ fontFamily: DISP, fontSize: 13, color: '#fff', letterSpacing: 1 }}>
+            {title || 'operation'}
+          </Typography>
+          <Typography sx={{ fontFamily: MONO, fontSize: 10, color: ACCENT }}>{tag}</Typography>
+        </Stack>
+      )}
+      {activeIdx >= 0 && (
+        <Stack spacing={1}>
+          {PDLC_ROLES.map((r, i) => {
+            const done = i < activeIdx;
+            const active = i === activeIdx;
+            return (
+              <Stack key={r} direction="row" alignItems="center" spacing={1.5}>
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    flexShrink: 0,
+                    bgcolor: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.15)',
+                    boxShadow: active ? `0 0 10px ${VIOLET}` : done ? `0 0 8px ${CYAN}` : 'none',
+                    ...(active && { animation: 'pulse 1.4s ease-in-out infinite' }),
+                  }}
+                />
+                <Typography sx={{ fontFamily: MONO, fontSize: 12, color: done || active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)', flex: 1 }}>
+                  {r}
+                </Typography>
+                <Typography sx={{ fontFamily: MONO, fontSize: 10, color: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.25)' }}>
+                  {done ? 'DONE' : active ? 'RUNNING' : 'QUEUED'}
+                </Typography>
+              </Stack>
+            );
+          })}
+        </Stack>
+      )}
       {checkpoint ? (
         <CheckpointGate />
-      ) : (
+      ) : operation?.note ? (
         <Box sx={{ mt: 1, p: 1.4, border: '1px dashed rgba(108,99,255,0.4)', borderRadius: 1.5 }}>
           <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-            {operation?.note ?? '⏸ awaiting human gate — PR #142 ready for review'}
+            {operation.note}
           </Typography>
         </Box>
-      )}
+      ) : null}
     </Stack>
   );
 }
@@ -754,7 +769,7 @@ export default function CommandCenter() {
         </Stack>
         <Stack direction="row" spacing={2.5} alignItems="center" flexWrap="wrap" useFlexGap justifyContent="flex-end">
           <Stack direction="row" spacing={2.5} alignItems="center">
-            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)', display: { xs: 'none', md: 'block' } }}>PRODUCT · STRATEGIZ</Typography>
+            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)', display: { xs: 'none', md: 'block' } }}>PRODUCT · TACTICL</Typography>
             {error ? (
               <Typography sx={{ fontFamily: MONO, fontSize: 11, color: '#FF6B6B' }} role="alert">
                 ⚠ {error}

@@ -252,6 +252,9 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
       s.setError(null);
       // Interrupt any in-flight TTS the moment the operator starts a new turn.
       tts.flush();
+      // Prime the TTS AudioContext inside this push-to-talk gesture so the reply
+      // isn't muted by the browser autoplay policy.
+      void tts.unlock();
 
       void (async () => {
         try {
@@ -290,6 +293,8 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
       if (!trimmed) return;
       // Interrupt any in-flight TTS — a new typed command supersedes the reply.
       tts.flush();
+      // Prime the TTS AudioContext inside this send gesture (autoplay policy).
+      void tts.unlock();
       const s = store.getState();
       s.setError(null);
       // Hand off to the server: tacticl-core treats the {text} frame as a final

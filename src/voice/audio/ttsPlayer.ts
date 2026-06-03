@@ -53,6 +53,22 @@ export class TtsPlayer {
     this.codec = codec;
   }
 
+  /**
+   * Create and resume the AudioContext *inside a user gesture* (push-to-talk down
+   * or send). The context is otherwise created lazily on the first inbound audio
+   * chunk — which is not a gesture — so Chrome's autoplay policy leaves it
+   * suspended and TTS plays silently. Priming it on the gesture unblocks later
+   * playback. Idempotent and safe to call on every turn.
+   */
+  async unlock(): Promise<void> {
+    const ctx = this.ensureContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume().catch(() => {
+        /* still blocked — will retry on the next gesture */
+      });
+    }
+  }
+
   private ensureContext(): AudioContext {
     if (this.ctx) return this.ctx;
     const AudioCtor: typeof AudioContext =
