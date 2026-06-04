@@ -74,7 +74,8 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
   let listening = false;
   let reconnectAttempts = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  let connecting = false;
+  /** In-flight connect; resolves only once the WS is OPEN so callers can safely send. */
+  let connectPromise: Promise<void> | null = null;
   /** Set true once we've sent {start} and are streaming this turn. */
   let turnOpen = false;
   let bargedThisTurn = false;
@@ -82,37 +83,51 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
   /* ── WebSocket connection ─────────────────────────────────────────────── */
 
   async function connect(): Promise<void> {
-    if (disposed || connecting || (ws && ws.readyState <= WebSocket.OPEN)) return;
-    connecting = true;
-    try {
-      const token = await fetchToken();
-      if (disposed) return;
-      const url = buildWsUrl(opts.wsUrl, token);
-      const socket = new WebSocket(url);
-      socket.binaryType = 'arraybuffer';
-      ws = socket;
+    if (disposed) return;
+    // Already connected — nothing to do.
+    if (ws && ws.readyState === WebSocket.OPEN) return;
+    // A connect is already in flight — await the same promise (don't open a 2nd socket).
+    if (connectPromise) return connectPromise;
 
-      socket.onopen = () => {
-        connecting = false;
-        reconnectAttempts = 0;
-        store.getState().setError(null);
-      };
-      socket.onmessage = (ev) => handleMessage(ev);
-      socket.onerror = () => {
-        // onclose will follow and drive reconnect.
-      };
-      socket.onclose = () => {
-        connecting = false;
-        if (ws === socket) ws = null;
+    connectPromise = (async () => {
+      try {
+        const token = await fetchToken();
+        if (disposed) return;
+        const url = buildWsUrl(opts.wsUrl, token);
+        const socket = new WebSocket(url);
+        socket.binaryType = 'arraybuffer';
+        ws = socket;
+        socket.onmessage = (ev) => handleMessage(ev);
+        socket.onerror = () => {
+          // onclose will follow and drive reconnect.
+        };
+        // Resolve ONLY once the socket is OPEN, so the caller can safely send the
+        // {start}/{text} frame (a previous version sent it while still CONNECTING,
+        // which silently dropped it and the turn never began server-side).
+        await new Promise<void>((resolve, reject) => {
+          socket.onopen = () => {
+            reconnectAttempts = 0;
+            store.getState().setError(null);
+            resolve();
+          };
+          socket.onclose = () => {
+            if (ws === socket) ws = null;
+            // If it closed before opening, fail this connect; reconnect either way.
+            reject(new Error('Voice link closed before it opened.'));
+            if (!disposed) scheduleReconnect();
+          };
+        });
+      } catch (err) {
+        store.getState().setError(
+          err instanceof Error ? err.message : 'Voice link failed to authenticate.',
+        );
         if (!disposed) scheduleReconnect();
-      };
-    } catch (err) {
-      connecting = false;
-      store.getState().setError(
-        err instanceof Error ? err.message : 'Voice link failed to authenticate.',
-      );
-      if (!disposed) scheduleReconnect();
-    }
+        throw err;
+      } finally {
+        connectPromise = null;
+      }
+    })();
+    return connectPromise;
   }
 
   async function fetchToken(): Promise<string> {
