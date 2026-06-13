@@ -34,6 +34,9 @@ const MAX_RECONNECT_DELAY_MS = 15000;
 const BASE_RECONNECT_DELAY_MS = 500;
 /** Smoothed mic level above this during 'speaking' triggers barge-in. */
 const BARGE_IN_LEVEL = 0.22;
+/** localStorage key for the active conversation id, so a reload resumes it. */
+export const VOICE_CID_KEY = 'tacticl.voice.cid';
+const CID_KEY = VOICE_CID_KEY;
 
 export interface LiveVoiceBackendOptions {
   /** WebSocket base URL, e.g. wss://api.tacticl.ai/v1/voice/stream. Required. */
@@ -74,6 +77,8 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
   let listening = false;
   let reconnectAttempts = 0;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Active durable conversation id; resumed from localStorage, sent as ?cid= on connect. */
+  let conversationId: string | null = readStoredCid();
   /** In-flight connect; resolves only once the WS is OPEN so callers can safely send. */
   let connectPromise: Promise<void> | null = null;
   /** Set true once we've sent {start} and are streaming this turn. */
@@ -93,7 +98,7 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
       try {
         const token = await fetchToken();
         if (disposed) return;
-        const url = buildWsUrl(opts.wsUrl, token);
+        const url = buildWsUrl(opts.wsUrl, token, conversationId);
         const socket = new WebSocket(url);
         socket.binaryType = 'arraybuffer';
         ws = socket;
@@ -214,6 +219,16 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
           title: msg.title,
           options: msg.options,
         });
+        break;
+      case 'conversation':
+        // The server told us which durable conversation this socket is bound to
+        // (a fresh server-assigned id, or the resumed one). Remember it so a reload
+        // resumes it, reflect it in the store, and refresh the picker so a brand-new
+        // conversation shows up in the list.
+        conversationId = msg.id;
+        writeStoredCid(msg.id);
+        s.setConversationId(msg.id);
+        void s.refreshConversations();
         break;
       case 'audio_format':
         tts.setCodec(msg.codec);
@@ -337,6 +352,35 @@ export function createLiveVoiceBackend(opts: LiveVoiceBackendOptions): VoiceBack
       sendControl({ type: 'decision', checkpointId, decision, feedback });
     },
 
+    switchConversation(nextId: string | null) {
+      conversationId = nextId;
+      if (nextId) {
+        writeStoredCid(nextId);
+      } else {
+        clearStoredCid();
+      }
+      // Drop the current socket so the next start()/sendText() reconnects bound to
+      // the chosen conversation (the server seeds memory from ?cid= at handshake).
+      tts.flush();
+      listening = false;
+      turnOpen = false;
+      mic?.stop();
+      if (ws) {
+        const old = ws;
+        ws = null;
+        connectPromise = null;
+        old.onopen = null;
+        old.onmessage = null;
+        old.onerror = null;
+        old.onclose = null;
+        try {
+          old.close();
+        } catch {
+          /* already closing */
+        }
+      }
+    },
+
     dispose() {
       disposed = true;
       listening = false;
@@ -378,7 +422,35 @@ function resolveTokenUrl(opts: LiveVoiceBackendOptions): string {
   return `${base}${path}`;
 }
 
-function buildWsUrl(wsUrl: string, token: string): string {
+function buildWsUrl(wsUrl: string, token: string, conversationId: string | null): string {
   const sep = wsUrl.includes('?') ? '&' : '?';
-  return `${wsUrl}${sep}token=${encodeURIComponent(token)}`;
+  let url = `${wsUrl}${sep}token=${encodeURIComponent(token)}`;
+  if (conversationId) {
+    url += `&cid=${encodeURIComponent(conversationId)}`;
+  }
+  return url;
+}
+
+function readStoredCid(): string | null {
+  try {
+    return window.localStorage.getItem(CID_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredCid(id: string): void {
+  try {
+    window.localStorage.setItem(CID_KEY, id);
+  } catch {
+    /* storage unavailable — resume just won't survive a reload */
+  }
+}
+
+function clearStoredCid(): void {
+  try {
+    window.localStorage.removeItem(CID_KEY);
+  } catch {
+    /* ignore */
+  }
 }

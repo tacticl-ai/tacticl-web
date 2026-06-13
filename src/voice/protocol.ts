@@ -84,6 +84,17 @@ export interface CheckpointFrame {
   options: CheckpointDecision[];
 }
 
+/**
+ * Identifies the durable conversation this socket is bound to. Sent right after
+ * connect — for a fresh conversation it carries the server-assigned id so the
+ * client can resume it later and surface it in the conversation picker.
+ */
+export interface ConversationFrame {
+  type: 'conversation';
+  id: string;
+  title?: string;
+}
+
 /** Server-side error surfaced to the operator. */
 export interface ErrorFrame {
   type: 'error';
@@ -109,6 +120,7 @@ export type DownControlMessage =
   | TranscriptFrame
   | HudFrame
   | CheckpointFrame
+  | ConversationFrame
   | ErrorFrame
   | AudioFormatFrame;
 
@@ -196,6 +208,7 @@ export function isDownControlMessage(value: unknown): value is DownControlMessag
     t === 'transcript' ||
     t === 'hud' ||
     t === 'checkpoint' ||
+    t === 'conversation' ||
     t === 'error' ||
     t === 'audio_format'
   );

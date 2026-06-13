@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { VoiceState } from '../components/command/VoiceSphere';
 import type { CheckpointDecision } from './protocol';
+import { voiceConversationsApi, type VoiceConversationSummary } from '../api/voice-conversations';
 
 export type { VoiceState };
 
@@ -47,6 +48,12 @@ export interface VoiceBackend {
   sendText?(text: string): void;
   /** Send a HITL checkpoint decision upstream. Optional for the mock. */
   decide?(checkpointId: string, decision: CheckpointDecision, feedback?: string): void;
+  /**
+   * Bind subsequent turns to a durable conversation: pass an id to resume one,
+   * or null to start a fresh conversation. Tears down the current socket so the
+   * next turn reconnects against the chosen conversation. Optional for the mock.
+   */
+  switchConversation?(conversationId: string | null): void;
   dispose(): void;
 }
 
@@ -58,6 +65,10 @@ interface VoiceStore {
   checkpoint: ActiveCheckpoint | null;
   operation: ActiveOperationState | null;
   error: string | null;
+  /** The durable conversation this session is bound to (null until the server assigns one). */
+  conversationId: string | null;
+  /** The user's past conversations, most-recent first (drives the picker). */
+  conversations: VoiceConversationSummary[];
   // primitives the backend drives:
   setState: (s: VoiceState) => void;
   setLevel: (l: number) => void;
@@ -67,6 +78,8 @@ interface VoiceStore {
   setCheckpoint: (c: ActiveCheckpoint | null) => void;
   setOperation: (o: ActiveOperationState | null) => void;
   setError: (e: string | null) => void;
+  /** The backend learned (or the user picked) the active conversation id. */
+  setConversationId: (id: string | null) => void;
   // UI actions:
   startListening: () => void;
   stopListening: () => void;
@@ -75,6 +88,12 @@ interface VoiceStore {
   setBackend: (b: VoiceBackend) => void;
   /** Resolve the active checkpoint with a decision and clear it. */
   decideCheckpoint: (decision: CheckpointDecision, feedback?: string) => void;
+  /** Re-fetch the conversation list for the picker. */
+  refreshConversations: () => Promise<void>;
+  /** Open a past conversation: load its transcript and resume it on the backend. */
+  loadConversation: (id: string) => Promise<void>;
+  /** Start a fresh conversation: clear the transcript and unbind the backend. */
+  newConversation: () => void;
 }
 
 let _seq = 0;
@@ -88,6 +107,8 @@ export const useVoice = create<VoiceStore>((set, get) => ({
   checkpoint: null,
   operation: null,
   error: null,
+  conversationId: null,
+  conversations: [],
 
   setState: (s) => set({ state: s }),
   setLevel: (l) => set({ level: l }),
@@ -115,6 +136,7 @@ export const useVoice = create<VoiceStore>((set, get) => ({
   setCheckpoint: (c) => set({ checkpoint: c }),
   setOperation: (o) => set({ operation: o }),
   setError: (e) => set({ error: e }),
+  setConversationId: (id) => set({ conversationId: id }),
 
   setBackend: (b) => set({ backend: b }),
   startListening: () => get().backend?.start(),
@@ -133,6 +155,41 @@ export const useVoice = create<VoiceStore>((set, get) => ({
     if (!checkpoint) return;
     backend?.decide?.(checkpoint.checkpointId, decision, feedback);
     set({ checkpoint: null });
+  },
+
+  refreshConversations: async () => {
+    try {
+      const list = await voiceConversationsApi.list();
+      set({ conversations: list });
+    } catch {
+      /* picker just keeps its current list if the fetch fails */
+    }
+  },
+
+  loadConversation: async (id) => {
+    try {
+      const detail = await voiceConversationsApi.get(id);
+      set({
+        conversationId: id,
+        checkpoint: null,
+        operation: null,
+        transcript: detail.turns.map((t) => ({
+          id: nextId(),
+          role: t.role,
+          text: t.text,
+          ts: Date.parse(t.timestamp) || Date.now(),
+        })),
+      });
+      // Resume server-side memory for the next turn against this conversation.
+      get().backend?.switchConversation?.(id);
+    } catch {
+      get().setError('Could not open that conversation.');
+    }
+  },
+
+  newConversation: () => {
+    set({ conversationId: null, transcript: [], checkpoint: null, operation: null });
+    get().backend?.switchConversation?.(null);
   },
 }));
 

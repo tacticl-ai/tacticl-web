@@ -6,6 +6,7 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import VoiceSphere from './VoiceSphere';
 import { useVoice } from '../../voice/useVoice';
 import { selectVoiceBackend } from '../../voice/selectVoiceBackend';
+import { VOICE_CID_KEY } from '../../voice/createLiveVoiceBackend';
 import { useAuthStore } from '../../stores/auth-store';
 import type { CheckpointDecision } from '../../voice/protocol';
 
@@ -257,6 +258,103 @@ function ReopenRail({
       >
         {title}
       </Typography>
+    </Box>
+  );
+}
+
+/** Conversation picker — list past conversations, open one, or start fresh. Sits
+ *  atop the comms log. Driven by the voice store; selecting an item rehydrates the
+ *  transcript and resumes that conversation's server-side memory for the next turn. */
+function ConversationPicker() {
+  const conversations = useVoice((s) => s.conversations);
+  const conversationId = useVoice((s) => s.conversationId);
+  const loadConversation = useVoice((s) => s.loadConversation);
+  const newConversation = useVoice((s) => s.newConversation);
+
+  return (
+    <Box sx={{ mb: 1.5, pb: 1.5, borderBottom: '1px solid rgba(108,99,255,0.12)' }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+        <Typography sx={{ fontFamily: DISP, fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.4)' }}>
+          CONVERSATIONS
+        </Typography>
+        <Box
+          role="button"
+          tabIndex={0}
+          aria-label="New conversation"
+          onClick={newConversation}
+          onKeyDown={(e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              newConversation();
+            }
+          }}
+          sx={{
+            cursor: 'pointer',
+            userSelect: 'none',
+            px: 1.2,
+            py: 0.4,
+            borderRadius: 999,
+            border: '1px solid rgba(108,99,255,0.4)',
+            color: ACCENT,
+            fontFamily: DISP,
+            fontSize: 10,
+            letterSpacing: 1.5,
+            background: 'rgba(108,99,255,0.06)',
+            transition: 'all .15s',
+            '&:hover': { background: 'rgba(108,99,255,0.16)' },
+            outline: 'none',
+            '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
+          }}
+        >
+          + NEW
+        </Box>
+      </Stack>
+      {conversations.length === 0 ? (
+        <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+          // no saved conversations yet
+        </Typography>
+      ) : (
+        <Stack spacing={0.6} sx={{ maxHeight: 168, overflowY: 'auto', pr: 0.5 }}>
+          {conversations.map((c) => {
+            const active = c.id === conversationId;
+            return (
+              <Box
+                key={c.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Open conversation: ${c.title}`}
+                onClick={() => loadConversation(c.id)}
+                onKeyDown={(e: React.KeyboardEvent) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    loadConversation(c.id);
+                  }
+                }}
+                sx={{
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  px: 1.2,
+                  py: 0.7,
+                  borderRadius: 1,
+                  border: `1px solid ${active ? ACCENT : 'rgba(108,99,255,0.16)'}`,
+                  background: active ? 'rgba(108,99,255,0.12)' : 'rgba(255,255,255,0.02)',
+                  transition: 'all .15s',
+                  '&:hover': { borderColor: 'rgba(108,99,255,0.5)' },
+                  outline: 'none',
+                  '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
+                }}
+              >
+                <Typography
+                  noWrap
+                  sx={{ fontFamily: MONO, fontSize: 12, color: active ? '#fff' : 'rgba(255,255,255,0.7)' }}
+                >
+                  {c.title || 'New conversation'}
+                </Typography>
+              </Box>
+            );
+          })}
+        </Stack>
+      )}
     </Box>
   );
 }
@@ -702,6 +800,18 @@ export default function CommandCenter() {
   useEffect(() => {
     const backend = selectVoiceBackend();
     setBackend(backend);
+    const store = useVoice.getState();
+    // Populate the picker, and resume the last conversation's transcript on load.
+    void store.refreshConversations();
+    let storedCid: string | null = null;
+    try {
+      storedCid = window.localStorage.getItem(VOICE_CID_KEY);
+    } catch {
+      /* storage unavailable — start fresh */
+    }
+    if (storedCid) {
+      void store.loadConversation(storedCid);
+    }
     return () => backend.dispose();
   }, [setBackend]);
 
@@ -814,6 +924,7 @@ export default function CommandCenter() {
             onCollapse={toggleLeft}
             sx={{ display: { xs: 'none', lg: 'flex' } }}
           >
+            <ConversationPicker />
             <TranscriptLog />
           </HudPanel>
         ) : (
