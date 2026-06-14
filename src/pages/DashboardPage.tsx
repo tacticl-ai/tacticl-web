@@ -1,384 +1,306 @@
 // src/pages/DashboardPage.tsx
-// "One row per pipeline" dashboard — a live HUD list with an agent timeline
-// strip + blinking active light per row. Row click → existing spark detail page.
+// Full-bleed "DEVELOPMENT PIPELINE" HUD dashboard — matches the design mockup.
+// One row per pipeline run with a live agent-timeline strip, blinking active/blocked
+// nodes, status pills, cost + relative time, and a contextual action. Wired to the
+// real /v1/pipelines feed (polls every 5s). Rendered full-bleed (no AppLayout chrome),
+// sharing the COMMAND / DASHBOARD / LINKS / CONFIG top nav with the command center.
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Box, Stack, Typography, CircularProgress } from '@mui/material';
-import { formatDistanceToNow } from 'date-fns';
-import HudPanel from '../components/hud/HudPanel';
-import { ACCENT, CYAN, AMBER, RED, DISP, MONO } from '../theme/hud';
 import { usePipelines } from '../hooks/usePipelines';
-import type { PipelineRunSummary, PdlcRole, PipelineStatus, RoleResultSummary } from '../api/types';
+import type { PipelineRunSummary, PdlcRole, PipelineStatus } from '../api/types';
 
-const ROLE_ABBR: Record<PdlcRole, string> = {
-  PO: 'PO',
-  RESEARCHER: 'Research',
-  ARCHITECT: 'Architect',
-  DESIGNER: 'Designer',
-  PLANNER: 'Planner',
-  IMPLEMENTER: 'Implementer',
-  REVIEWER: 'Reviewer',
-  TESTER: 'Test',
-  SECURITY_ANALYST: 'Security',
-  TECHNICAL_WRITER: 'Docs',
-  DEVOPS: 'DevOps',
-  RETRO_ANALYST: 'Retro',
+// ── Role sequences per playbook (the full pipeline so not-yet-run roles show as todo).
+const SEQUENCES: Record<string, PdlcRole[]> = {
+  FULL_PDLC: ['PO', 'RESEARCHER', 'ARCHITECT', 'DESIGNER', 'PLANNER', 'IMPLEMENTER', 'REVIEWER', 'TESTER', 'SECURITY_ANALYST', 'TECHNICAL_WRITER', 'DEVOPS', 'RETRO_ANALYST'],
+  SMALL_FEATURE: ['PO', 'PLANNER', 'IMPLEMENTER', 'REVIEWER', 'TESTER', 'RETRO_ANALYST'],
+  BUG_FIX: ['RESEARCHER', 'IMPLEMENTER', 'REVIEWER', 'TESTER', 'RETRO_ANALYST'],
+  REFACTOR: ['RESEARCHER', 'PLANNER', 'IMPLEMENTER', 'REVIEWER', 'TESTER'],
+  UI_CHANGE: ['PO', 'DESIGNER', 'IMPLEMENTER', 'REVIEWER', 'TESTER'],
+  DOCS_ONLY: ['RESEARCHER', 'TECHNICAL_WRITER', 'REVIEWER'],
+  INFRA_CHANGE: ['ARCHITECT', 'PLANNER', 'IMPLEMENTER', 'SECURITY_ANALYST', 'DEVOPS'],
+  SECURITY_PATCH: ['SECURITY_ANALYST', 'IMPLEMENTER', 'REVIEWER', 'TESTER'],
 };
 
-type StatusKind = 'running' | 'blocked' | 'done' | 'failed' | 'queued';
+const ROLE_LABEL: Record<PdlcRole, string> = {
+  PO: 'PO', RESEARCHER: 'Research', ARCHITECT: 'Architect', DESIGNER: 'Designer',
+  PLANNER: 'Planner', IMPLEMENTER: 'Implementer', REVIEWER: 'Reviewer', TESTER: 'Test',
+  SECURITY_ANALYST: 'Security', TECHNICAL_WRITER: 'Docs', DEVOPS: 'DevOps', RETRO_ANALYST: 'Retro',
+};
 
-interface StatusMeta {
-  kind: StatusKind;
-  label: string;
-  color: string;
-  blink: boolean;
+type Kind = 'running' | 'blocked' | 'merged' | 'failed' | 'queued';
+type NodeState = 'done' | 'cur' | 'block' | 'fail' | 'todo';
+
+function kindOf(s: PipelineStatus, hasCheckpoint: boolean): Kind {
+  if (s === 'PAUSED_AT_CHECKPOINT' || hasCheckpoint) return 'blocked';
+  if (s === 'COMPLETED') return 'merged';
+  if (s === 'FAILED' || s === 'CANCELLED') return 'failed';
+  if (s === 'PENDING') return 'queued';
+  return 'running';
 }
 
-function statusMeta(status: PipelineStatus): StatusMeta {
-  switch (status) {
-    case 'RUNNING':
-      return { kind: 'running', label: 'RUNNING', color: ACCENT, blink: true };
-    case 'PAUSED_AT_CHECKPOINT':
-      return { kind: 'blocked', label: 'NEEDS YOU', color: AMBER, blink: true };
-    case 'COMPLETED':
-      return { kind: 'done', label: 'COMPLETE', color: CYAN, blink: false };
-    case 'FAILED':
-      return { kind: 'failed', label: 'FAILED', color: RED, blink: false };
-    case 'CANCELLED':
-      return { kind: 'failed', label: 'CANCELLED', color: RED, blink: false };
-    case 'PENDING':
-    default:
-      return { kind: 'queued', label: 'QUEUED', color: 'rgba(238,240,246,0.5)', blink: false };
-  }
+const PILL: Record<Kind, { label: string; cls: string }> = {
+  running: { label: 'RUNNING', cls: 'p-run' },
+  blocked: { label: 'NEEDS YOU', cls: 'p-block' },
+  merged: { label: 'MERGED', cls: 'p-done' },
+  failed: { label: 'FAILED', cls: 'p-fail' },
+  queued: { label: 'QUEUED', cls: 'p-queue' },
+};
+
+function relTime(iso?: string): string {
+  if (!iso) return '—';
+  const ms = Date.now() - new Date(iso).getTime();
+  if (Number.isNaN(ms)) return '—';
+  const m = Math.floor(ms / 60000);
+  if (m < 1) return 'now';
+  if (m < 60) return `${m}m`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h`;
+  return `${Math.floor(h / 24)}d`;
 }
 
-type NodeKind = 'done' | 'active' | 'blocked' | 'failed' | 'todo';
-
-function nodeKind(
-  role: PdlcRole,
-  roleResults: Record<string, RoleResultSummary>,
-  currentRole: PdlcRole | null,
-  pipelineStatus: PipelineStatus,
-): NodeKind {
-  const r = roleResults[role];
-  if (r) {
-    if (r.status === 'COMPLETED' || r.status === 'SKIPPED') return 'done';
-    if (r.status === 'FAILED' || r.status === 'REJECTED' || r.status === 'ESCALATED') return 'failed';
+function sequenceFor(run: PipelineRunSummary): PdlcRole[] {
+  const base = SEQUENCES[run.playbook];
+  if (base && base.length) {
+    const extra = (run.activatedRoles ?? []).filter((r) => !base.includes(r));
+    return [...base, ...extra];
   }
-  if (role === currentRole) {
-    return pipelineStatus === 'PAUSED_AT_CHECKPOINT' ? 'blocked' : 'active';
+  return run.activatedRoles?.length ? run.activatedRoles : ['IMPLEMENTER'];
+}
+
+function nodeStateFor(role: PdlcRole, run: PipelineRunSummary, kind: Kind): NodeState {
+  const activated = new Set(run.activatedRoles ?? []);
+  const isCur = run.currentRole === role;
+  if (kind === 'merged') return 'done';
+  if (isCur) {
+    if (kind === 'blocked') return 'block';
+    if (kind === 'failed') return 'fail';
+    if (kind === 'queued') return 'todo';
+    return 'cur';
+  }
+  if (activated.has(role)) return 'done';
+  if (kind === 'failed' && !run.currentRole) {
+    const last = run.activatedRoles?.[run.activatedRoles.length - 1];
+    if (last === role) return 'fail';
   }
   return 'todo';
 }
 
-const NODE_COLOR: Record<NodeKind, string> = {
-  done: CYAN,
-  active: ACCENT,
-  blocked: AMBER,
-  failed: RED,
-  todo: 'rgba(238,240,246,0.16)',
-};
-
-/** Compact agent timeline strip: a node per activated role with a blinking
- *  light on whichever role is currently active (or blocked on a gate). */
-function AgentStrip({ run }: { run: PipelineRunSummary }) {
-  const roles = run.activatedRoles ?? [];
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'flex-start', minWidth: 0 }}>
-      {roles.map((role, i) => {
-        const kind = nodeKind(role, run.roleResults ?? {}, run.currentRole, run.status);
-        const live = kind === 'active' || kind === 'blocked';
-        const prev = i > 0 ? nodeKind(roles[i - 1], run.roleResults ?? {}, run.currentRole, run.status) : null;
-        const segDone = prev === 'done' || prev === 'failed' || prev === 'blocked' || prev === 'active';
-        return (
-          <Box key={role} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1, minWidth: 0, position: 'relative' }}>
-            {/* connector segment */}
-            {i > 0 && (
-              <Box
-                sx={{
-                  position: 'absolute',
-                  top: 5,
-                  left: '-50%',
-                  width: '100%',
-                  height: 2,
-                  bgcolor: segDone ? CYAN : 'rgba(238,240,246,0.12)',
-                }}
-              />
-            )}
-            {/* node */}
-            <Box
-              sx={{
-                position: 'relative',
-                zIndex: 1,
-                width: 12,
-                height: 12,
-                borderRadius: '50%',
-                bgcolor: NODE_COLOR[kind],
-                border: kind === 'todo' ? '1px solid rgba(238,240,246,0.2)' : 'none',
-                boxShadow: live
-                  ? `0 0 10px ${NODE_COLOR[kind]}`
-                  : kind === 'done'
-                    ? `0 0 8px ${CYAN}99`
-                    : 'none',
-                ...(live && {
-                  animation: 'dash-blink 1.25s ease-in-out infinite',
-                  '@keyframes dash-blink': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } },
-                }),
-              }}
-            />
-            {/* label */}
-            <Typography
-              sx={{
-                mt: 0.75,
-                fontFamily: MONO,
-                fontSize: 8.5,
-                letterSpacing: 0.2,
-                whiteSpace: 'nowrap',
-                textAlign: 'center',
-                color:
-                  kind === 'done'
-                    ? '#8ff0e4'
-                    : live
-                      ? '#eef0f6'
-                      : kind === 'failed'
-                        ? '#ffb0b0'
-                        : 'rgba(238,240,246,0.34)',
-              }}
-            >
-              {ROLE_ABBR[role] ?? role}
-            </Typography>
-          </Box>
-        );
-      })}
-    </Box>
-  );
-}
-
-function StatusPill({ meta }: { meta: StatusMeta }) {
-  return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={0.75}
-      sx={{
-        display: 'inline-flex',
-        px: 1.25,
-        py: 0.5,
-        borderRadius: 999,
-        border: `1px solid ${meta.color}`,
-        background: `${meta.color}1f`,
-      }}
-    >
-      <Box
-        sx={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          bgcolor: meta.color,
-          boxShadow: meta.blink ? `0 0 8px ${meta.color}` : 'none',
-          ...(meta.blink && {
-            animation: 'pill-blink 1.2s ease-in-out infinite',
-            '@keyframes pill-blink': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.35 } },
-          }),
-        }}
-      />
-      <Typography sx={{ fontFamily: DISP, fontSize: 9.5, letterSpacing: 1.3, color: meta.color, whiteSpace: 'nowrap' }}>
-        {meta.label}
-      </Typography>
-    </Stack>
-  );
-}
-
-const GRID_COLS = '120px minmax(180px, 260px) 1fr 64px 72px';
-
-function PipelineRow({ run }: { run: PipelineRunSummary }) {
-  const navigate = useNavigate();
-  const meta = statusMeta(run.status);
-  const cost = run.totalCostUsd > 0 ? `$${run.totalCostUsd.toFixed(2)}` : '—';
-  const updated = run.updatedAt
-    ? formatDistanceToNow(new Date(run.updatedAt), { addSuffix: false })
-    : '—';
-
-  return (
-    <Box
-      role="button"
-      tabIndex={0}
-      onClick={() => navigate(`/sparks/${run.sparkId}`)}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          navigate(`/sparks/${run.sparkId}`);
-        }
-      }}
-      sx={{
-        display: 'grid',
-        gridTemplateColumns: GRID_COLS,
-        gap: 2,
-        alignItems: 'center',
-        px: 2,
-        py: 1.75,
-        cursor: 'pointer',
-        borderBottom: '1px solid rgba(108,99,255,0.06)',
-        transition: 'background .18s',
-        '&:hover': { background: 'rgba(108,99,255,0.06)' },
-        '&:last-of-type': { borderBottom: 'none' },
-        outline: 'none',
-        '&:focus-visible': { boxShadow: `inset 0 0 0 1px ${ACCENT}` },
-      }}
-    >
-      {/* status */}
-      <Box sx={{ minWidth: 0 }}>
-        <StatusPill meta={meta} />
-      </Box>
-
-      {/* name + repo */}
-      <Box sx={{ minWidth: 0 }}>
-        <Typography noWrap sx={{ fontFamily: DISP, fontSize: 14, color: '#eef0f6', fontWeight: 500 }}>
-          {run.name || 'Untitled pipeline'}
-        </Typography>
-        <Typography noWrap sx={{ fontFamily: MONO, fontSize: 10.5, color: 'rgba(238,240,246,0.38)', mt: 0.25 }}>
-          {run.repoFullName || run.playbook.replace(/_/g, ' ').toLowerCase()}
-        </Typography>
-        {meta.kind === 'blocked' && run.prNumber != null && (
-          <Typography sx={{ fontFamily: MONO, fontSize: 10, color: AMBER, mt: 0.25 }}>
-            ▲ PR #{run.prNumber} · awaiting your approval
-          </Typography>
-        )}
-      </Box>
-
-      {/* agent strip */}
-      <Box sx={{ minWidth: 0, overflowX: 'auto' }}>
-        <AgentStrip run={run} />
-      </Box>
-
-      {/* cost */}
-      <Typography sx={{ fontFamily: MONO, fontSize: 11.5, color: 'rgba(238,240,246,0.6)' }}>{cost}</Typography>
-
-      {/* updated */}
-      <Typography sx={{ fontFamily: MONO, fontSize: 11.5, color: 'rgba(238,240,246,0.5)' }}>{updated}</Typography>
-    </Box>
-  );
+function actionFor(kind: Kind): { text: string; cls: string } {
+  if (kind === 'blocked') return { text: 'REVIEW →', cls: 'review' };
+  if (kind === 'failed') return { text: 'LOG →', cls: '' };
+  return { text: 'OPEN →', cls: '' };
 }
 
 export default function DashboardPage() {
-  const { data: pipelines, isLoading, isError } = usePipelines();
+  const navigate = useNavigate();
+  const { data: runs, isLoading, isError } = usePipelines();
 
-  const rows = useMemo(() => pipelines ?? [], [pipelines]);
-
+  const list = useMemo(() => runs ?? [], [runs]);
   const counts = useMemo(() => {
-    let running = 0;
-    let needsYou = 0;
-    let complete = 0;
-    let failed = 0;
-    for (const r of rows) {
-      const k = statusMeta(r.status).kind;
-      if (k === 'running') running += 1;
-      else if (k === 'blocked') needsYou += 1;
-      else if (k === 'done') complete += 1;
-      else if (k === 'failed') failed += 1;
+    const c = { running: 0, blocked: 0, merged: 0, failed: 0 };
+    for (const r of list) {
+      const k = kindOf(r.status, !!r.currentCheckpointId);
+      if (k === 'running' || k === 'queued') c.running += 1;
+      else if (k === 'blocked') c.blocked += 1;
+      else if (k === 'merged') c.merged += 1;
+      else if (k === 'failed') c.failed += 1;
     }
-    return { running, needsYou, complete, failed };
-  }, [rows]);
-
-  const stats: { label: string; value: number; color: string }[] = [
-    { label: 'RUNNING', value: counts.running, color: ACCENT },
-    { label: 'NEEDS YOU', value: counts.needsYou, color: AMBER },
-    { label: 'COMPLETE', value: counts.complete, color: CYAN },
-    { label: 'FAILED', value: counts.failed, color: RED },
-  ];
+    return c;
+  }, [list]);
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {/* Page head */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        alignItems={{ xs: 'flex-start', sm: 'flex-end' }}
-        justifyContent="space-between"
-        spacing={2}
-      >
-        <Box>
-          <Typography sx={{ fontFamily: DISP, fontSize: 26, letterSpacing: 6, fontWeight: 600, color: '#fff', lineHeight: 1 }}>
-            DEVELOPMENT{' '}
-            <Box
-              component="span"
-              sx={{
-                background: `linear-gradient(90deg, ${ACCENT}, #B25CFF)`,
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-                color: 'transparent',
-              }}
-            >
-              PIPELINE
-            </Box>
-          </Typography>
-          <Typography sx={{ fontFamily: MONO, fontSize: 11, letterSpacing: 2, color: 'rgba(238,240,246,0.4)', mt: 1 }}>
-            LIVE AGENT TRACKING · {rows.length} {rows.length === 1 ? 'BUILD' : 'BUILDS'}
-          </Typography>
-        </Box>
-        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-          {stats.map((s) => (
-            <Stack
-              key={s.label}
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{
-                px: 1.5,
-                py: 1,
-                borderRadius: 1.5,
-                border: '1px solid rgba(108,99,255,0.14)',
-                background: 'linear-gradient(180deg, rgba(22,28,34,0.66), rgba(11,15,19,0.66))',
-                backdropFilter: 'blur(16px)',
-              }}
-            >
-              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: s.color, boxShadow: `0 0 9px ${s.color}` }} />
-              <Typography sx={{ fontFamily: DISP, fontSize: 19, fontWeight: 600, color: '#fff', lineHeight: 1 }}>
-                {s.value}
-              </Typography>
-              <Typography sx={{ fontFamily: MONO, fontSize: 9.5, letterSpacing: 1.4, color: 'rgba(238,240,246,0.42)' }}>
-                {s.label}
-              </Typography>
-            </Stack>
-          ))}
-        </Stack>
-      </Stack>
+    <div className="dash-root">
+      <style>{CSS}</style>
+      <div className="grid-bg" />
+      <div className="scan" />
 
-      {/* Pipeline list panel */}
-      <HudPanel title="PIPELINES" tag="LIVE · 5s" contentSx={{ p: 0 }}>
-        {/* column header */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: GRID_COLS,
-            gap: 2,
-            px: 2,
-            py: 1.25,
-            borderBottom: '1px solid rgba(108,99,255,0.14)',
-          }}
-        >
-          {['STATUS', 'BUILD', 'AGENTS  ·  done · live · queued', 'COST', 'UPDATED'].map((h) => (
-            <Typography key={h} sx={{ fontFamily: DISP, fontSize: 9.5, letterSpacing: 1.4, color: 'rgba(238,240,246,0.4)' }}>
-              {h}
-            </Typography>
-          ))}
-        </Box>
+      <div className="stage">
+        <div className="top">
+          <div className="brand"><span className="beacon" />TACTICL <span className="sep">//</span> DASHBOARD</div>
+          <div className="topright">
+            <span className="muted">PRODUCT · TACTICL</span>
+            <div className="nav">
+              <a className="chip" onClick={() => navigate('/command')}>COMMAND</a>
+              <a className="chip active">DASHBOARD</a>
+              <a className="chip" onClick={() => navigate('/connections')}>LINKS</a>
+              <a className="chip" onClick={() => navigate('/settings')}>CONFIG</a>
+            </div>
+          </div>
+        </div>
 
-        {isLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={26} sx={{ color: ACCENT }} />
-          </Box>
-        ) : isError ? (
-          <Typography sx={{ fontFamily: MONO, fontSize: 12.5, color: RED, textAlign: 'center', py: 5 }}>
-            Failed to load pipelines.
-          </Typography>
-        ) : rows.length === 0 ? (
-          <Typography sx={{ fontFamily: MONO, fontSize: 12.5, color: 'rgba(238,240,246,0.45)', textAlign: 'center', py: 5 }}>
-            // no pipelines yet — start a build in Command to see it here
-          </Typography>
-        ) : (
-          rows.map((run) => <PipelineRow key={run.id} run={run} />)
-        )}
-      </HudPanel>
-    </Box>
+        <div className="head">
+          <div>
+            <h1 className="h1">DEVELOPMENT <span className="b">PIPELINE</span></h1>
+            <div className="sub">LIVE AGENT TRACKING · {list.length} BUILD{list.length === 1 ? '' : 'S'}</div>
+          </div>
+          <div className="summary">
+            <Stat color="var(--accent)" n={counts.running} l="RUNNING" />
+            <Stat color="var(--amber)" n={counts.blocked} l="NEEDS YOU" />
+            <Stat color="var(--cyan)" n={counts.merged} l="MERGED" />
+            <Stat color="var(--red)" n={counts.failed} l="FAILED" />
+          </div>
+        </div>
+
+        <div className="panel">
+          <div className="lhead">
+            <div>STATUS</div><div>BUILD</div>
+            <div>AGENTS&nbsp;·&nbsp; done&nbsp; ◉ live&nbsp; ○ queued</div>
+            <div>COST</div><div>UPDATED</div><div />
+          </div>
+
+          {isLoading && <div className="empty">Loading pipelines…</div>}
+          {isError && <div className="empty err">Failed to load pipelines.</div>}
+          {!isLoading && !isError && list.length === 0 && (
+            <div className="empty">No pipelines yet. Start a build from Command to see it tracked here.</div>
+          )}
+
+          {list.map((run, i) => {
+            const kind = kindOf(run.status, !!run.currentCheckpointId);
+            const pill = PILL[kind];
+            const seq = sequenceFor(run);
+            const act = actionFor(kind);
+            return (
+              <div className="row" key={run.id} style={{ animationDelay: `${0.05 + i * 0.07}s` }}
+                   onClick={() => navigate(`/sparks/${run.sparkId}`)}>
+                <div><span className={`pill ${pill.cls}`}><span className="pdot" />{pill.label}</span></div>
+                <div>
+                  <div className="bname">{run.name ?? run.playbook ?? 'Pipeline'}</div>
+                  <div className="brepo">{run.name ? run.playbook : run.sparkId}</div>
+                  {kind === 'blocked' && <div className="prtag">▲ awaiting your approval</div>}
+                </div>
+                <div className="strip">
+                  {seq.map((role, idx) => {
+                    const st = nodeStateFor(role, run, kind);
+                    const segCls = idx === 0 ? '' : st === 'done' ? 'fdone'
+                      : st === 'cur' ? 'fcur' : st === 'fail' ? 'ffail'
+                      : st === 'block' ? 'fblock' : 'ftodo';
+                    const ndCls = st === 'done' ? 'n-done' : st === 'cur' ? 'n-cur'
+                      : st === 'block' ? 'n-block' : st === 'fail' ? 'n-fail' : 'n-todo';
+                    const nlCls = st === 'done' ? 'cyan' : (st === 'cur' || st === 'block' || st === 'fail') ? 'on' : '';
+                    return (
+                      <div className="node" key={role + idx}>
+                        {idx > 0 && <span className={`seg ${segCls}`} />}
+                        <span className={`nd ${ndCls}`} />
+                        <span className={`nl ${nlCls}`}>{ROLE_LABEL[role] ?? role}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="small">{run.totalCostUsd ? `$${run.totalCostUsd.toFixed(2)}` : '—'}</div>
+                <div className="small">{relTime(run.updatedAt)}</div>
+                <div className="act"><span className={act.cls}>{act.text}</span></div>
+              </div>
+            );
+          })}
+
+          <div className="legend">
+            <span><span className="lz" style={{ background: 'var(--cyan)', boxShadow: '0 0 7px var(--cyan)' }} />done</span>
+            <span><span className="lz blink" style={{ background: 'var(--accent)', boxShadow: '0 0 9px var(--accent)' }} />working now</span>
+            <span><span className="lz blink" style={{ background: 'var(--amber)', boxShadow: '0 0 9px var(--amber)' }} />waiting on you</span>
+            <span><span className="lz" style={{ background: 'var(--red)' }} />failed</span>
+            <span><span className="lz" style={{ background: 'rgba(238,240,246,.18)', border: '1px solid rgba(238,240,246,.25)' }} />queued</span>
+          </div>
+        </div>
+        <div style={{ height: 46 }} />
+      </div>
+    </div>
   );
 }
+
+function Stat({ color, n, l }: { color: string; n: number; l: string }) {
+  return (
+    <div className="stat">
+      <span className="sdot" style={{ background: color, boxShadow: `0 0 9px ${color}` }} />
+      <span className="n">{n}</span><span className="l">{l}</span>
+    </div>
+  );
+}
+
+const CSS = `
+.dash-root{position:fixed;inset:0;overflow-y:auto;color:#eef0f6;font-family:var(--mono);letter-spacing:.2px;
+  --accent:#6C63FF;--magenta:#B25CFF;--cyan:#15E0C8;--red:#FF6B6B;--amber:#F5B544;
+  --ink:#070a0c;--glass1:rgba(22,28,34,.66);--glass2:rgba(11,15,19,.66);
+  --disp:"Chakra Petch",sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--line:rgba(108,99,255,.14);
+  background:radial-gradient(1300px 820px at 50% -8%,rgba(108,99,255,.16),transparent 58%),
+    radial-gradient(1000px 760px at 92% 110%,rgba(178,92,255,.10),transparent 60%),
+    radial-gradient(760px 620px at 4% 18%,rgba(21,224,200,.06),transparent 60%),var(--ink);}
+.dash-root .grid-bg{position:fixed;inset:0;pointer-events:none;opacity:.45;z-index:0;
+  background-image:linear-gradient(rgba(108,99,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.06) 1px,transparent 1px);
+  background-size:54px 54px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 32%,#000 35%,transparent 78%);}
+.dash-root .scan{position:fixed;left:0;right:0;height:160px;z-index:1;pointer-events:none;
+  background:linear-gradient(rgba(108,99,255,.07),transparent);animation:dscan 8s linear infinite;}
+@keyframes dscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
+.dash-root .stage{position:relative;z-index:2}
+.dash-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
+.dash-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
+.dash-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
+.dash-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:dhalo 2.2s ease-out infinite}
+@keyframes dhalo{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+.dash-root .sep{color:var(--accent)}
+.dash-root .topright{display:flex;align-items:center;gap:18px}
+.dash-root .muted{color:rgba(238,240,246,.42);font-size:11px}
+.dash-root .nav{display:flex;gap:7px}
+.dash-root .chip{padding:6px 13px;border-radius:999px;border:1px solid rgba(108,99,255,.3);font-family:var(--disp);font-size:10.5px;letter-spacing:2px;color:rgba(170,165,255,.9);background:rgba(108,99,255,.05);cursor:pointer;transition:.18s}
+.dash-root .chip:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.16)}
+.dash-root .chip.active{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2);box-shadow:0 0 18px rgba(108,99,255,.25)}
+.dash-root .head{padding:14px 34px 2px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.dash-root .h1{font-family:var(--disp);font-size:30px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
+.dash-root .h1 .b{background:linear-gradient(90deg,var(--accent),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+.dash-root .sub{font-size:11px;color:rgba(238,240,246,.4);letter-spacing:3px;margin-top:8px}
+.dash-root .summary{display:flex;gap:9px;flex-wrap:wrap}
+.dash-root .stat{display:flex;align-items:center;gap:9px;padding:9px 15px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(16px)}
+.dash-root .stat .n{font-family:var(--disp);font-size:19px;font-weight:600}
+.dash-root .stat .l{font-size:9.5px;letter-spacing:1.6px;color:rgba(238,240,246,.42)}
+.dash-root .sdot{width:8px;height:8px;border-radius:50%}
+.dash-root .panel{margin:16px 34px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),inset 0 0 60px rgba(108,99,255,.04),0 18px 60px rgba(0,0,0,.55);position:relative}
+.dash-root .panel::before,.dash-root .panel::after{content:"";position:absolute;width:18px;height:18px;border:0 solid rgba(108,99,255,.6);pointer-events:none}
+.dash-root .panel::before{top:8px;left:8px;border-top-width:1.5px;border-left-width:1.5px}
+.dash-root .panel::after{bottom:8px;right:8px;border-bottom-width:1.5px;border-right-width:1.5px}
+.dash-root .lhead{display:grid;grid-template-columns:118px 250px 1fr 60px 70px 104px;gap:16px;align-items:center;padding:13px 22px;border-bottom:1px solid var(--line);font-family:var(--disp);font-size:9.5px;letter-spacing:1.8px;color:rgba(238,240,246,.4)}
+.dash-root .row{display:grid;grid-template-columns:118px 250px 1fr 60px 70px 104px;gap:16px;align-items:center;padding:16px 22px;border-bottom:1px solid rgba(108,99,255,.06);cursor:pointer;transition:.2s;opacity:0;transform:translateY(10px);animation:drise .55s cubic-bezier(.2,.7,.2,1) forwards}
+.dash-root .row:hover{background:rgba(108,99,255,.06)}
+.dash-root .row:hover .bname{color:#fff}
+@keyframes drise{to{opacity:1;transform:none}}
+.dash-root .bname{font-family:var(--disp);font-size:14px;color:#eef0f6;transition:.2s;font-weight:500}
+.dash-root .brepo{font-size:10.5px;color:rgba(238,240,246,.38);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+.dash-root .pill{font-family:var(--disp);font-size:9.5px;letter-spacing:1.3px;padding:5px 11px;border-radius:999px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.dash-root .pdot{width:6px;height:6px;border-radius:50%}
+.dash-root .p-run{color:#bdb8ff;border:1px solid var(--accent);background:rgba(108,99,255,.13)} .dash-root .p-run .pdot{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:dblink 1.3s ease-in-out infinite}
+.dash-root .p-block{color:#ffd99a;border:1px solid var(--amber);background:rgba(245,181,68,.12)} .dash-root .p-block .pdot{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:dblink 1s ease-in-out infinite}
+.dash-root .p-done{color:#8ff0e4;border:1px solid var(--cyan);background:rgba(21,224,200,.1)} .dash-root .p-done .pdot{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.dash-root .p-fail{color:#ffb0b0;border:1px solid var(--red);background:rgba(255,107,107,.12)} .dash-root .p-fail .pdot{background:var(--red)}
+.dash-root .p-queue{color:rgba(238,240,246,.5);border:1px solid rgba(238,240,246,.2);background:rgba(255,255,255,.03)} .dash-root .p-queue .pdot{background:rgba(238,240,246,.35)}
+.dash-root .strip{display:flex;align-items:flex-start;position:relative}
+.dash-root .node{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;position:relative;min-width:0}
+.dash-root .seg{position:absolute;top:6px;left:-50%;width:100%;height:2px;z-index:0}
+.dash-root .seg.fdone{background:var(--cyan)}
+.dash-root .seg.fcur{background:linear-gradient(90deg,var(--cyan),var(--accent))}
+.dash-root .seg.fblock{background:linear-gradient(90deg,var(--cyan),var(--amber))}
+.dash-root .seg.ftodo{background:rgba(238,240,246,.12)}
+.dash-root .seg.ffail{background:linear-gradient(90deg,var(--cyan),var(--red))}
+.dash-root .nd{width:13px;height:13px;border-radius:50%;position:relative;z-index:1}
+.dash-root .n-done{background:var(--cyan);box-shadow:0 0 9px rgba(21,224,200,.7)}
+.dash-root .n-cur{background:var(--accent);box-shadow:0 0 12px var(--accent);animation:dblink 1.25s ease-in-out infinite}
+.dash-root .n-cur::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:dhalo 1.8s ease-out infinite}
+.dash-root .n-block{background:var(--amber);box-shadow:0 0 12px var(--amber);animation:dblink 1s ease-in-out infinite}
+.dash-root .n-block::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--amber);animation:dhalo 1.6s ease-out infinite}
+.dash-root .n-fail{background:var(--red);box-shadow:0 0 9px var(--red)}
+.dash-root .n-todo{background:rgba(238,240,246,.16);border:1px solid rgba(238,240,246,.2)}
+.dash-root .nl{font-size:8.5px;letter-spacing:.3px;color:rgba(238,240,246,.34);white-space:nowrap;text-align:center}
+.dash-root .nl.on{color:#eef0f6}
+.dash-root .nl.cyan{color:#8ff0e4}
+@keyframes dblink{0%,100%{opacity:1}50%{opacity:.35}}
+.dash-root .small{font-size:11px;color:rgba(238,240,246,.5)}
+.dash-root .act{font-family:var(--disp);font-size:10px;letter-spacing:1px;color:rgba(170,165,255,.9);text-align:right;white-space:nowrap}
+.dash-root .review{color:var(--amber);font-weight:600;animation:dtextglow 1.6s ease-in-out infinite}
+@keyframes dtextglow{0%,100%{text-shadow:0 0 0 rgba(245,181,68,0)}50%{text-shadow:0 0 12px rgba(245,181,68,.85)}}
+.dash-root .prtag{font-size:10px;color:var(--amber);margin-top:3px;letter-spacing:.3px;opacity:.9}
+.dash-root .legend{display:flex;gap:18px;padding:12px 24px;font-size:10px;color:rgba(238,240,246,.45);border-top:1px solid var(--line);flex-wrap:wrap}
+.dash-root .legend span{display:inline-flex;align-items:center;gap:7px}
+.dash-root .lz{width:9px;height:9px;border-radius:50%}
+.dash-root .lz.blink{animation:dblink 1.2s ease-in-out infinite}
+.dash-root .empty{padding:34px 24px;text-align:center;font-size:12.5px;color:rgba(238,240,246,.5)}
+.dash-root .empty.err{color:#ffb0b0}
+`;

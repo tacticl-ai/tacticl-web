@@ -34,7 +34,7 @@ function LandingOrDashboard() {
   const isLoading = useAuthStore((s) => s.isLoading);
 
   if (isLoading) return null;
-  if (isAuthenticated) return <Navigate to="/command" replace />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return <LandingPage />;
 }
 
@@ -65,6 +65,10 @@ function AppInner() {
         <Route path="/command" element={<ProtectedRoute><CommandCenter /></ProtectedRoute>} />
         <Route path="/chat" element={<Navigate to="/command" replace />} />
 
+        {/* Dashboard — full-bleed "DEVELOPMENT PIPELINE" HUD, no AppLayout chrome.
+            Primary landing surface; shares the COMMAND/DASHBOARD/LINKS/CONFIG nav. */}
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+
         {/* Protected */}
         <Route
           element={
@@ -73,7 +77,6 @@ function AppInner() {
             </ProtectedRoute>
           }
         >
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/sparks" element={<SparkListPage />} />
           <Route path="/sparks/:id" element={<SparkDetailPage />} />
           <Route path="/pipelines" element={<PipelineListPage />} />
