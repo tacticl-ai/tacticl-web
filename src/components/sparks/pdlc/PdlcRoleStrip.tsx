@@ -12,7 +12,7 @@ interface PdlcRoleStripProps {
 }
 
 const ROLE_ABBREVIATIONS: Record<PdlcRole, string> = {
-  PM: 'PM',
+  PO: 'PO',
   RESEARCHER: 'RSCH',
   ARCHITECT: 'ARCH',
   DESIGNER: 'DSGN',

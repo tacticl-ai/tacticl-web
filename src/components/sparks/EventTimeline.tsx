@@ -31,7 +31,7 @@ const EVENT_COLORS: Record<string, string> = {
 };
 
 const ROLE_DISPLAY_NAMES: Record<PdlcRole, string> = {
-  PM: 'PM',
+  PO: 'Product Owner',
   RESEARCHER: 'Researcher',
   ARCHITECT: 'Architect',
   DESIGNER: 'Designer',

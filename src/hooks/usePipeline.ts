@@ -37,6 +37,23 @@ export function useRoleArtifact(sparkId: string | undefined, role: PdlcRole | nu
   });
 }
 
+export function useArtifactList(sparkId: string | undefined) {
+  return useQuery({
+    queryKey: ['artifact-list', sparkId],
+    queryFn: () => pipelineApi.getArtifactList(sparkId!),
+    enabled: !!sparkId,
+  });
+}
+
+export function useArtifactContent(sparkId: string | undefined, name: string | null) {
+  return useQuery({
+    queryKey: ['artifact-content', sparkId, name],
+    queryFn: () => pipelineApi.getArtifactContent(sparkId!, name!),
+    enabled: !!sparkId && !!name,
+    staleTime: 30_000,
+  });
+}
+
 export function usePlaybooks() {
   return useQuery({
     queryKey: ['playbooks'],

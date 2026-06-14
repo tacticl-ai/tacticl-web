@@ -2,6 +2,7 @@ import { api } from './client';
 import type {
   PipelineRun, PipelineEvent, RoleArtifact,
   CheckpointResolution, Playbook, PdlcRole,
+  ArtifactListItem, ArtifactContentResponse,
 } from './types';
 
 export const pipelineApi = {
@@ -18,6 +19,14 @@ export const pipelineApi = {
 
   getArtifact: (sparkId: string, role: PdlcRole) =>
     api.get<RoleArtifact>(`/v1/sparks/${sparkId}/pipeline/artifacts/${role}`),
+
+  getArtifactList: (sparkId: string) =>
+    api.get<ArtifactListItem[]>(`/v1/sparks/${sparkId}/pipeline/artifacts`),
+
+  getArtifactContent: (sparkId: string, name: string) =>
+    api.get<ArtifactContentResponse>(
+      `/v1/sparks/${sparkId}/pipeline/artifacts/${encodeURIComponent(name)}/content`,
+    ),
 
   resolveCheckpoint: (sparkId: string, checkpointId: string, data: CheckpointResolution) =>
     api.post(`/v1/sparks/${sparkId}/pipeline/checkpoint/${checkpointId}`, data),

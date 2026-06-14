@@ -6,6 +6,7 @@ import Typography from '@mui/material/Typography';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import { useRoleArtifact } from '../../../hooks/usePipeline';
+import ArtifactMarkdown from './ArtifactMarkdown';
 import type { PdlcRole, RoleResultSummary } from '../../../api/types';
 
 interface ArtifactTabsProps {
@@ -15,7 +16,7 @@ interface ArtifactTabsProps {
 }
 
 const ROLE_SHORT_NAMES: Record<PdlcRole, string> = {
-  PM: 'PM',
+  PO: 'PO',
   RESEARCHER: 'Research',
   ARCHITECT: 'Arch',
   DESIGNER: 'Design',
@@ -35,6 +36,15 @@ function formatTokens(tokens: number): string {
   return String(tokens);
 }
 
+/** Pull a markdown body out of an artifact's content map, if one exists. */
+function extractMarkdown(content: Record<string, unknown>): string | null {
+  for (const key of ['markdown', 'body', 'content', 'text']) {
+    const v = content[key];
+    if (typeof v === 'string' && v.trim().length > 0) return v;
+  }
+  return null;
+}
+
 function ArtifactContent({ sparkId, role }: { sparkId: string; role: PdlcRole }) {
   const { data: artifact, isLoading, isError } = useRoleArtifact(sparkId, role);
 
@@ -51,6 +61,21 @@ function ArtifactContent({ sparkId, role }: { sparkId: string; role: PdlcRole })
       <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
         No artifact available
       </Typography>
+    );
+  }
+
+  const markdown = extractMarkdown(artifact.content ?? {});
+  const metaParts = [artifact.artifactType, `v${artifact.artifactVersion}`].filter(Boolean);
+
+  // Prefer the rich markdown rendering; fall back to a JSON dump when the
+  // artifact has no markdown body (legacy / structured-only artifacts).
+  if (markdown) {
+    return (
+      <ArtifactMarkdown
+        markdown={markdown}
+        meta={metaParts.join(' · ')}
+        tag={`${ROLE_SHORT_NAMES[role]} · v${artifact.artifactVersion}`}
+      />
     );
   }
 
@@ -74,7 +99,7 @@ function ArtifactContent({ sparkId, role }: { sparkId: string; role: PdlcRole })
         />
       </Box>
 
-      {/* Artifact content */}
+      {/* Fallback: structured JSON content */}
       <Box
         sx={{
           fontFamily: "'SF Mono', 'Fira Code', monospace",

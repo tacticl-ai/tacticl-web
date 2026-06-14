@@ -8,6 +8,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
 import SparkListPage from './pages/SparkListPage';
+import DashboardPage from './pages/DashboardPage';
 import PipelineListPage from './pages/PipelineListPage';
 import SparkDetailPage from './pages/SparkDetailPage';
 import DeviceListPage from './pages/DeviceListPage';
@@ -72,6 +73,7 @@ function AppInner() {
             </ProtectedRoute>
           }
         >
+          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/sparks" element={<SparkListPage />} />
           <Route path="/sparks/:id" element={<SparkDetailPage />} />
           <Route path="/pipelines" element={<PipelineListPage />} />

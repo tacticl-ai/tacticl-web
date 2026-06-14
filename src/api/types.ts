@@ -396,7 +396,7 @@ export type PipelineStatus =
   | 'COMPLETED' | 'FAILED' | 'CANCELLED';
 
 export type PdlcRole =
-  | 'PM' | 'RESEARCHER' | 'ARCHITECT' | 'DESIGNER' | 'PLANNER'
+  | 'PO' | 'RESEARCHER' | 'ARCHITECT' | 'DESIGNER' | 'PLANNER'
   | 'IMPLEMENTER' | 'REVIEWER' | 'TESTER' | 'SECURITY_ANALYST'
   | 'TECHNICAL_WRITER' | 'DEVOPS' | 'RETRO_ANALYST';
 
@@ -443,6 +443,31 @@ export interface PipelineRun {
   completedAt: string | null;
 }
 
+/**
+ * Lightweight, list-oriented projection of a pipeline run for the dashboard's
+ * "one row per pipeline" view. Carries just enough to render a status chip, an
+ * agent timeline strip with a blinking active light, cost, and the row click
+ * target (sparkId → existing detail page).
+ */
+export interface PipelineRunSummary {
+  id: string;
+  sparkId: string;
+  name: string;
+  playbook: string;
+  repoFullName: string | null;
+  status: PipelineStatus;
+  totalCostUsd: number;
+  activatedRoles: PdlcRole[];
+  currentRole: PdlcRole | null;
+  roleResults: Record<string, RoleResultSummary>;
+  skippedRoles: string[];
+  prNumber: number | null;
+  prUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+  completedAt: string | null;
+}
+
 export interface PipelineEvent {
   id: string;
   pipelineRunId: string;
@@ -459,6 +484,26 @@ export interface RoleArtifact {
   content: Record<string, unknown>;
   artifactVersion: number;
   createdAt: string;
+}
+
+/** One entry in the pipeline's artifact index (GET .../pipeline/artifacts). */
+export interface ArtifactListItem {
+  /** Stable artifact name / slug used to fetch its content. */
+  name: string;
+  role: PdlcRole;
+  /** Human title, e.g. "Product Requirements", "Change summary". */
+  title: string;
+  artifactType: string;
+  artifactVersion: number;
+  createdAt: string;
+}
+
+/** Rendered artifact body (GET .../pipeline/artifacts/{name}/content). */
+export interface ArtifactContentResponse {
+  name: string;
+  /** Markdown body. May be empty/absent for legacy JSON-only artifacts. */
+  markdown: string;
+  sha: string;
 }
 
 export interface CheckpointResolution {

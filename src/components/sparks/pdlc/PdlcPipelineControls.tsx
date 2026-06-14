@@ -17,7 +17,7 @@ interface PdlcPipelineControlsProps {
 }
 
 const ROLE_LABELS: Record<PdlcRole, string> = {
-  PM: 'PM',
+  PO: 'PO',
   RESEARCHER: 'Researcher',
   ARCHITECT: 'Architect',
   DESIGNER: 'Designer',

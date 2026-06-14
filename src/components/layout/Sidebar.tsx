@@ -11,6 +11,7 @@ import Divider from '@mui/material/Divider';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import ChatIcon from '@mui/icons-material/Chat';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
@@ -29,6 +30,7 @@ export const SIDEBAR_WIDTH = 240;
 export const SIDEBAR_COLLAPSED_WIDTH = 64;
 
 const navItems = [
+  { label: 'Dashboard', path: '/dashboard', icon: DashboardIcon },
   { label: 'Chat', path: '/chat', icon: ChatIcon },
   { label: 'Sparks', path: '/sparks', icon: AutoAwesomeIcon },
   { label: 'Pipelines', path: '/pipelines', icon: AccountTreeIcon },

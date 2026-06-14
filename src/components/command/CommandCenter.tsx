@@ -9,19 +9,14 @@ import { selectVoiceBackend } from '../../voice/selectVoiceBackend';
 import { VOICE_CID_KEY } from '../../voice/createLiveVoiceBackend';
 import { useAuthStore } from '../../stores/auth-store';
 import type { CheckpointDecision } from '../../voice/protocol';
+import HudPanel from '../hud/HudPanel';
+import { ACCENT, VIOLET, MAGENTA, CYAN, DISP, MONO } from '../../theme/hud';
 
 /* Jarvis command center — a glassy holographic HUD on near-black, the voice
    sphere as the hero. Violet (#6C63FF) is the brand HUD accent throughout;
    cyan (#03DAC6) is demoted to a sparing secondary highlight (the arbiter-link
    indicator). The existing chat + Sparks/PDLC views drop into the framed
-   panels. */
-
-const ACCENT = '#6C63FF'; // brand violet — primary HUD accent everywhere
-const VIOLET = '#6C63FF'; // alias kept for existing call sites
-const MAGENTA = '#B25CFF'; // 'thinking' shift — brighter violet→magenta (mirrors the orb)
-const CYAN = '#03DAC6'; // secondary — sparing contrast highlight only
-const DISP = '"Chakra Petch", "Inter", sans-serif';
-const MONO = '"JetBrains Mono", ui-monospace, monospace';
+   panels. HUD tokens + HudPanel now live in src/theme/hud.ts + src/components/hud. */
 
 const STATE_COPY: Record<string, { label: string; hint: string }> = {
   idle: { label: 'READY', hint: 'Hold to speak' },
@@ -58,126 +53,6 @@ function usePersistentPanel(key: string): [boolean, () => void, (next: boolean) 
   const toggle = useCallback(() => setOpen(!open), [open, setOpen]);
 
   return [open, toggle, setOpen];
-}
-
-/** Glassy HUD panel with corner brackets. Optionally renders a collapse control
- *  in the header — the chevron points "outward" (toward the screen edge) so the
- *  collapse direction reads at a glance. */
-function HudPanel({
-  title,
-  tag,
-  children,
-  sx,
-  side,
-  onCollapse,
-}: {
-  title: string;
-  tag?: string;
-  children: React.ReactNode;
-  sx?: object;
-  side?: 'left' | 'right';
-  onCollapse?: () => void;
-}) {
-  return (
-    <Box
-      sx={{
-        position: 'relative',
-        background: 'linear-gradient(180deg, rgba(20,26,30,0.72), rgba(12,16,20,0.72))',
-        backdropFilter: 'blur(14px)',
-        border: '1px solid rgba(108,99,255,0.18)',
-        borderRadius: 2,
-        boxShadow: 'inset 0 0 40px rgba(108,99,255,0.04), 0 8px 40px rgba(0,0,0,0.5)',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        ...sx,
-      }}
-    >
-      {/* corner brackets */}
-      {[
-        { top: 6, left: 6, b: 'borderTop borderLeft' },
-        { top: 6, right: 6, b: 'borderTop borderRight' },
-        { bottom: 6, left: 6, b: 'borderBottom borderLeft' },
-        { bottom: 6, right: 6, b: 'borderBottom borderRight' },
-      ].map((c, i) => (
-        <Box
-          key={i}
-          sx={{
-            position: 'absolute',
-            width: 14,
-            height: 14,
-            borderColor: 'rgba(108,99,255,0.55)',
-            borderStyle: 'solid',
-            borderWidth: 0,
-            ...(c.b.includes('borderTop') && { borderTopWidth: 1.5 }),
-            ...(c.b.includes('borderBottom') && { borderBottomWidth: 1.5 }),
-            ...(c.b.includes('borderLeft') && { borderLeftWidth: 1.5 }),
-            ...(c.b.includes('borderRight') && { borderRightWidth: 1.5 }),
-            top: c.top,
-            bottom: c.bottom,
-            left: c.left,
-            right: c.right,
-          }}
-        />
-      ))}
-      <Stack
-        direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        spacing={1}
-        sx={{ px: 2, py: 1.1, borderBottom: '1px solid rgba(108,99,255,0.12)' }}
-      >
-        <Typography sx={{ fontFamily: DISP, fontSize: 12, letterSpacing: 3, color: ACCENT, fontWeight: 600, flex: 1, minWidth: 0 }}>
-          {title}
-        </Typography>
-        {tag && (
-          <Typography sx={{ fontFamily: MONO, fontSize: 10, letterSpacing: 1, color: 'rgba(255,255,255,0.4)', flexShrink: 0 }}>
-            {tag}
-          </Typography>
-        )}
-        {onCollapse && (
-          <Box
-            role="button"
-            tabIndex={0}
-            aria-label={`Collapse ${title} panel`}
-            aria-expanded={true}
-            onClick={onCollapse}
-            onKeyDown={(e: React.KeyboardEvent) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onCollapse();
-              }
-            }}
-            sx={{
-              flexShrink: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              userSelect: 'none',
-              width: 24,
-              height: 24,
-              borderRadius: 1,
-              border: '1px solid rgba(108,99,255,0.32)',
-              color: 'rgba(108,99,255,0.85)',
-              background: 'rgba(108,99,255,0.05)',
-              transition: 'all .15s',
-              '&:hover': { background: 'rgba(108,99,255,0.16)', color: ACCENT, borderColor: ACCENT },
-              outline: 'none',
-              '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
-            }}
-          >
-            {side === 'right' ? (
-              <ChevronRightIcon sx={{ fontSize: 18 }} />
-            ) : (
-              <ChevronLeftIcon sx={{ fontSize: 18 }} />
-            )}
-          </Box>
-        )}
-      </Stack>
-      <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2 }}>{children}</Box>
-    </Box>
-  );
 }
 
 /** Slim, always-visible re-open affordance shown in place of a collapsed panel.

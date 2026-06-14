@@ -12,7 +12,7 @@ interface ActiveRolePanelProps {
 }
 
 const ROLE_NAMES: Record<PdlcRole, string> = {
-  PM: 'Product Manager',
+  PO: 'Product Owner',
   RESEARCHER: 'Researcher',
   ARCHITECT: 'Architect',
   DESIGNER: 'Designer',
