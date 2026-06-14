@@ -459,6 +459,7 @@ export interface PipelineRunSummary {
   totalCostUsd: number;
   activatedRoles: PdlcRole[];
   currentRole: PdlcRole | null;
+  currentCheckpointId: string | null;
   roleResults: Record<string, RoleResultSummary>;
   skippedRoles: string[];
   prNumber: number | null;
