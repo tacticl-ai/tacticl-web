@@ -473,10 +473,9 @@ function ActiveOperation() {
 
 /** Compact HUD nav — keeps the rest of the app reachable from the full-bleed HUD. */
 const NAV_LINKS: { label: string; to: string }[] = [
-  { label: 'SPARKS', to: '/sparks' },
-  { label: 'PIPELINES', to: '/pipelines' },
-  { label: 'LINKS', to: '/connections' },
-  { label: 'CONFIG', to: '/settings' },
+  { label: 'DASHBOARD', to: '/dashboard' },
+  { label: 'LINKS', to: '/links' },
+  { label: 'SETTINGS', to: '/settings' },
 ];
 
 function HudNav() {

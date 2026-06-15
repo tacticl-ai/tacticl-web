@@ -3,26 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import theme from './theme';
-import AppLayout from './components/layout/AppLayout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
-import SparkListPage from './pages/SparkListPage';
 import DashboardPage from './pages/DashboardPage';
-import PipelineListPage from './pages/PipelineListPage';
 import SparkDetailPage from './pages/SparkDetailPage';
-import DeviceListPage from './pages/DeviceListPage';
-import DeviceDetailPage from './pages/DeviceDetailPage';
-import RepoListPage from './pages/RepoListPage';
-import TokenListPage from './pages/TokenListPage';
-import TemplateListPage from './pages/TemplateListPage';
+import LinksPage from './pages/LinksPage';
+import SettingsHubPage from './pages/SettingsHubPage';
 import TelegramLinkPage from './pages/TelegramLinkPage';
-import ConnectionsOverviewPage from './pages/connections/ConnectionsOverviewPage';
-import SocialConnectionsPage from './pages/connections/SocialConnectionsPage';
-import MediaConnectionsPage from './pages/connections/MediaConnectionsPage';
-import DeveloperConnectionsPage from './pages/connections/DeveloperConnectionsPage';
-import ProductivityConnectionsPage from './pages/connections/ProductivityConnectionsPage';
-import SettingsPage from './pages/SettingsPage';
 import CommandCenter from './components/command/CommandCenter';
 import ErrorBoundary from './components/auth/ErrorBoundary';
 import { useWebSocket } from './hooks/useWebSocket';
@@ -60,39 +48,27 @@ function AppInner() {
         <Route path="/" element={<LandingOrDashboard />} />
         <Route path="/pricing" element={<PricingPage />} />
 
-        {/* Command center — full-bleed immersive HUD, no AppLayout chrome. Auth-gated.
-            This is now the primary chat surface; the old /chat redirects here. */}
+        {/* ── The four consolidated full-bleed HUD surfaces (no AppLayout chrome) ── */}
         <Route path="/command" element={<ProtectedRoute><CommandCenter /></ProtectedRoute>} />
-        <Route path="/chat" element={<Navigate to="/command" replace />} />
-
-        {/* Dashboard — full-bleed "DEVELOPMENT PIPELINE" HUD, no AppLayout chrome.
-            Primary landing surface; shares the COMMAND/DASHBOARD/LINKS/CONFIG nav. */}
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/links" element={<ProtectedRoute><LinksPage /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><SettingsHubPage /></ProtectedRoute>} />
 
-        {/* Protected */}
-        <Route
-          element={
-            <ProtectedRoute>
-              <AppLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/sparks" element={<SparkListPage />} />
-          <Route path="/sparks/:id" element={<SparkDetailPage />} />
-          <Route path="/pipelines" element={<PipelineListPage />} />
-          <Route path="/devices" element={<DeviceListPage />} />
-          <Route path="/devices/:id" element={<DeviceDetailPage />} />
-          <Route path="/repos" element={<RepoListPage />} />
-          <Route path="/tokens" element={<TokenListPage />} />
-          <Route path="/templates" element={<TemplateListPage />} />
-          <Route path="/connections" element={<ConnectionsOverviewPage />} />
-          <Route path="/connections/social" element={<SocialConnectionsPage />} />
-          <Route path="/connections/media" element={<MediaConnectionsPage />} />
-          <Route path="/connections/developer" element={<DeveloperConnectionsPage />} />
-          <Route path="/connections/productivity" element={<ProductivityConnectionsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/telegram/link" element={<TelegramLinkPage />} />
-        </Route>
+        {/* Pipeline detail drill-in (from Dashboard rows) + telegram link — standalone, auth-gated. */}
+        <Route path="/sparks/:id" element={<ProtectedRoute><SparkDetailPage /></ProtectedRoute>} />
+        <Route path="/telegram/link" element={<ProtectedRoute><TelegramLinkPage /></ProtectedRoute>} />
+
+        {/* Retired legacy routes → redirect into the consolidated surfaces. */}
+        <Route path="/chat" element={<Navigate to="/command" replace />} />
+        <Route path="/sparks" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/pipelines" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/connections/*" element={<Navigate to="/links" replace />} />
+        <Route path="/connections" element={<Navigate to="/links" replace />} />
+        <Route path="/devices/*" element={<Navigate to="/settings" replace />} />
+        <Route path="/devices" element={<Navigate to="/settings" replace />} />
+        <Route path="/repos" element={<Navigate to="/settings" replace />} />
+        <Route path="/tokens" element={<Navigate to="/settings" replace />} />
+        <Route path="/templates" element={<Navigate to="/settings" replace />} />
 
         {/* 404 catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />

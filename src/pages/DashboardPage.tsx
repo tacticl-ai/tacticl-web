@@ -122,8 +122,8 @@ export default function DashboardPage() {
             <div className="nav">
               <a className="chip" onClick={() => navigate('/command')}>COMMAND</a>
               <a className="chip active">DASHBOARD</a>
-              <a className="chip" onClick={() => navigate('/connections')}>LINKS</a>
-              <a className="chip" onClick={() => navigate('/settings')}>CONFIG</a>
+              <a className="chip" onClick={() => navigate('/links')}>LINKS</a>
+              <a className="chip" onClick={() => navigate('/settings')}>SETTINGS</a>
             </div>
           </div>
         </div>
