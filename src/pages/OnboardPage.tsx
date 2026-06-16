@@ -119,8 +119,10 @@ export default function OnboardPage() {
   // ── submit ─────────────────────────────────────────────────────────────────
   const submit = () => {
     const repoSpecs: RepoSpec[] = repos.filter(repoRowValid).map((r) =>
+      // Backend RepoSpecDto uses primitive booleans (create/isPrivate) — always send them
+      // so the connect-existing path doesn't fail JSON binding.
       r.mode === 'connect'
-        ? { url: r.url.trim() }
+        ? { url: r.url.trim(), create: false, owner: '', repoName: '', isPrivate: false }
         : { create: true, owner: DEFAULT_OWNER, repoName: r.repoName.trim(), isPrivate: r.isPrivate },
     );
     const channelSpecs: ChannelSpec[] = channels.filter(channelRowValid).map((c) => ({
