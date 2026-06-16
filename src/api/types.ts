@@ -555,3 +555,41 @@ export interface UserProfileResponse {
   email: string;
   avatarUrl: string | null;
 }
+
+// ─── Product (onboarding) ────────────────────────────────
+
+export type ProductChannelType = 'DISCORD' | 'TELEGRAM' | 'WEB' | 'VOICE';
+
+export interface ProductChannel {
+  channelType: ProductChannelType;
+  externalKey: string;
+  label: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  repos: string[];
+  channels: ProductChannel[];
+  createdAt: string;
+}
+
+export interface RepoSpec {
+  url?: string;
+  create?: boolean;
+  owner?: string;
+  repoName?: string;
+  isPrivate?: boolean;
+}
+
+export interface ChannelSpec {
+  channelType: string;
+  externalKey: string;
+  label: string;
+}
+
+export interface RegisterProductRequest {
+  name: string;
+  repos: RepoSpec[];
+  channels: ChannelSpec[];
+}

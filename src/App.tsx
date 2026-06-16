@@ -10,20 +10,39 @@ import DashboardPage from './pages/DashboardPage';
 import SparkDetailPage from './pages/SparkDetailPage';
 import LinksPage from './pages/LinksPage';
 import SettingsHubPage from './pages/SettingsHubPage';
+import OnboardPage from './pages/OnboardPage';
 import TelegramLinkPage from './pages/TelegramLinkPage';
 import CommandCenter from './components/command/CommandCenter';
 import ErrorBoundary from './components/auth/ErrorBoundary';
 import { useWebSocket } from './hooks/useWebSocket';
+import { useProducts } from './hooks/useProducts';
 import { useAuthStore } from './stores/auth-store';
 
-/** Show landing page for unauthenticated visitors, land authenticated users in the command center */
+/**
+ * Root surface. Unauthenticated → landing page. Authenticated → first-run guard:
+ * brand-new accounts with zero products are sent to /onboard, everyone else lands
+ * in the dashboard.
+ */
 function LandingOrDashboard() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
 
   if (isLoading) return null;
-  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  if (isAuthenticated) return <FirstRunGuard />;
   return <LandingPage />;
+}
+
+/** Authenticated landing: empty product list → onboarding, otherwise the dashboard. */
+function FirstRunGuard() {
+  const { data: products, isLoading, isError } = useProducts();
+
+  // While we don't yet know whether the user has products, render nothing (brief).
+  if (isLoading) return null;
+  // On error, fail open into the dashboard rather than trapping the user in onboarding.
+  if (!isError && products && products.length === 0) {
+    return <Navigate to="/onboard" replace />;
+  }
+  return <Navigate to="/dashboard" replace />;
 }
 
 const queryClient = new QueryClient({
@@ -53,6 +72,9 @@ function AppInner() {
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
         <Route path="/links" element={<ProtectedRoute><LinksPage /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsHubPage /></ProtectedRoute>} />
+
+        {/* First-run product onboarding wizard — full-bleed, sibling of /dashboard. */}
+        <Route path="/onboard" element={<ProtectedRoute><OnboardPage /></ProtectedRoute>} />
 
         {/* Pipeline detail drill-in (from Dashboard rows) + telegram link — standalone, auth-gated. */}
         <Route path="/sparks/:id" element={<ProtectedRoute><SparkDetailPage /></ProtectedRoute>} />
