@@ -363,41 +363,69 @@ export default function VoiceSphere({ state, level, size = 360 }: VoiceSpherePro
       coreR: number,
       energy: number
     ) => {
+      const TWO_PI = Math.PI * 2;
       g.save();
       g.translate(cx, cy);
-      // body gradient: hot center → violet body → faint rim
-      const grad = g.createRadialGradient(-coreR * 0.25, -coreR * 0.25, coreR * 0.05, 0, 0, coreR);
-      grad.addColorStop(0, rgba(mix(accent, WHITE, 0.7), 0.98));
-      grad.addColorStop(0.35, rgba(mix(accent, WHITE, 0.2), 0.92));
-      grad.addColorStop(0.72, rgba(accent, 0.78));
-      grad.addColorStop(1, rgba(accent, 0.05));
       g.globalCompositeOperation = 'lighter';
-      g.fillStyle = grad;
-      g.beginPath();
-      g.arc(0, 0, coreR, 0, Math.PI * 2);
-      g.fill();
-      // turbulence blobs
-      for (let i = 0; i < 5; i++) {
-        const a = t * (0.3 + i * 0.13) + (i * Math.PI * 2) / 5;
-        const rr = coreR * (0.18 + 0.12 * i);
-        const bx = Math.cos(a) * coreR * 0.32;
-        const by = Math.sin(a * 1.3) * coreR * 0.32;
-        const bg = g.createRadialGradient(bx, by, 0, bx, by, rr);
-        bg.addColorStop(0, rgba(mix(accent, MAGENTA, 0.4), 0.22 + energy * 0.2));
-        bg.addColorStop(1, rgba(accent, 0));
-        g.fillStyle = bg;
-        g.beginPath();
-        g.arc(bx, by, rr, 0, Math.PI * 2);
-        g.fill();
-      }
-      // outer bloom
-      const bloom = g.createRadialGradient(0, 0, coreR * 0.7, 0, 0, coreR * 2.2);
-      bloom.addColorStop(0, rgba(accent, 0.22 + energy * 0.2));
+
+      // outer atmosphere bloom (behind the body) — violet → magenta falloff
+      const bloom = g.createRadialGradient(0, 0, coreR * 0.55, 0, 0, coreR * 2.5);
+      bloom.addColorStop(0, rgba(accent, 0.3 + energy * 0.28));
+      bloom.addColorStop(0.5, rgba(mix(accent, MAGENTA, 0.5), 0.12 + energy * 0.14));
       bloom.addColorStop(1, rgba(accent, 0));
       g.fillStyle = bloom;
       g.beginPath();
-      g.arc(0, 0, coreR * 2.2, 0, Math.PI * 2);
+      g.arc(0, 0, coreR * 2.5, 0, TWO_PI);
       g.fill();
+
+      // body: hot near-white heart → violet body → IRIDESCENT magenta → sparing cyan rim
+      const grad = g.createRadialGradient(-coreR * 0.28, -coreR * 0.3, coreR * 0.04, 0, 0, coreR);
+      grad.addColorStop(0, rgba(mix(WHITE, accent, 0.12), 1.0));
+      grad.addColorStop(0.26, rgba(mix(accent, WHITE, 0.38), 0.96));
+      grad.addColorStop(0.58, rgba(accent, 0.92));
+      grad.addColorStop(0.82, rgba(mix(accent, MAGENTA, 0.55), 0.72));
+      grad.addColorStop(0.95, rgba(mix(MAGENTA, CYAN, 0.4), 0.4));
+      grad.addColorStop(1, rgba(accent, 0));
+      g.fillStyle = grad;
+      g.beginPath();
+      g.arc(0, 0, coreR, 0, TWO_PI);
+      g.fill();
+
+      // colorful drifting turbulence (alternating magenta / sparing cyan)
+      for (let i = 0; i < 6; i++) {
+        const a = t * (0.3 + i * 0.11) + (i * TWO_PI) / 6;
+        const rr = coreR * (0.2 + 0.1 * i);
+        const bx = Math.cos(a) * coreR * 0.34;
+        const by = Math.sin(a * 1.3) * coreR * 0.3;
+        const bc = i % 2 ? mix(accent, MAGENTA, 0.6) : mix(accent, CYAN, 0.3);
+        const bg = g.createRadialGradient(bx, by, 0, bx, by, rr);
+        bg.addColorStop(0, rgba(bc, 0.26 + energy * 0.22));
+        bg.addColorStop(1, rgba(bc, 0));
+        g.fillStyle = bg;
+        g.beginPath();
+        g.arc(bx, by, rr, 0, TWO_PI);
+        g.fill();
+      }
+
+      // crisp off-center specular glint → glossy 3D-sphere read
+      const sx = -coreR * 0.34;
+      const sy = -coreR * 0.38;
+      const spec = g.createRadialGradient(sx, sy, 0, sx, sy, coreR * 0.36);
+      spec.addColorStop(0, rgba(WHITE, 0.85));
+      spec.addColorStop(0.5, rgba(WHITE, 0.16));
+      spec.addColorStop(1, rgba(WHITE, 0));
+      g.fillStyle = spec;
+      g.beginPath();
+      g.arc(sx, sy, coreR * 0.36, 0, TWO_PI);
+      g.fill();
+
+      // bright iridescent rim ring
+      g.lineWidth = Math.max(1.5, coreR * 0.025);
+      g.strokeStyle = rgba(mix(accent, CYAN, 0.3), 0.4 + energy * 0.3);
+      g.beginPath();
+      g.arc(0, 0, coreR * 0.99, 0, TWO_PI);
+      g.stroke();
+
       g.restore();
     };
 
