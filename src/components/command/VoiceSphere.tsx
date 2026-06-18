@@ -174,36 +174,53 @@ void main(){
   // audio ripple riding the surface
   turb += sin((r*22.0) - uTime*6.0) * 0.06 * (uActive + uEmit);
 
-  // depth ramp: hot near-white center → violet body → magenta-tinted mid
   float depth = clamp(nrm.z, 0.0, 1.0);
-  float hotMask = smoothstep(0.55, 1.0, depth) * (0.55 + uLevel*0.7);
-  vec3 body = mix(uViolet, uMagenta, clamp(uTurb*0.85 + turb*0.25, 0.0, 1.0));
-  vec3 col  = mix(body*0.55, body, turb);
-  col = mix(col, uHot, hotMask*hotMask);            // bright pulsing heart
-  col += uViolet * pow(turb, 3.0) * 0.6;            // plasma filament glow
 
-  // fresnel rim — violet body rim with a thin sparing cyan kiss at the limb
-  vec3 rimCol = mix(uViolet, uCyan, smoothstep(0.78, 1.0, fres) * 0.5);
-  col += rimCol * fres * (1.1 + uActive*0.5 + uEmit*0.5);
+  // ── iridescent body — an oil-slick / holographic sheen that shifts violet →
+  //    magenta → (sparing) cyan across depth, surface angle and slow time. This
+  //    is what reads as "modern": the sphere is never one flat purple. ──
+  float ang  = atan(uv.y, uv.x);
+  float irid = 0.5 + 0.5*sin(depth*3.4 + turb*2.2 + uTime*0.5 + ang*0.6);
+  vec3 sheen = mix(uViolet, uMagenta, smoothstep(0.15, 0.85, irid));
+  sheen = mix(sheen, uCyan, smoothstep(0.72, 1.0, irid) * 0.4);   // sparing cyan kiss
+  vec3 body  = mix(uViolet, sheen, 0.62 + turb*0.30);
+  body = mix(body, uMagenta, uTurb*0.6);                          // 'thinking' shift
 
-  // chromatic split for depth (cheap fake refraction at the rim)
-  float ca = fres * 0.12;
-  col.r += ca * 0.6;
-  col.b -= ca * 0.3;
+  // turbulent plasma luminance — punchier contrast than before
+  vec3 col = body * (0.30 + turb*1.05);
+  col += uViolet * pow(turb, 3.0) * 0.75;                         // glowing filaments
+
+  // hot pulsing heart — crisp + bright (not a muddy smear)
+  float hotMask = pow(smoothstep(0.42, 1.0, depth), 1.7) * (0.72 + uLevel*0.95);
+  col = mix(col, uHot, hotMask);
+
+  // moving specular glint → glossy 3D-sphere read (the big "cool" upgrade)
+  vec3  L = normalize(vec3(0.42, 0.58, 0.85));
+  float spec = pow(max(dot(nrm, L), 0.0), 24.0);
+  col += vec3(1.0) * spec * (0.55 + uActive*0.45);
+  float specWide = pow(max(dot(nrm, L), 0.0), 4.0) * 0.18;        // soft sheen
+  col += mix(uViolet, vec3(1.0), 0.6) * specWide;
+
+  // bright iridescent fresnel rim
+  vec3 rimCol = mix(uViolet, mix(uMagenta, uCyan, 0.35), smoothstep(0.55, 1.0, fres));
+  col += rimCol * fres * (1.35 + uActive*0.6 + uEmit*0.6);
+
+  // chromatic split at the limb (fake refraction)
+  float ca = fres * 0.16;
+  col.r += ca * 0.7;
+  col.b += ca * 0.25;
 
   col *= edge;
 
-  // outer additive bloom/atmosphere beyond the body
-  float halo = exp(-pow(max(r-coreR,0.0)*4.2, 1.6));
-  vec3 haloCol = mix(uViolet, uMagenta, uTurb*0.6);
-  col += haloCol * halo * (0.32 + uLevel*0.5 + uActive*0.18);
+  // punchy outer bloom / atmosphere
+  float halo = exp(-pow(max(r-coreR, 0.0)*3.6, 1.5));
+  vec3 haloCol = mix(uViolet, uMagenta, uTurb*0.6 + 0.18);
+  col += haloCol * halo * (0.42 + uLevel*0.65 + uActive*0.28);
+  col += uViolet * uEmit * halo * 0.75;                           // speaking flash
 
-  // speaking emission flash riding outward
-  col += uViolet * uEmit * halo * 0.6;
-
-  // gentle filmic tone + alpha from total energy
-  col = col / (col + 0.55);
-  float alpha = clamp(edge + halo*0.9, 0.0, 1.0);
+  // saturation-preserving ACES-ish tonemap — kills the old muddy desaturation
+  col = (col*(2.51*col+0.03))/(col*(2.43*col+0.59)+0.14);
+  float alpha = clamp(edge + halo*0.95, 0.0, 1.0);
   gl_FragColor = vec4(col, alpha);
 }
 `;
@@ -403,7 +420,7 @@ export default function VoiceSphere({ state, level, size = 360 }: VoiceSpherePro
       // breathing baseline keeps idle alive
       const breathe = 1 + Math.sin(t * 1.5) * 0.035;
       // overall visible "energy" for HUD intensity
-      const energy = thinking ? 0.5 + 0.15 * Math.sin(t * 3) : st === 'idle' ? 0.2 + 0.05 * Math.sin(t * 1.5) : 0.4 + smooth * 0.6;
+      const energy = thinking ? 0.55 + 0.15 * Math.sin(t * 3) : st === 'idle' ? 0.34 + 0.08 * Math.sin(t * 1.4) : 0.45 + smooth * 0.6;
 
       // ── palette per state (violet dominant; magenta on thinking) ──
       const accent = mix(VIOLET, MAGENTA, turbE * (0.55 + 0.15 * Math.sin(t * 3)));
@@ -418,7 +435,7 @@ export default function VoiceSphere({ state, level, size = 360 }: VoiceSpherePro
         const u = glState.uniforms;
         gl.uniform2f(u.uRes, px, px);
         gl.uniform1f(u.uTime, t);
-        gl.uniform1f(u.uLevel, smooth * (active ? 1 : 0.5) + (st === 'idle' ? 0.04 : 0));
+        gl.uniform1f(u.uLevel, smooth * (active ? 1 : 0.55) + (st === 'idle' ? 0.17 + 0.06 * Math.sin(t * 1.4) : 0.04));
         gl.uniform1f(u.uTurb, turbE);
         gl.uniform1f(u.uActive, activeE);
         gl.uniform1f(u.uEmit, emitE);
