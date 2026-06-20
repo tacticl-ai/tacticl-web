@@ -7,6 +7,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePipelines } from '../hooks/usePipelines';
+import HudTopbar from '../components/hud/HudTopbar';
 import type { PipelineRunSummary, PdlcRole, PipelineStatus } from '../api/types';
 
 // ── Role sequences per playbook (the full pipeline so not-yet-run roles show as todo).
@@ -114,20 +115,9 @@ export default function DashboardPage() {
       <div className="grid-bg" />
       <div className="scan" />
 
-      <div className="stage">
-        <div className="top">
-          <div className="brand"><span className="beacon" />TACTICL <span className="sep">//</span> DASHBOARD</div>
-          <div className="topright">
-            <span className="muted">PRODUCT · TACTICL</span>
-            <div className="nav">
-              <a className="chip" onClick={() => navigate('/command')}>COMMAND</a>
-              <a className="chip active">DASHBOARD</a>
-              <a className="chip" onClick={() => navigate('/links')}>LINKS</a>
-              <a className="chip" onClick={() => navigate('/settings')}>SETTINGS</a>
-            </div>
-          </div>
-        </div>
+      <HudTopbar active="dashboard" />
 
+      <div className="stage">
         <div className="head">
           <div>
             <h1 className="h1">DEVELOPMENT <span className="b">PIPELINE</span></h1>
@@ -231,18 +221,8 @@ const CSS = `
   background:linear-gradient(rgba(108,99,255,.07),transparent);animation:dscan 8s linear infinite;}
 @keyframes dscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
 .dash-root .stage{position:relative;z-index:2}
-.dash-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
-.dash-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
-.dash-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
-.dash-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:dhalo 2.2s ease-out infinite}
+/* node-strip halo (also reused by .n-cur/.n-block below) */
 @keyframes dhalo{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
-.dash-root .sep{color:var(--accent)}
-.dash-root .topright{display:flex;align-items:center;gap:18px}
-.dash-root .muted{color:rgba(238,240,246,.42);font-size:11px}
-.dash-root .nav{display:flex;gap:7px}
-.dash-root .chip{padding:6px 13px;border-radius:999px;border:1px solid rgba(108,99,255,.3);font-family:var(--disp);font-size:10.5px;letter-spacing:2px;color:rgba(170,165,255,.9);background:rgba(108,99,255,.05);cursor:pointer;transition:.18s}
-.dash-root .chip:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.16)}
-.dash-root .chip.active{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2);box-shadow:0 0 18px rgba(108,99,255,.25)}
 .dash-root .head{padding:14px 34px 2px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px}
 .dash-root .h1{font-family:var(--disp);font-size:30px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
 .dash-root .h1 .b{background:linear-gradient(90deg,var(--accent),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}

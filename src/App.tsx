@@ -8,7 +8,6 @@ import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
 import DashboardPage from './pages/DashboardPage';
 import SparkDetailPage from './pages/SparkDetailPage';
-import LinksPage from './pages/LinksPage';
 import SettingsHubPage from './pages/SettingsHubPage';
 import OnboardPage from './pages/OnboardPage';
 import TelegramLinkPage from './pages/TelegramLinkPage';
@@ -70,7 +69,7 @@ function AppInner() {
         {/* ── The four consolidated full-bleed HUD surfaces (no AppLayout chrome) ── */}
         <Route path="/command" element={<ProtectedRoute><CommandCenter /></ProtectedRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-        <Route path="/links" element={<ProtectedRoute><LinksPage /></ProtectedRoute>} />
+        <Route path="/links" element={<Navigate to="/settings" replace />} />
         <Route path="/settings" element={<ProtectedRoute><SettingsHubPage /></ProtectedRoute>} />
 
         {/* First-run product onboarding wizard — full-bleed, sibling of /dashboard. */}

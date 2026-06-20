@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateProduct } from '../hooks/useProducts';
+import HudTopbar from '../components/hud/HudTopbar';
 import type { ChannelSpec, RegisterProductRequest, RepoSpec } from '../api/types';
 
 // ── Step model ─────────────────────────────────────────────────────────────────
@@ -143,15 +144,10 @@ export default function OnboardPage() {
       <div className="grid-bg" />
       <div className="scan" />
 
-      <div className="stage">
-        {/* ── top bar (shared HUD chrome) ─────────────────────────────────── */}
-        <div className="top">
-          <div className="brand"><span className="beacon" />TACTICL <span className="sep">//</span> ONBOARD</div>
-          <div className="topright">
-            <span className="muted">FIRST RUN · PRODUCT SETUP</span>
-          </div>
-        </div>
+      {/* ── top bar (shared HUD chrome) ─────────────────────────────────── */}
+      <HudTopbar />
 
+      <div className="stage">
         {/* ── head ────────────────────────────────────────────────────────── */}
         <div className="head">
           <div>
@@ -507,14 +503,8 @@ const CSS = `
   background:linear-gradient(rgba(108,99,255,.07),transparent);animation:oscan 8s linear infinite;}
 @keyframes oscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
 .onb-root .stage{position:relative;z-index:2}
-.onb-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
-.onb-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
-.onb-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
-.onb-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:ohalo 2.2s ease-out infinite}
+/* not-connected beacon halo (reused by .ncbeacon::after below) */
 @keyframes ohalo{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
-.onb-root .sep{color:var(--accent)}
-.onb-root .topright{display:flex;align-items:center;gap:18px}
-.onb-root .muted{color:rgba(238,240,246,.42);font-size:11px;letter-spacing:1px}
 .onb-root .head{padding:14px 34px 2px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px}
 .onb-root .h1{font-family:var(--disp);font-size:30px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
 .onb-root .h1 .b{background:linear-gradient(90deg,var(--accent),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}

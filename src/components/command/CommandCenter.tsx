@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import VoiceSphere from './VoiceSphere';
 import { useVoice } from '../../voice/useVoice';
 import { selectVoiceBackend } from '../../voice/selectVoiceBackend';
 import { VOICE_CID_KEY } from '../../voice/createLiveVoiceBackend';
-import { useAuthStore } from '../../stores/auth-store';
 import type { CheckpointDecision } from '../../voice/protocol';
 import HudPanel from '../hud/HudPanel';
+import HudTopbar from '../hud/HudTopbar';
 import { ACCENT, VIOLET, MAGENTA, CYAN, DISP, MONO } from '../../theme/hud';
 
 /* Jarvis command center — a glassy holographic HUD on near-black, the voice
@@ -471,75 +470,6 @@ function ActiveOperation() {
   );
 }
 
-/** Compact HUD nav — keeps the rest of the app reachable from the full-bleed HUD. */
-const NAV_LINKS: { label: string; to: string }[] = [
-  { label: 'DASHBOARD', to: '/dashboard' },
-  { label: 'LINKS', to: '/links' },
-  { label: 'SETTINGS', to: '/settings' },
-];
-
-function HudNav() {
-  const navigate = useNavigate();
-  const clearAuth = useAuthStore((s) => s.clearAuth);
-
-  const signOut = () => {
-    clearAuth();
-    navigate('/', { replace: true });
-  };
-
-  const chipSx = {
-    cursor: 'pointer',
-    userSelect: 'none' as const,
-    textDecoration: 'none',
-    px: 1.4,
-    py: 0.55,
-    borderRadius: 999,
-    border: '1px solid rgba(108,99,255,0.32)',
-    fontFamily: DISP,
-    fontSize: 10.5,
-    letterSpacing: 2,
-    color: 'rgba(108,99,255,0.85)',
-    background: 'rgba(108,99,255,0.04)',
-    transition: 'all .15s',
-    lineHeight: 1.6,
-    '&:hover': { background: 'rgba(108,99,255,0.14)', color: ACCENT, borderColor: ACCENT },
-    outline: 'none',
-    '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
-  };
-
-  return (
-    <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-      {NAV_LINKS.map((l) => (
-        <Box key={l.to} component={RouterLink} to={l.to} sx={chipSx}>
-          {l.label}
-        </Box>
-      ))}
-      <Box
-        role="button"
-        tabIndex={0}
-        aria-label="Sign out"
-        onClick={signOut}
-        onKeyDown={(e: React.KeyboardEvent) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            signOut();
-          }
-        }}
-        sx={{
-          ...chipSx,
-          border: '1px solid rgba(255,107,107,0.4)',
-          color: 'rgba(255,107,107,0.85)',
-          background: 'rgba(255,107,107,0.05)',
-          '&:hover': { background: 'rgba(255,107,107,0.16)', color: '#FF6B6B', borderColor: '#FF6B6B' },
-          '&:focus-visible': { boxShadow: '0 0 0 2px #FF6B6B' },
-        }}
-      >
-        SIGN OUT
-      </Box>
-    </Stack>
-  );
-}
-
 /**
  * HUD command bar — typed input pinned at the bottom-center. Coexists with
  * push-to-talk: both routes push an operator turn and drive the same response.
@@ -663,7 +593,6 @@ function TextComposer() {
 export default function CommandCenter() {
   const state = useVoice((s) => s.state);
   const level = useVoice((s) => s.level);
-  const error = useVoice((s) => s.error);
   const setBackend = useVoice((s) => s.setBackend);
   const startListening = useVoice((s) => s.startListening);
   const stopListening = useVoice((s) => s.stopListening);
@@ -710,7 +639,6 @@ export default function CommandCenter() {
   }, [toggleLeft, toggleRight]);
 
   const copy = STATE_COPY[state];
-  const clock = useMemo(() => new Date().toLocaleTimeString('en-US', { hour12: false }), []);
 
   // The grid reflows on what's open: a collapsed side becomes a slim rail track,
   // an open side gets a full panel column. Both closed → orb owns the stage.
@@ -744,28 +672,7 @@ export default function CommandCenter() {
       <Box sx={{ position: 'absolute', left: 0, right: 0, height: 120, pointerEvents: 'none', background: 'linear-gradient(rgba(108,99,255,0.06), transparent)', animation: 'scan 7s linear infinite' }} />
 
       {/* top HUD bar */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 4, pt: 3, pb: 1, position: 'relative', zIndex: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1.5}>
-          <Box sx={{ width: 10, height: 10, borderRadius: '50%', bgcolor: ACCENT, boxShadow: `0 0 12px ${ACCENT}` }} />
-          <Typography sx={{ fontFamily: DISP, fontSize: 18, letterSpacing: 6, fontWeight: 600 }}>
-            TACTICL <Box component="span" sx={{ color: ACCENT }}>//</Box> COMMAND
-          </Typography>
-        </Stack>
-        <Stack direction="row" spacing={2.5} alignItems="center" flexWrap="wrap" useFlexGap justifyContent="flex-end">
-          <Stack direction="row" spacing={2.5} alignItems="center">
-            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)', display: { xs: 'none', md: 'block' } }}>PRODUCT · TACTICL</Typography>
-            {error ? (
-              <Typography sx={{ fontFamily: MONO, fontSize: 11, color: '#FF6B6B' }} role="alert">
-                ⚠ {error}
-              </Typography>
-            ) : (
-              <Typography sx={{ fontFamily: MONO, fontSize: 11, color: CYAN, display: { xs: 'none', sm: 'block' }, textShadow: `0 0 10px ${CYAN}55` }}>◈ ARBITER LINK ACTIVE</Typography>
-            )}
-            <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.45)', display: { xs: 'none', sm: 'block' } }}>{clock}</Typography>
-          </Stack>
-          <HudNav />
-        </Stack>
-      </Stack>
+      <HudTopbar active="command" />
 
       {/* body column: main grid grows, command bar pinned at the bottom */}
       <Box
