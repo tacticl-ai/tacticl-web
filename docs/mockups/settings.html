@@ -68,6 +68,12 @@ html,body{height:100%;background:#070a0c}
 .set-root .slabel{font-family:var(--disp);font-size:12px;letter-spacing:2.4px;font-weight:600}
 .set-root .shint{font-size:9.5px;letter-spacing:.4px;color:rgba(238,240,246,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .set-root .sitem.active .shint{color:rgba(189,184,255,.7)}
+.set-root .snav-div{height:1px;border-top:1px solid rgba(255,107,107,.16);margin:10px 4px 2px}
+.set-root .ssignout{display:flex;align-items:center;gap:11px;text-align:left;padding:13px 15px;border-radius:13px;cursor:pointer;
+  border:1px solid rgba(255,107,107,.28);background:rgba(255,107,107,.05);color:#ffb0b0;font-family:var(--mono);transition:.18s}
+.set-root .ssignout:hover{border-color:var(--red);background:rgba(255,107,107,.14);color:#fff}
+.set-root .ssignout .sopower{font-size:14px;line-height:1;flex-shrink:0;opacity:.85}
+.set-root .ssignout .solabel{font-family:var(--disp);font-size:12px;letter-spacing:2.4px;font-weight:600}
 
 /* ── panel ───────────────────────────────────────────────────────────────── */
 .set-root .pane{min-width:0;display:flex;flex-direction:column;gap:18px}
@@ -283,8 +289,8 @@ html,body{height:100%;background:#070a0c}
       </div>
       <div class="topright">
         <div class="nav">
-          <a class="chip" href="dashboard.html">DASHBOARD</a>
           <a class="chip primary" href="command.html"><span class="chip-orb"></span>COMMAND</a>
+          <a class="chip" href="dashboard.html">DASHBOARD</a>
           <a class="chip active" href="settings.html">SETTINGS</a>
         </div>
       </div>
@@ -342,6 +348,12 @@ html,body{height:100%;background:#070a0c}
             <span class="slabel">PLAN &amp; BILLING</span>
             <span class="shint">Tier · usage · invoices</span>
           </span>
+        </button>
+
+        <div class="snav-div"></div>
+        <button class="ssignout" type="button" onclick="location.href='index.html'">
+          <span class="sopower">⏻</span>
+          <span class="solabel">SIGN OUT</span>
         </button>
       </aside>
 
