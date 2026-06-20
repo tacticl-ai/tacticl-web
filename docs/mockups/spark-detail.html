@@ -206,6 +206,30 @@ body{background:#070a0c}
 .dash-root .eyebrow{padding:18px 34px 0;font-family:var(--disp);font-size:10px;letter-spacing:2.5px;color:rgba(238,240,246,.4);display:flex;align-items:center;gap:9px}
 .dash-root .eyebrow::before{content:"";width:7px;height:7px;background:var(--accent);box-shadow:0 0 10px var(--accent);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
 .dash-root .foot{text-align:center;color:rgba(238,240,246,.3);font-size:10px;letter-spacing:2px;margin:34px 0 8px;font-family:var(--disp)}
+
+/* ── product switcher — scopes the whole app to the active product; sits next to the brand mark ── */
+.dash-root .prodsw { position: relative; }
+.dash-root .prodsw-btn { display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(108,99,255,0.06);
+  border:1px solid rgba(108,99,255,0.22); border-radius:8px; padding:6px 11px; color:#E6E3F5;
+  font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; }
+.dash-root .prodsw-btn:hover { border-color:rgba(108,99,255,0.5); }
+.dash-root .prodsw-dot { width:7px; height:7px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#B25CFF);
+  box-shadow:0 0 8px rgba(108,99,255,0.7); flex:none; }
+.dash-root .prodsw-car { color:rgba(255,255,255,0.4); font-size:10px; }
+.dash-root .prodsw-menu { position:absolute; top:calc(100% + 8px); left:0; min-width:208px; z-index:60;
+  background:rgba(14,16,26,0.97); border:1px solid rgba(108,99,255,0.28); border-radius:10px; padding:8px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.6); display:none; backdrop-filter:blur(14px); }
+.dash-root .prodsw.open .prodsw-menu { display:block; }
+.dash-root .prodsw-eyebrow { font-family:'Chakra Petch',sans-serif; font-size:9px; letter-spacing:2px;
+  color:rgba(255,255,255,0.35); padding:4px 8px 8px; }
+.dash-root .prodsw-item { display:flex; align-items:center; gap:9px; padding:8px; border-radius:7px; cursor:pointer;
+  font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12.5px; color:rgba(255,255,255,0.72); }
+.dash-root .prodsw-item:hover { background:rgba(108,99,255,0.1); }
+.dash-root .prodsw-item.active { color:#fff; background:rgba(108,99,255,0.14); }
+.dash-root .prodsw-new { display:block; margin-top:6px; padding:8px; border-top:1px solid rgba(108,99,255,0.14);
+  color:#15E0C8; font-family:'Chakra Petch',sans-serif; font-size:11px; letter-spacing:1px;
+  text-decoration:none; cursor:pointer; }
+.dash-root .prodsw-new:hover { color:#5ff0e0; }
 </style>
 </head>
 <body>
@@ -215,8 +239,20 @@ body{background:#070a0c}
 
   <div class="stage">
     <!-- topbar — identical markup to dashboard.html / command.html -->
-    <div class="top">
+    <div class="top" style="flex-wrap:wrap;gap:12px">
       <a class="brand" href="index.html" style="text-decoration:none;color:inherit"><span class="beacon"></span>TACTICL <span class="sep">//</span> PIPELINE</a>
+      <div class="prodsw" id="prodsw">
+        <button class="prodsw-btn" type="button" onclick="document.getElementById('prodsw').classList.toggle('open')">
+          <span class="prodsw-dot"></span><span class="prodsw-name">Acme Corp</span><span class="prodsw-car">▾</span>
+        </button>
+        <div class="prodsw-menu">
+          <div class="prodsw-eyebrow">PRODUCT</div>
+          <div class="prodsw-item active"><span class="prodsw-dot"></span>Acme Corp</div>
+          <div class="prodsw-item"><span class="prodsw-dot"></span>Marketiz</div>
+          <div class="prodsw-item"><span class="prodsw-dot"></span>Internal Tools</div>
+          <a class="prodsw-new" href="onboard.html">+ New product</a>
+        </div>
+      </div>
       <div class="topright">
         <span class="muted">PRODUCT · TACTICL</span>
         <span class="link">◈ ARBITER LINK ACTIVE</span>

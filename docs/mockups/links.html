@@ -22,7 +22,8 @@ html,body{margin:0;padding:0;background:#070a0c}
   background:linear-gradient(rgba(108,99,255,.07),transparent);animation:lscan 8s linear infinite;}
 @keyframes lscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
 .links-root .stage{position:relative;z-index:2}
-.links-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
+.links-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px;flex-wrap:wrap;gap:14px}
+.links-root .topleft{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .links-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
 .links-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
 .links-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:lhalo 2.2s ease-out infinite}
@@ -95,6 +96,38 @@ html,body{margin:0;padding:0;background:#070a0c}
 .links-root .btn.con:hover:not(:disabled){background:rgba(108,99,255,.28);box-shadow:0 0 18px rgba(108,99,255,.3)}
 .links-root .btn.dis{color:#ffb0b0;border:1px solid rgba(255,107,107,.5);background:rgba(255,107,107,.08)}
 .links-root .btn.dis:hover:not(:disabled){border-color:var(--red);background:rgba(255,107,107,.16)}
+.links-root .repos{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(14px)}
+.links-root .repos-head{display:flex;align-items:center;gap:10px;padding:13px 18px;border-bottom:1px solid var(--line)}
+.links-root .repos-head .rlbl{font-family:var(--disp);font-size:11px;letter-spacing:2px;color:rgba(238,240,246,.7);text-transform:uppercase}
+.links-root .repos-head .rsrc{font-size:10px;color:rgba(238,240,246,.4)}
+.links-root .repos-head .rcount{margin-left:auto;font-family:var(--disp);font-size:10px;letter-spacing:1.4px;padding:4px 11px;border-radius:999px;border:1px solid var(--cyan);color:#8ff0e4;background:rgba(21,224,200,.1)}
+.links-root .repo{display:flex;align-items:center;gap:11px;padding:11px 18px;border-bottom:1px solid rgba(108,99,255,.07)}
+.links-root .repo:last-child{border-bottom:none}
+.links-root .repo .rico{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:rgba(21,224,200,.08);border:1px solid rgba(21,224,200,.25);color:#8ff0e4;font-size:12px;flex-shrink:0}
+.links-root .repo .rname{font-size:12.5px;color:#eef0f6}
+.links-root .repo .rmeta{margin-left:auto;font-size:10px;color:rgba(238,240,246,.4)}
+.prodsw { position: relative; }
+.prodsw-btn { display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(108,99,255,0.06);
+  border:1px solid rgba(108,99,255,0.22); border-radius:8px; padding:6px 11px; color:#E6E3F5;
+  font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; }
+.prodsw-btn:hover { border-color:rgba(108,99,255,0.5); }
+.prodsw-dot { width:7px; height:7px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--magenta));
+  box-shadow:0 0 8px rgba(108,99,255,0.7); flex:none; }
+.prodsw-car { color:rgba(255,255,255,0.4); font-size:10px; }
+.prodsw-menu { position:absolute; top:calc(100% + 8px); left:0; min-width:208px; z-index:60;
+  background:rgba(14,16,26,0.97); border:1px solid rgba(108,99,255,0.28); border-radius:10px; padding:8px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.6); display:none; backdrop-filter:blur(14px); }
+.prodsw.open .prodsw-menu { display:block; }
+.prodsw-eyebrow { font-family:'Chakra Petch',sans-serif; font-size:9px; letter-spacing:2px;
+  color:rgba(255,255,255,0.35); padding:4px 8px 8px; }
+.prodsw-item { display:flex; align-items:center; gap:9px; padding:8px; border-radius:7px; cursor:pointer;
+  font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12.5px; color:rgba(255,255,255,0.72); }
+.prodsw-item:hover { background:rgba(108,99,255,0.1); }
+.prodsw-item.active { color:#fff; background:rgba(108,99,255,0.14); }
+.prodsw-new { display:block; margin-top:6px; padding:8px; border-top:1px solid rgba(108,99,255,0.14);
+  color:#15E0C8; font-family:'Chakra Petch',sans-serif; font-size:11px; letter-spacing:1px;
+  text-decoration:none; cursor:pointer; }
+.prodsw-new:hover { color:#5ff0e0; }
 </style>
 </head>
 <body>
@@ -104,9 +137,22 @@ html,body{margin:0;padding:0;background:#070a0c}
 
   <div class="stage">
     <div class="top">
-      <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> LINKS</div>
+      <div class="topleft">
+        <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> LINKS</div>
+        <div class="prodsw" id="prodsw">
+          <button class="prodsw-btn" type="button" onclick="document.getElementById('prodsw').classList.toggle('open')">
+            <span class="prodsw-dot"></span><span class="prodsw-name">Acme Corp</span><span class="prodsw-car">▾</span>
+          </button>
+          <div class="prodsw-menu">
+            <div class="prodsw-eyebrow">PRODUCT</div>
+            <div class="prodsw-item active"><span class="prodsw-dot"></span>Acme Corp</div>
+            <div class="prodsw-item"><span class="prodsw-dot"></span>Marketiz</div>
+            <div class="prodsw-item"><span class="prodsw-dot"></span>Internal Tools</div>
+            <a class="prodsw-new" href="onboard.html">+ New product</a>
+          </div>
+        </div>
+      </div>
       <div class="topright">
-        <span class="muted">PRODUCT · TACTICL</span>
         <div class="nav">
           <a class="chip" href="command.html">COMMAND</a>
           <a class="chip" href="dashboard.html">DASHBOARD</a>
@@ -119,160 +165,24 @@ html,body{margin:0;padding:0;background:#070a0c}
     <div class="head">
       <div>
         <h1 class="h1">CONNECTED <span class="b">CHANNELS</span></h1>
-        <div class="sub">INTEGRATION GRID · 12 CHANNELS</div>
+        <div class="sub">Channels &amp; integrations Tacticl talks to, through, or runs on.</div>
       </div>
       <div class="summary">
-        <div class="stat"><span class="sdot" style="background:var(--cyan);box-shadow:0 0 9px var(--cyan)"></span><span class="n">7</span><span class="l">LINKED</span></div>
+        <div class="stat"><span class="sdot" style="background:var(--cyan);box-shadow:0 0 9px var(--cyan)"></span><span class="n">8</span><span class="l">LINKED</span></div>
         <div class="stat"><span class="sdot" style="background:rgba(238,240,246,.4);box-shadow:0 0 9px rgba(238,240,246,.4)"></span><span class="n">5</span><span class="l">AVAILABLE</span></div>
         <div class="stat"><span class="sdot" style="background:var(--amber);box-shadow:0 0 9px var(--amber)"></span><span class="n">2</span><span class="l">NEEDS YOU</span></div>
       </div>
     </div>
 
-    <!-- ── SOCIAL ─────────────────────────────────────────────── -->
+    <!-- ── DEVELOPER (GitHub org + repos) ─────────────────────── -->
     <div class="section" style="animation-delay:.05s">
-      <div class="shead">
-        <span class="glyph" style="color:var(--accent);border-color:var(--accent)">◈</span>
-        <div class="stitle">
-          <div class="sname">Social</div>
-          <div class="sdesc">Channels the agent can compose, schedule, and publish to.</div>
-        </div>
-        <span class="badge" style="border-color:var(--accent);color:var(--accent)">3 / 5</span>
-      </div>
-      <div class="cards">
-
-        <div class="card on" style="--ca:var(--accent)">
-          <span class="stripe"></span>
-          <div class="cardtop">
-            <span class="logo" style="background:#1DA1F2">𝕏</span>
-            <div class="meta">
-              <div class="pname">X / Twitter</div>
-              <div class="phandle">@tacticl_hq</div>
-            </div>
-          </div>
-          <div class="statusrow">
-            <span class="tag linked"><span class="tdot"></span>LINKED</span>
-          </div>
-          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
-        </div>
-
-        <div class="card on" style="--ca:var(--accent)">
-          <span class="stripe"></span>
-          <div class="cardtop">
-            <span class="logo" style="background:#0A66C2">in</span>
-            <div class="meta">
-              <div class="pname">LinkedIn</div>
-              <div class="phandle">Tacticl AI</div>
-            </div>
-          </div>
-          <div class="statusrow">
-            <span class="tag linked"><span class="tdot"></span>LINKED</span>
-            <span class="tag warn">⚠ RECONNECT</span>
-          </div>
-          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
-        </div>
-
-        <div class="card on" style="--ca:var(--accent)">
-          <span class="stripe"></span>
-          <div class="cardtop">
-            <span class="logo" style="background:linear-gradient(135deg,#feda75,#d62976 55%,#4f5bd5)">◎</span>
-            <div class="meta">
-              <div class="pname">Instagram</div>
-              <div class="phandle">@tacticl.ai</div>
-            </div>
-          </div>
-          <div class="statusrow">
-            <span class="tag linked"><span class="tdot"></span>LINKED</span>
-          </div>
-          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
-        </div>
-
-        <div class="card" style="--ca:var(--accent)">
-          <span class="stripe"></span>
-          <div class="cardtop">
-            <span class="logo" style="background:#FF0000">▶</span>
-            <div class="meta">
-              <div class="pname">YouTube</div>
-              <div class="phandle">not linked</div>
-            </div>
-          </div>
-          <div class="statusrow">
-            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
-          </div>
-          <div class="cardact"><button class="btn con">CONNECT →</button></div>
-        </div>
-
-        <div class="card" style="--ca:var(--accent)">
-          <span class="stripe"></span>
-          <div class="cardtop">
-            <span class="logo" style="background:#222">♪</span>
-            <div class="meta">
-              <div class="pname">TikTok</div>
-              <div class="phandle">not linked</div>
-            </div>
-          </div>
-          <div class="statusrow">
-            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
-          </div>
-          <div class="cardact"><button class="btn con">CONNECT →</button></div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ── MEDIA ──────────────────────────────────────────────── -->
-    <div class="section" style="animation-delay:.13s">
-      <div class="shead">
-        <span class="glyph" style="color:var(--red);border-color:var(--red)">◉</span>
-        <div class="stitle">
-          <div class="sname">Media</div>
-          <div class="sdesc">Read-only sources the agent pulls assets from for posts.</div>
-        </div>
-        <span class="badge" style="border-color:var(--red);color:var(--red)">1 / 2</span>
-      </div>
-      <div class="cards">
-
-        <div class="card on" style="--ca:var(--red)">
-          <span class="stripe"></span>
-          <div class="cardtop">
-            <span class="logo" style="background:#4285F4">▦</span>
-            <div class="meta">
-              <div class="pname">Google Photos</div>
-              <div class="phandle">cuztomiz@hotmail.com</div>
-            </div>
-          </div>
-          <div class="statusrow">
-            <span class="tag linked"><span class="tdot"></span>LINKED</span>
-          </div>
-          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
-        </div>
-
-        <div class="card" style="--ca:var(--red)">
-          <span class="stripe"></span>
-          <div class="cardtop">
-            <span class="logo" style="background:#0061FF">▤</span>
-            <div class="meta">
-              <div class="pname">Dropbox</div>
-              <div class="phandle">not linked</div>
-            </div>
-          </div>
-          <div class="statusrow">
-            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
-          </div>
-          <div class="cardact"><button class="btn con">CONNECT →</button></div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ── DEVELOPER ──────────────────────────────────────────── -->
-    <div class="section" style="animation-delay:.21s">
       <div class="shead">
         <span class="glyph" style="color:var(--cyan);border-color:var(--cyan)">⌘</span>
         <div class="stitle">
           <div class="sname">Developer</div>
-          <div class="sdesc">Repos, chat ingress, and devices that run your PDLC sparks.</div>
+          <div class="sdesc">The GitHub org Tacticl executes PDLC sparks through. Repos come with the org grant.</div>
         </div>
-        <span class="badge" style="border-color:var(--cyan);color:var(--cyan)">3 / 4</span>
+        <span class="badge" style="border-color:var(--cyan);color:var(--cyan)">1 / 1</span>
       </div>
       <div class="cards">
 
@@ -291,7 +201,37 @@ html,body{margin:0;padding:0;background:#070a0c}
           <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
         </div>
 
-        <div class="card on" style="--ca:var(--cyan)">
+      </div>
+
+      <!-- repos belong under the GitHub org grant -->
+      <div class="repos">
+        <div class="repos-head">
+          <span class="rlbl">Repos in scope</span>
+          <span class="rsrc">via strategiz-io org grant</span>
+          <span class="rcount">14 GRANTED</span>
+        </div>
+        <div class="repo"><span class="rico">❯</span><span class="rname">strategiz-io/strategiz-core</span><span class="rmeta">java · default</span></div>
+        <div class="repo"><span class="rico">❯</span><span class="rname">strategiz-io/tacticl-core</span><span class="rmeta">java</span></div>
+        <div class="repo"><span class="rico">❯</span><span class="rname">strategiz-io/tacticl-web</span><span class="rmeta">react</span></div>
+        <div class="repo"><span class="rico">❯</span><span class="rname">strategiz-io/cidadel-ai-arbiter</span><span class="rmeta">typescript</span></div>
+        <div class="repo"><span class="rico">❯</span><span class="rname">strategiz-io/marketiz</span><span class="rmeta">typescript</span></div>
+        <div class="repo"><span class="rico">❯</span><span class="rname">strategiz-io/cidadel-core</span><span class="rmeta">java</span></div>
+      </div>
+    </div>
+
+    <!-- ── MESSAGING ──────────────────────────────────────────── -->
+    <div class="section" style="animation-delay:.13s">
+      <div class="shead">
+        <span class="glyph" style="color:var(--accent);border-color:var(--accent)">◆</span>
+        <div class="stitle">
+          <div class="sname">Messaging</div>
+          <div class="sdesc">Chat channels Tacticl talks through — alerts in, commands out.</div>
+        </div>
+        <span class="badge" style="border-color:var(--accent);color:var(--accent)">2 / 2</span>
+      </div>
+      <div class="cards">
+
+        <div class="card on" style="--ca:var(--accent)">
           <span class="stripe"></span>
           <div class="cardtop">
             <span class="logo" style="background:#5865F2">◆</span>
@@ -306,7 +246,7 @@ html,body{margin:0;padding:0;background:#070a0c}
           <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
         </div>
 
-        <div class="card on" style="--ca:var(--cyan)">
+        <div class="card on" style="--ca:var(--accent)">
           <span class="stripe"></span>
           <div class="cardtop">
             <span class="logo" style="background:#229ED9">✈</span>
@@ -322,12 +262,88 @@ html,body{margin:0;padding:0;background:#070a0c}
           <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
         </div>
 
-        <div class="card" style="--ca:var(--cyan)">
+      </div>
+    </div>
+
+    <!-- ── SOCIAL ─────────────────────────────────────────────── -->
+    <div class="section" style="animation-delay:.21s">
+      <div class="shead">
+        <span class="glyph" style="color:var(--magenta);border-color:var(--magenta)">◈</span>
+        <div class="stitle">
+          <div class="sname">Social</div>
+          <div class="sdesc">Channels the agent can compose, schedule, and publish to.</div>
+        </div>
+        <span class="badge" style="border-color:var(--magenta);color:var(--magenta)">3 / 5</span>
+      </div>
+      <div class="cards">
+
+        <div class="card on" style="--ca:var(--magenta)">
           <span class="stripe"></span>
           <div class="cardtop">
-            <span class="logo" style="background:#06B6D4">▣</span>
+            <span class="logo" style="background:#1DA1F2">𝕏</span>
             <div class="meta">
-              <div class="pname">Desktop Device</div>
+              <div class="pname">X / Twitter</div>
+              <div class="phandle">@tacticl_hq</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card on" style="--ca:var(--magenta)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#0A66C2">in</span>
+            <div class="meta">
+              <div class="pname">LinkedIn</div>
+              <div class="phandle">Tacticl AI</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+            <span class="tag warn">⚠ RECONNECT</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card on" style="--ca:var(--magenta)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:linear-gradient(135deg,#feda75,#d62976 55%,#4f5bd5)">◎</span>
+            <div class="meta">
+              <div class="pname">Instagram</div>
+              <div class="phandle">@tacticl.ai</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card" style="--ca:var(--magenta)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#FF0000">▶</span>
+            <div class="meta">
+              <div class="pname">YouTube</div>
+              <div class="phandle">not linked</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
+          </div>
+          <div class="cardact"><button class="btn con">CONNECT →</button></div>
+        </div>
+
+        <div class="card" style="--ca:var(--magenta)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#222">♪</span>
+            <div class="meta">
+              <div class="pname">TikTok</div>
               <div class="phandle">not linked</div>
             </div>
           </div>
@@ -340,18 +356,48 @@ html,body{margin:0;padding:0;background:#070a0c}
       </div>
     </div>
 
-    <!-- ── PRODUCTIVITY (coming soon) ─────────────────────────── -->
+    <!-- ── DEVICES ────────────────────────────────────────────── -->
     <div class="section" style="animation-delay:.29s">
       <div class="shead">
-        <span class="glyph" style="color:var(--amber);border-color:var(--amber)">⬡</span>
+        <span class="glyph" style="color:var(--amber);border-color:var(--amber)">▣</span>
         <div class="stitle">
-          <div class="sname">Productivity</div>
-          <div class="sdesc">Docs, notes, and task tools — task automation surfaces.</div>
+          <div class="sname">Devices</div>
+          <div class="sdesc">Paired execution targets Tacticl runs sparks on — desktop &amp; mobile agents.</div>
         </div>
-        <span class="badge soon">COMING SOON</span>
+        <span class="badge" style="border-color:var(--amber);color:var(--amber)">1 / 2</span>
       </div>
-      <div class="soonbox">
-        Productivity integrations like Slack, Notion, and Google Drive are on the way.
+      <div class="cards">
+
+        <div class="card on" style="--ca:var(--amber)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#06B6D4">▣</span>
+            <div class="meta">
+              <div class="pname">MacBook Pro</div>
+              <div class="phandle">desktop agent · online</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>PAIRED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">UNPAIR</button></div>
+        </div>
+
+        <div class="card" style="--ca:var(--amber)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#222">▢</span>
+            <div class="meta">
+              <div class="pname">Mobile Device</div>
+              <div class="phandle">not paired</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
+          </div>
+          <div class="cardact"><button class="btn con">PAIR →</button></div>
+        </div>
+
       </div>
     </div>
 

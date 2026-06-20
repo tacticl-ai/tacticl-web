@@ -30,7 +30,7 @@ html,body{height:100%;background:#070a0c}
   background:linear-gradient(rgba(108,99,255,.07),transparent);animation:sscan 8s linear infinite;}
 @keyframes sscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
 .set-root .stage{position:relative;z-index:2}
-.set-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
+.set-root .top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:22px 34px 10px}
 .set-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
 .set-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
 .set-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:shalo 2.2s ease-out infinite}
@@ -179,6 +179,30 @@ html,body{height:100%;background:#070a0c}
 .set-root .codebox{display:flex;align-items:center;gap:12px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:12px;padding:14px 16px}
 .set-root .code{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:8px;color:#bdb8ff;flex:1}
 
+/* ── product switcher ────────────────────────────────────────────────────── */
+.prodsw { position: relative; }
+.prodsw-btn { display:flex; align-items:center; gap:8px; cursor:pointer; background:rgba(108,99,255,0.06);
+  border:1px solid rgba(108,99,255,0.22); border-radius:8px; padding:6px 11px; color:#E6E3F5;
+  font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12px; }
+.prodsw-btn:hover { border-color:rgba(108,99,255,0.5); }
+.prodsw-dot { width:7px; height:7px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--magenta));
+  box-shadow:0 0 8px rgba(108,99,255,0.7); flex:none; }
+.prodsw-car { color:rgba(255,255,255,0.4); font-size:10px; }
+.prodsw-menu { position:absolute; top:calc(100% + 8px); left:0; min-width:208px; z-index:60;
+  background:rgba(14,16,26,0.97); border:1px solid rgba(108,99,255,0.28); border-radius:10px; padding:8px;
+  box-shadow:0 18px 50px rgba(0,0,0,0.6); display:none; backdrop-filter:blur(14px); }
+.prodsw.open .prodsw-menu { display:block; }
+.prodsw-eyebrow { font-family:'Chakra Petch',sans-serif; font-size:9px; letter-spacing:2px;
+  color:rgba(255,255,255,0.35); padding:4px 8px 8px; }
+.prodsw-item { display:flex; align-items:center; gap:9px; padding:8px; border-radius:7px; cursor:pointer;
+  font-family:'JetBrains Mono',ui-monospace,monospace; font-size:12.5px; color:rgba(255,255,255,0.72); }
+.prodsw-item:hover { background:rgba(108,99,255,0.1); }
+.prodsw-item.active { color:#fff; background:rgba(108,99,255,0.14); }
+.prodsw-new { display:block; margin-top:6px; padding:8px; border-top:1px solid rgba(108,99,255,0.14);
+  color:var(--cyan); font-family:'Chakra Petch',sans-serif; font-size:11px; letter-spacing:1px;
+  text-decoration:none; cursor:pointer; }
+.prodsw-new:hover { color:#5ff0e0; }
+
 /* mock-only: visibility of inactive sections */
 .set-root .sec{display:none}
 .set-root .sec.show{display:flex;flex-direction:column;gap:18px}
@@ -193,8 +217,19 @@ html,body{height:100%;background:#070a0c}
     <!-- ── top bar (shared HUD chrome) ─────────────────────────────────── -->
     <div class="top">
       <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> SETTINGS</div>
+      <div class="prodsw" id="prodsw">
+        <button class="prodsw-btn" type="button" onclick="document.getElementById('prodsw').classList.toggle('open')">
+          <span class="prodsw-dot"></span><span class="prodsw-name">Acme Corp</span><span class="prodsw-car">▾</span>
+        </button>
+        <div class="prodsw-menu">
+          <div class="prodsw-eyebrow">PRODUCT</div>
+          <div class="prodsw-item active"><span class="prodsw-dot"></span>Acme Corp</div>
+          <div class="prodsw-item"><span class="prodsw-dot"></span>Marketiz</div>
+          <div class="prodsw-item"><span class="prodsw-dot"></span>Internal Tools</div>
+          <a class="prodsw-new" href="onboard.html">+ New product</a>
+        </div>
+      </div>
       <div class="topright">
-        <span class="muted">PRODUCT · TACTICL</span>
         <div class="nav">
           <a class="chip" href="command.html">COMMAND</a>
           <a class="chip" href="dashboard.html">DASHBOARD</a>
@@ -208,179 +243,58 @@ html,body{height:100%;background:#070a0c}
     <div class="head">
       <div>
         <h1 class="h1">SYSTEM <span class="b">SETTINGS</span></h1>
-        <div class="sub">AGENT CONFIG · ACCESS · WORKERS</div>
+        <div class="sub">Your account &amp; product configuration.</div>
       </div>
     </div>
 
     <!-- ── two-column hub: section nav + active panel ──────────────────── -->
     <div class="hub">
       <aside class="snav">
-        <button class="sitem" data-sec="general">
+        <button class="sitem active" data-sec="tokens">
           <span class="sdot"></span>
           <span class="stext">
-            <span class="slabel">GENERAL</span>
-            <span class="shint">Limits · domains · account</span>
+            <span class="slabel">API TOKENS</span>
+            <span class="shint">Your programmatic keys</span>
           </span>
         </button>
-        <button class="sitem active" data-sec="repos">
+        <button class="sitem" data-sec="billing">
           <span class="sdot"></span>
           <span class="stext">
-            <span class="slabel">REPOS</span>
-            <span class="shint">Connected repositories</span>
+            <span class="slabel">PLAN &amp; BILLING</span>
+            <span class="shint">Tier · usage · invoices</span>
           </span>
         </button>
-        <button class="sitem" data-sec="tokens">
+        <button class="sitem" data-sec="profile">
           <span class="sdot"></span>
           <span class="stext">
-            <span class="slabel">TOKENS</span>
-            <span class="shint">Agent API keys</span>
+            <span class="slabel">PROFILE</span>
+            <span class="shint">Name · email · avatar</span>
           </span>
         </button>
-        <button class="sitem" data-sec="devices">
+        <button class="sitem" data-sec="preferences">
           <span class="sdot"></span>
           <span class="stext">
-            <span class="slabel">DEVICES</span>
-            <span class="shint">Paired workers</span>
+            <span class="slabel">PREFERENCES</span>
+            <span class="shint">Limits · domains · sparks</span>
+          </span>
+        </button>
+        <button class="sitem" data-sec="products">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">PRODUCTS</span>
+            <span class="shint">Your registered products</span>
           </span>
         </button>
       </aside>
 
       <div class="pane">
 
-        <!-- ═══════════════ GENERAL ═══════════════ -->
-        <div class="sec" id="sec-general">
+        <!-- ═══════════════ API TOKENS ═══════════════ -->
+        <div class="sec show" id="sec-tokens">
           <div class="panel">
             <div class="phead">
-              <div class="ptitle">GENERAL</div>
-              <div class="ptag">USER CONFIG</div>
-            </div>
-            <div class="pbody">
-              <div class="block">
-                <div class="bhead">AGENT LIMITS</div>
-                <div class="fgrid">
-                  <label class="field">
-                    <span class="flabel">MAX CONCURRENT SPARKS</span>
-                    <input class="inp" type="number" value="4" />
-                    <span class="fhint">How many sparks can run at the same time</span>
-                  </label>
-                  <label class="field">
-                    <span class="flabel">MONTHLY SPENDING LIMIT</span>
-                    <div class="inp-affix">
-                      <span class="affix">$</span>
-                      <input class="inp" type="number" value="250" />
-                    </div>
-                    <span class="fhint">Set to 0 to block all spending</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="block">
-                <div class="bhead">DOMAIN CONTROLS</div>
-                <div class="bdesc">Control which websites the agent can access. Allowlist takes precedence.</div>
-                <div>
-                  <div class="flabel">ALLOWLIST · agent can always access</div>
-                  <div class="row-inline">
-                    <input class="inp" placeholder="e.g. example.com" />
-                    <button class="btn ghost sm">ADD</button>
-                  </div>
-                  <div class="chips">
-                    <span class="tag cyan">github.com<button class="tagx">×</button></span>
-                    <span class="tag cyan">docs.anthropic.com<button class="tagx">×</button></span>
-                    <span class="tag cyan">linear.app<button class="tagx">×</button></span>
-                  </div>
-                </div>
-                <div style="height:14px"></div>
-                <div>
-                  <div class="flabel">BLOCKLIST · agent cannot access</div>
-                  <div class="row-inline">
-                    <input class="inp" placeholder="e.g. example.com" />
-                    <button class="btn ghost sm">ADD</button>
-                  </div>
-                  <div class="chips">
-                    <span class="tag red">facebook.com<button class="tagx">×</button></span>
-                    <span class="tag red">tiktok.com<button class="tagx">×</button></span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="block">
-                <div class="bhead">ACCOUNT</div>
-                <div class="bdesc">Account management is handled through the auth portal at auth.tacticl.ai.</div>
-              </div>
-
-              <div class="savebar">
-                <button class="btn primary" disabled>SAVE CHANGES</button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══════════════ REPOS ═══════════════ -->
-        <div class="sec show" id="sec-repos">
-          <div class="panel">
-            <div class="phead">
-              <div class="ptitle">REPOS</div>
-              <div class="ptag">ACCESS GRANTS</div>
-              <div class="paction"><button class="btn primary sm" data-modal="repo">+ CONNECT REPO</button></div>
-            </div>
-            <div class="pbody">
-              <div class="rows">
-                <div class="lrow">
-                  <span class="ldot violet"></span>
-                  <div class="lmain">
-                    <div class="lname">tacticl-ai/tacticl-core</div>
-                    <div class="lsub">GITHUB · granted 6d ago</div>
-                  </div>
-                  <span class="tag red">ADMIN</span>
-                  <button class="btn ghost sm danger">REVOKE</button>
-                </div>
-                <div class="lrow">
-                  <span class="ldot violet"></span>
-                  <div class="lmain">
-                    <div class="lname">tacticl-ai/tacticl-web</div>
-                    <div class="lsub">GITHUB · granted 6d ago</div>
-                  </div>
-                  <span class="tag amber">WRITE</span>
-                  <button class="btn ghost sm danger">REVOKE</button>
-                </div>
-                <div class="lrow">
-                  <span class="ldot violet"></span>
-                  <div class="lmain">
-                    <div class="lname">strategiz-io/strategiz-core</div>
-                    <div class="lsub">GITHUB · granted 12d ago</div>
-                  </div>
-                  <span class="tag amber">WRITE</span>
-                  <button class="btn ghost sm danger">REVOKE</button>
-                </div>
-                <div class="lrow">
-                  <span class="ldot violet"></span>
-                  <div class="lmain">
-                    <div class="lname">cidadel-platform/cidadel-core</div>
-                    <div class="lsub">GITHUB · granted 3w ago</div>
-                  </div>
-                  <span class="tag violet">READ</span>
-                  <button class="btn ghost sm danger">REVOKE</button>
-                </div>
-                <div class="lrow">
-                  <span class="ldot violet"></span>
-                  <div class="lmain">
-                    <div class="lname">marketiz/marketiz</div>
-                    <div class="lsub">GITLAB · granted 2d ago</div>
-                  </div>
-                  <span class="tag violet">READ</span>
-                  <button class="btn ghost sm danger">REVOKE</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ═══════════════ TOKENS ═══════════════ -->
-        <div class="sec" id="sec-tokens">
-          <div class="panel">
-            <div class="phead">
-              <div class="ptitle">TOKENS</div>
-              <div class="ptag">AGENT KEYS</div>
+              <div class="ptitle">API TOKENS</div>
+              <div class="ptag">PROGRAMMATIC KEYS</div>
               <div class="paction"><button class="btn primary sm" data-modal="token">+ ADD TOKEN</button></div>
             </div>
             <div class="pbody">
@@ -437,86 +351,244 @@ html,body{height:100%;background:#070a0c}
           </div>
         </div>
 
-        <!-- ═══════════════ DEVICES ═══════════════ -->
-        <div class="sec" id="sec-devices">
+        <!-- ═══════════════ PLAN & BILLING ═══════════════ -->
+        <div class="sec" id="sec-billing">
           <div class="panel">
             <div class="phead">
-              <div class="ptitle">DEVICES</div>
-              <div class="ptag">WORKERS</div>
-              <div class="paction"><button class="btn primary sm" data-modal="device">+ ADD DEVICE</button></div>
+              <div class="ptitle">PLAN &amp; BILLING</div>
+              <div class="ptag">SUBSCRIPTION</div>
+              <div class="paction"><button class="btn primary sm">UPGRADE</button></div>
             </div>
             <div class="pbody">
-              <div class="dgrid">
-
-                <div class="dtile">
-                  <div class="dhead">
-                    <span class="ldot cyan"></span>
-                    <div class="lmain">
-                      <div class="lname">Nova Studio</div>
-                      <div class="lsub">macOS 15.4 · desktop</div>
-                    </div>
-                    <button class="btn ghost sm danger">UNPAIR</button>
+              <div class="block">
+                <div class="bhead">CURRENT PLAN</div>
+                <div class="lrow">
+                  <span class="ldot violet"></span>
+                  <div class="lmain">
+                    <div class="lname">Agency</div>
+                    <div class="lsub">$199 / mo · renews Jul 14, 2026</div>
                   </div>
-                  <div class="dspec">12 cores · 64GB RAM · 814GB free</div>
-                  <div class="chips">
-                    <span class="tag violet">CODE</span>
-                    <span class="tag violet">DEVOPS</span>
-                    <span class="tag violet">BROWSER</span>
-                  </div>
-                  <div class="ddaemon">2 active daemons</div>
-                  <div class="lsub">last seen just now</div>
+                  <span class="tag violet">ACTIVE</span>
+                  <button class="btn ghost sm">CHANGE PLAN</button>
                 </div>
+              </div>
 
-                <div class="dtile">
-                  <div class="dhead">
-                    <span class="ldot amber"></span>
-                    <div class="lmain">
-                      <div class="lname">Forge Rig</div>
-                      <div class="lsub">Linux · desktop</div>
-                    </div>
-                    <button class="btn ghost sm danger">UNPAIR</button>
-                  </div>
-                  <div class="dspec">16 cores · 128GB RAM · 1.9TB free</div>
-                  <div class="chips">
-                    <span class="tag violet">CODE</span>
-                    <span class="tag violet">VIDEO</span>
-                  </div>
-                  <div class="ddaemon">3 active daemons</div>
-                  <div class="lsub">last seen 2m ago</div>
+              <div class="block">
+                <div class="bhead">USAGE THIS CYCLE</div>
+                <div class="meter">
+                  <div class="mtop"><span class="mlabel">AGENT CREDITS</span><span class="mtext">6.8M / 20M tokens</span></div>
+                  <div class="mtrack"><span class="mfill" style="width:34%"></span></div>
                 </div>
+                <div class="meter">
+                  <div class="mtop"><span class="mlabel">VIDEO GENERATIONS</span><span class="mtext">82 / 100 videos</span></div>
+                  <div class="mtrack"><span class="mfill hot" style="width:82%"></span></div>
+                </div>
+                <div class="meter">
+                  <div class="mtop"><span class="mlabel">SPEND</span><span class="mtext">$148.20 / $250.00</span></div>
+                  <div class="mtrack"><span class="mfill" style="width:59%"></span></div>
+                </div>
+              </div>
 
-                <div class="dtile">
-                  <div class="dhead">
+              <div class="block">
+                <div class="bhead">PAYMENT METHOD</div>
+                <div class="lrow">
+                  <span class="ldot cyan"></span>
+                  <div class="lmain">
+                    <div class="lname">Visa · ••••&nbsp;4242</div>
+                    <div class="lsub">expires 08 / 2028</div>
+                  </div>
+                  <button class="btn ghost sm">UPDATE</button>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="bhead">INVOICES</div>
+                <div class="rows">
+                  <div class="lrow">
                     <span class="ldot dim"></span>
                     <div class="lmain">
-                      <div class="lname">Pixel 9 Pro</div>
-                      <div class="lsub">Android 16 · mobile</div>
+                      <div class="lname">Jun 14, 2026</div>
+                      <div class="lsub">Agency · monthly</div>
                     </div>
-                    <button class="btn ghost sm danger">UNPAIR</button>
+                    <span class="tag cyan">PAID</span>
+                    <span class="dim">$199.00</span>
+                    <button class="btn ghost sm">PDF</button>
                   </div>
-                  <div class="dspec">8 cores · 12GB RAM · 96GB free</div>
-                  <div class="chips">
-                    <span class="tag violet">SOCIAL</span>
-                  </div>
-                  <div class="lsub">last seen 4h ago</div>
-                </div>
-
-                <div class="dtile">
-                  <div class="dhead">
+                  <div class="lrow">
                     <span class="ldot dim"></span>
                     <div class="lmain">
-                      <div class="lname">iPad Air M3</div>
-                      <div class="lsub">iPadOS 19 · mobile</div>
+                      <div class="lname">May 14, 2026</div>
+                      <div class="lsub">Agency · monthly</div>
                     </div>
-                    <button class="btn ghost sm danger">UNPAIR</button>
+                    <span class="tag cyan">PAID</span>
+                    <span class="dim">$199.00</span>
+                    <button class="btn ghost sm">PDF</button>
                   </div>
-                  <div class="dspec">8 cores · 8GB RAM · 142GB free</div>
-                  <div class="chips">
-                    <span class="tag violet">RESEARCH</span>
+                  <div class="lrow">
+                    <span class="ldot dim"></span>
+                    <div class="lmain">
+                      <div class="lname">Apr 14, 2026</div>
+                      <div class="lsub">Business · monthly</div>
+                    </div>
+                    <span class="tag cyan">PAID</span>
+                    <span class="dim">$99.00</span>
+                    <button class="btn ghost sm">PDF</button>
                   </div>
-                  <div class="lsub">last seen 1d ago</div>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
+        <!-- ═══════════════ PROFILE ═══════════════ -->
+        <div class="sec" id="sec-profile">
+          <div class="panel">
+            <div class="phead">
+              <div class="ptitle">PROFILE</div>
+              <div class="ptag">YOUR ACCOUNT</div>
+            </div>
+            <div class="pbody">
+              <div class="block">
+                <div class="bhead">AVATAR</div>
+                <div class="lrow flush">
+                  <span class="ldot violet" style="width:46px;height:46px;border-radius:13px"></span>
+                  <div class="lmain">
+                    <div class="lname">Profile photo</div>
+                    <div class="lsub">PNG or JPG · up to 2MB</div>
+                  </div>
+                  <button class="btn ghost sm">UPLOAD</button>
+                  <button class="btn ghost sm danger">REMOVE</button>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="bhead">IDENTITY</div>
+                <div class="fgrid">
+                  <label class="field">
+                    <span class="flabel">DISPLAY NAME</span>
+                    <input class="inp" type="text" value="Gabriel Jimenez" />
+                  </label>
+                  <label class="field">
+                    <span class="flabel">EMAIL</span>
+                    <input class="inp" type="email" value="cuztomiz@hotmail.com" />
+                    <span class="fhint">Used for sign-in and billing receipts</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="bhead">ACCOUNT</div>
+                <div class="bdesc">Password and security are managed through the auth portal at auth.tacticl.ai.</div>
+              </div>
+
+              <div class="savebar">
+                <button class="btn primary" disabled>SAVE CHANGES</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ PREFERENCES ═══════════════ -->
+        <div class="sec" id="sec-preferences">
+          <div class="panel">
+            <div class="phead">
+              <div class="ptitle">PREFERENCES</div>
+              <div class="ptag">AGENT CONFIG</div>
+            </div>
+            <div class="pbody">
+              <div class="block">
+                <div class="bhead">AGENT LIMITS</div>
+                <div class="fgrid">
+                  <label class="field">
+                    <span class="flabel">MAX CONCURRENT SPARKS</span>
+                    <input class="inp" type="number" value="4" />
+                    <span class="fhint">How many sparks can run at the same time</span>
+                  </label>
+                  <label class="field">
+                    <span class="flabel">MONTHLY SPENDING LIMIT</span>
+                    <div class="inp-affix">
+                      <span class="affix">$</span>
+                      <input class="inp" type="number" value="250" />
+                    </div>
+                    <span class="fhint">Set to 0 to block all spending</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="bhead">DOMAIN CONTROLS</div>
+                <div class="bdesc">Control which websites the agent can access. Allowlist takes precedence.</div>
+                <div>
+                  <div class="flabel">ALLOWLIST · agent can always access</div>
+                  <div class="row-inline">
+                    <input class="inp" placeholder="e.g. example.com" />
+                    <button class="btn ghost sm">ADD</button>
+                  </div>
+                  <div class="chips">
+                    <span class="tag cyan">github.com<button class="tagx">×</button></span>
+                    <span class="tag cyan">docs.anthropic.com<button class="tagx">×</button></span>
+                    <span class="tag cyan">linear.app<button class="tagx">×</button></span>
+                  </div>
+                </div>
+                <div style="height:14px"></div>
+                <div>
+                  <div class="flabel">BLOCKLIST · agent cannot access</div>
+                  <div class="row-inline">
+                    <input class="inp" placeholder="e.g. example.com" />
+                    <button class="btn ghost sm">ADD</button>
+                  </div>
+                  <div class="chips">
+                    <span class="tag red">facebook.com<button class="tagx">×</button></span>
+                    <span class="tag red">tiktok.com<button class="tagx">×</button></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="savebar">
+                <button class="btn primary" disabled>SAVE CHANGES</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ PRODUCTS ═══════════════ -->
+        <div class="sec" id="sec-products">
+          <div class="panel">
+            <div class="phead">
+              <div class="ptitle">PRODUCTS</div>
+              <div class="ptag">REGISTERED</div>
+              <div class="paction"><a class="btn primary sm" href="onboard.html">+ NEW PRODUCT</a></div>
+            </div>
+            <div class="pbody">
+              <div class="bdesc">Each product scopes its own sparks, links, tokens and team. Switch the active product from the topbar.</div>
+              <div class="rows">
+                <div class="lrow">
+                  <span class="ldot violet"></span>
+                  <div class="lmain">
+                    <div class="lname">Acme Corp</div>
+                    <div class="lsub">created 3w ago · 5 repos · 4 devices</div>
+                  </div>
+                  <span class="tag violet">ACTIVE</span>
+                  <button class="btn ghost sm">MANAGE</button>
+                </div>
+                <div class="lrow">
+                  <span class="ldot cyan"></span>
+                  <div class="lmain">
+                    <div class="lname">Marketiz</div>
+                    <div class="lsub">created 6d ago · 1 repo · 2 devices</div>
+                  </div>
+                  <button class="btn ghost sm">MANAGE</button>
+                  <button class="btn ghost sm danger">DELETE</button>
+                </div>
+                <div class="lrow">
+                  <span class="ldot cyan"></span>
+                  <div class="lmain">
+                    <div class="lname">Internal Tools</div>
+                    <div class="lsub">created 2d ago · 0 repos · 1 device</div>
+                  </div>
+                  <button class="btn ghost sm">MANAGE</button>
+                  <button class="btn ghost sm danger">DELETE</button>
+                </div>
               </div>
             </div>
           </div>
@@ -526,34 +598,6 @@ html,body{height:100%;background:#070a0c}
     </div>
 
     <div style="height:46px"></div>
-  </div>
-
-  <!-- ── modal: CONNECT REPOSITORY (hidden by default) ─────────────────── -->
-  <div class="overlay" id="modal-repo" style="display:none">
-    <div class="modal">
-      <div class="mhead">
-        <div class="ptitle">CONNECT REPOSITORY</div>
-        <button class="mx" data-close>×</button>
-      </div>
-      <div class="mbody">
-        <label class="field">
-          <span class="flabel">PROVIDER</span>
-          <select class="inp"><option>GitHub</option><option>GitLab</option><option>Bitbucket</option></select>
-        </label>
-        <label class="field">
-          <span class="flabel">REPOSITORY</span>
-          <input class="inp" placeholder="owner/repo" />
-        </label>
-        <label class="field">
-          <span class="flabel">ACCESS LEVEL</span>
-          <select class="inp"><option>Read</option><option>Write</option><option>Admin</option></select>
-        </label>
-        <div class="savebar">
-          <button class="btn ghost" data-close>CANCEL</button>
-          <button class="btn primary" disabled>CONNECT</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- ── modal: ADD TOKEN (hidden by default) ──────────────────────────── -->
@@ -579,30 +623,6 @@ html,body{height:100%;background:#070a0c}
         <div class="savebar">
           <button class="btn ghost" data-close>CANCEL</button>
           <button class="btn primary" disabled>ADD</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ── modal: CONNECT A DEVICE (hidden by default) ───────────────────── -->
-  <div class="overlay" id="modal-device" style="display:none">
-    <div class="modal">
-      <div class="mhead">
-        <div class="ptitle">CONNECT A DEVICE</div>
-        <button class="mx" data-close>×</button>
-      </div>
-      <div class="mbody">
-        <div class="bdesc">Download Tacticl Device, open it, then enter the pairing code below to link this worker.</div>
-        <label class="field">
-          <span class="flabel">PAIRING CODE</span>
-          <div class="codebox">
-            <span class="code">7F2 9KQ</span>
-            <button class="btn ghost sm">COPY</button>
-          </div>
-        </label>
-        <div class="banner cyan">Waiting for your device to connect… (expires in 5 minutes)</div>
-        <div class="savebar">
-          <button class="btn ghost" data-close>CLOSE</button>
         </div>
       </div>
     </div>
