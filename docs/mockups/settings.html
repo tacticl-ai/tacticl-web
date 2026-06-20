@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TACTICL // SETTINGS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ── reset ──────────────────────────────────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#070a0c}
+
+/* ════════════════════════════════════════════════════════════════════════
+   Scoped <style> tokens reproduced 1:1 from SettingsHubPage.tsx (.set-root)
+   ════════════════════════════════════════════════════════════════════════ */
+.set-root{position:fixed;inset:0;overflow-y:auto;color:#eef0f6;font-family:var(--mono);letter-spacing:.2px;
+  --accent:#6C63FF;--magenta:#B25CFF;--cyan:#15E0C8;--red:#FF6B6B;--amber:#F5B544;
+  --ink:#070a0c;--glass1:rgba(22,28,34,.66);--glass2:rgba(11,15,19,.66);
+  --disp:"Chakra Petch",sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--line:rgba(108,99,255,.14);
+  background:radial-gradient(1300px 820px at 50% -8%,rgba(108,99,255,.16),transparent 58%),
+    radial-gradient(1000px 760px at 92% 110%,rgba(178,92,255,.10),transparent 60%),
+    radial-gradient(760px 620px at 4% 18%,rgba(21,224,200,.06),transparent 60%),var(--ink);}
+.set-root .grid-bg{position:fixed;inset:0;pointer-events:none;opacity:.45;z-index:0;
+  background-image:linear-gradient(rgba(108,99,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.06) 1px,transparent 1px);
+  background-size:54px 54px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 32%,#000 35%,transparent 78%);
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 32%,#000 35%,transparent 78%);}
+.set-root .scan{position:fixed;left:0;right:0;height:160px;z-index:1;pointer-events:none;
+  background:linear-gradient(rgba(108,99,255,.07),transparent);animation:sscan 8s linear infinite;}
+@keyframes sscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
+.set-root .stage{position:relative;z-index:2}
+.set-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
+.set-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
+.set-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
+.set-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:shalo 2.2s ease-out infinite}
+@keyframes shalo{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+.set-root .sep{color:var(--accent)}
+.set-root .topright{display:flex;align-items:center;gap:18px}
+.set-root .muted{color:rgba(238,240,246,.42);font-size:11px}
+.set-root .nav{display:flex;gap:7px}
+.set-root .chip{padding:6px 13px;border-radius:999px;border:1px solid rgba(108,99,255,.3);font-family:var(--disp);font-size:10.5px;letter-spacing:2px;color:rgba(170,165,255,.9);background:rgba(108,99,255,.05);cursor:pointer;transition:.18s}
+.set-root .chip:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.16)}
+.set-root .chip.active{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2);box-shadow:0 0 18px rgba(108,99,255,.25)}
+.set-root .head{padding:14px 34px 2px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.set-root .h1{font-family:var(--disp);font-size:30px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
+.set-root .h1 .b{background:linear-gradient(90deg,var(--accent),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+.set-root .sub{font-size:11px;color:rgba(238,240,246,.4);letter-spacing:3px;margin-top:8px}
+
+/* ── hub: section nav + pane ─────────────────────────────────────────────── */
+.set-root .hub{display:grid;grid-template-columns:248px 1fr;gap:18px;padding:18px 34px 0;align-items:start}
+@media (max-width:820px){.set-root .hub{grid-template-columns:1fr}}
+.set-root .snav{display:flex;flex-direction:column;gap:8px;position:sticky;top:18px}
+@media (max-width:820px){.set-root .snav{flex-direction:row;flex-wrap:wrap;position:static}}
+.set-root .sitem{display:flex;align-items:center;gap:11px;text-align:left;padding:13px 15px;border-radius:13px;cursor:pointer;
+  border:1px solid var(--line);background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(16px);
+  color:#eef0f6;font-family:var(--mono);transition:.18s}
+.set-root .sitem:hover{border-color:rgba(108,99,255,.4);background:rgba(108,99,255,.08)}
+.set-root .sitem.active{border-color:var(--accent);background:rgba(108,99,255,.16);box-shadow:0 0 18px rgba(108,99,255,.18)}
+.set-root .sitem .sdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:rgba(238,240,246,.22)}
+.set-root .sitem.active .sdot{background:var(--accent);box-shadow:0 0 9px var(--accent)}
+.set-root .stext{display:flex;flex-direction:column;gap:3px;min-width:0}
+.set-root .slabel{font-family:var(--disp);font-size:12px;letter-spacing:2.4px;font-weight:600}
+.set-root .shint{font-size:9.5px;letter-spacing:.4px;color:rgba(238,240,246,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.set-root .sitem.active .shint{color:rgba(189,184,255,.7)}
+
+/* ── panel ───────────────────────────────────────────────────────────────── */
+.set-root .pane{min-width:0;display:flex;flex-direction:column;gap:18px}
+.set-root .panel{border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),inset 0 0 60px rgba(108,99,255,.04),0 18px 60px rgba(0,0,0,.55);position:relative}
+.set-root .panel::before,.set-root .panel::after{content:"";position:absolute;width:18px;height:18px;border:0 solid rgba(108,99,255,.6);pointer-events:none;z-index:2}
+.set-root .panel::before{top:8px;left:8px;border-top-width:1.5px;border-left-width:1.5px}
+.set-root .panel::after{bottom:8px;right:8px;border-bottom-width:1.5px;border-right-width:1.5px}
+.set-root .phead{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line)}
+.set-root .ptitle{font-family:var(--disp);font-size:13px;letter-spacing:3px;color:var(--accent);font-weight:600}
+.set-root .ptag{font-size:10px;letter-spacing:1px;color:rgba(238,240,246,.4)}
+.set-root .paction{margin-left:auto}
+.set-root .pbody{padding:20px 22px}
+
+/* ── blocks / fields ─────────────────────────────────────────────────────── */
+.set-root .block{padding-bottom:20px;margin-bottom:20px;border-bottom:1px solid rgba(108,99,255,.08)}
+.set-root .block:last-of-type{border-bottom:none;margin-bottom:6px;padding-bottom:6px}
+.set-root .bhead{font-family:var(--disp);font-size:11px;letter-spacing:2.2px;color:#eef0f6;font-weight:600;margin-bottom:12px}
+.set-root .bdesc{font-size:11.5px;color:rgba(238,240,246,.5);margin-bottom:14px;line-height:1.5}
+.set-root .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:620px){.set-root .fgrid{grid-template-columns:1fr}}
+.set-root .field{display:flex;flex-direction:column;gap:6px}
+.set-root .flabel{font-family:var(--disp);font-size:9.5px;letter-spacing:1.6px;color:rgba(238,240,246,.5)}
+.set-root .fhint{font-size:10px;color:rgba(238,240,246,.36);line-height:1.4}
+.set-root .inp{width:100%;box-sizing:border-box;background:rgba(7,10,12,.55);border:1px solid rgba(108,99,255,.22);border-radius:10px;
+  color:#eef0f6;font-family:var(--mono);font-size:13px;padding:10px 12px;outline:none;transition:.16s}
+.set-root .inp:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(108,99,255,.18)}
+.set-root select.inp{appearance:none;cursor:pointer}
+.set-root .inp-affix{display:flex;align-items:center;background:rgba(7,10,12,.55);border:1px solid rgba(108,99,255,.22);border-radius:10px;overflow:hidden}
+.set-root .inp-affix:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px rgba(108,99,255,.18)}
+.set-root .inp-affix .affix{padding:0 0 0 12px;color:rgba(238,240,246,.5);font-size:13px}
+.set-root .inp-affix .inp{border:none;box-shadow:none;background:transparent}
+.set-root .inp-affix .inp:focus{box-shadow:none}
+.set-root .row-inline{display:flex;gap:8px;align-items:center;margin:8px 0}
+
+/* ── buttons ─────────────────────────────────────────────────────────────── */
+.set-root .btn{font-family:var(--disp);font-size:11px;letter-spacing:1.6px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.16s;border:1px solid transparent;white-space:nowrap}
+.set-root .btn.sm{padding:7px 12px;font-size:10px;letter-spacing:1.2px}
+.set-root .btn:disabled{opacity:.4;cursor:not-allowed}
+.set-root .btn.primary{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2)}
+.set-root .btn.primary:not(:disabled):hover{background:rgba(108,99,255,.34);box-shadow:0 0 18px rgba(108,99,255,.3)}
+.set-root .btn.ghost{color:rgba(189,184,255,.9);border-color:rgba(108,99,255,.3);background:rgba(108,99,255,.05)}
+.set-root .btn.ghost:not(:disabled):hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.14)}
+.set-root .btn.ghost.danger{color:#ffb0b0;border-color:rgba(255,107,107,.32);background:rgba(255,107,107,.05)}
+.set-root .btn.ghost.danger:hover{border-color:var(--red);color:#fff;background:rgba(255,107,107,.16)}
+.set-root .savebar{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+
+/* ── tags / chips ────────────────────────────────────────────────────────── */
+.set-root .chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.set-root .dim{font-size:11px;color:rgba(238,240,246,.36)}
+.set-root .tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-size:9.5px;letter-spacing:1.2px;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.set-root .tag.violet{color:#bdb8ff;border:1px solid var(--accent);background:rgba(108,99,255,.13)}
+.set-root .tag.cyan{color:#8ff0e4;border:1px solid var(--cyan);background:rgba(21,224,200,.1)}
+.set-root .tag.amber{color:#ffd99a;border:1px solid var(--amber);background:rgba(245,181,68,.12)}
+.set-root .tag.red{color:#ffb0b0;border:1px solid var(--red);background:rgba(255,107,107,.12)}
+.set-root .tagx{background:none;border:none;color:inherit;cursor:pointer;font-size:14px;line-height:1;padding:0;opacity:.7}
+.set-root .tagx:hover{opacity:1}
+
+/* ── list rows ───────────────────────────────────────────────────────────── */
+.set-root .rows{display:flex;flex-direction:column;gap:10px}
+.set-root .lrow{display:flex;align-items:center;gap:12px;padding:13px 15px;border-radius:12px;border:1px solid var(--line);background:rgba(108,99,255,.04);transition:.16s}
+.set-root .lrow:hover{background:rgba(108,99,255,.08)}
+.set-root .lrow.flush{border:none;background:none;padding:0;margin-bottom:12px}
+.set-root .lrow.flush:hover{background:none}
+.set-root .ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.set-root .ldot.violet{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.set-root .ldot.cyan{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.set-root .ldot.amber{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:sblink 1.1s ease-in-out infinite}
+.set-root .ldot.dim{background:rgba(238,240,246,.22)}
+@keyframes sblink{0%,100%{opacity:1}50%{opacity:.4}}
+.set-root .lmain{flex:1;min-width:0}
+.set-root .lname{font-family:var(--disp);font-size:13px;font-weight:500;color:#eef0f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.set-root .lsub{font-size:10.5px;color:rgba(238,240,246,.42);margin-top:2px}
+.set-root .card{padding:15px;border-radius:13px;border:1px solid var(--line);background:rgba(108,99,255,.04)}
+.set-root .mono-token{font-family:var(--mono);color:rgba(189,184,255,.8)}
+
+/* ── meters ──────────────────────────────────────────────────────────────── */
+.set-root .meter{margin-top:10px}
+.set-root .mtop{display:flex;justify-content:space-between;margin-bottom:5px}
+.set-root .mlabel{font-family:var(--disp);font-size:9px;letter-spacing:1.4px;color:rgba(238,240,246,.5)}
+.set-root .mtext{font-size:10px;color:rgba(238,240,246,.5)}
+.set-root .mtrack{height:6px;border-radius:999px;background:rgba(238,240,246,.08);overflow:hidden}
+.set-root .mfill{display:block;height:100%;border-radius:999px;background:var(--accent);box-shadow:0 0 8px rgba(108,99,255,.6);transition:width .3s}
+.set-root .mfill.hot{background:var(--amber);box-shadow:0 0 8px rgba(245,181,68,.6)}
+
+/* ── device grid ─────────────────────────────────────────────────────────── */
+.set-root .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.set-root .dtile{padding:15px;border-radius:13px;border:1px solid var(--line);background:rgba(108,99,255,.04);display:flex;flex-direction:column;gap:9px}
+.set-root .dhead{display:flex;align-items:center;gap:11px}
+.set-root .dspec{font-size:11px;color:rgba(238,240,246,.5)}
+.set-root .ddaemon{font-size:11px;color:#bdb8ff}
+
+/* ── not-connected / empty / banners ─────────────────────────────────────── */
+.set-root .nc{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:44px 24px}
+.set-root .ncbeacon{width:13px;height:13px;border-radius:50%;background:rgba(108,99,255,.4);position:relative;box-shadow:0 0 14px rgba(108,99,255,.5)}
+.set-root .ncbeacon::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1.5px solid rgba(108,99,255,.5);animation:shalo 2.4s ease-out infinite}
+.set-root .nctitle{font-family:var(--disp);font-size:13px;letter-spacing:2.4px;color:#eef0f6;font-weight:600}
+.set-root .ncdesc{font-size:12px;color:rgba(238,240,246,.5);max-width:420px;line-height:1.6}
+.set-root .empty{padding:34px 24px;text-align:center;font-size:12.5px;color:rgba(238,240,246,.5)}
+.set-root .empty.err{color:#ffb0b0}
+.set-root .banner{padding:10px 14px;border-radius:10px;font-size:11.5px;margin:14px 0;letter-spacing:.3px}
+.set-root .banner.err{color:#ffb0b0;border:1px solid rgba(255,107,107,.3);background:rgba(255,107,107,.08)}
+.set-root .banner.cyan{color:#8ff0e4;border:1px solid rgba(21,224,200,.25);background:rgba(21,224,200,.06)}
+
+/* ── modal ───────────────────────────────────────────────────────────────── */
+.set-root .overlay{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(4,6,8,.66);backdrop-filter:blur(6px)}
+.set-root .modal{width:100%;max-width:420px;border:1px solid rgba(108,99,255,.3);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(22,28,34,.94),rgba(11,15,19,.96));box-shadow:0 24px 80px rgba(0,0,0,.7),inset 0 0 60px rgba(108,99,255,.05)}
+.set-root .mhead{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.set-root .mx{background:none;border:none;color:rgba(238,240,246,.5);font-size:22px;line-height:1;cursor:pointer;padding:0;width:26px;height:26px}
+.set-root .mx:hover{color:#fff}
+.set-root .mbody{padding:20px;display:flex;flex-direction:column;gap:16px}
+.set-root .codebox{display:flex;align-items:center;gap:12px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.25);border-radius:12px;padding:14px 16px}
+.set-root .code{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:8px;color:#bdb8ff;flex:1}
+
+/* mock-only: visibility of inactive sections */
+.set-root .sec{display:none}
+.set-root .sec.show{display:flex;flex-direction:column;gap:18px}
+</style>
+</head>
+<body>
+<div class="set-root">
+  <div class="grid-bg"></div>
+  <div class="scan"></div>
+
+  <div class="stage">
+    <!-- ── top bar (shared HUD chrome) ─────────────────────────────────── -->
+    <div class="top">
+      <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> SETTINGS</div>
+      <div class="topright">
+        <span class="muted">PRODUCT · TACTICL</span>
+        <div class="nav">
+          <a class="chip">COMMAND</a>
+          <a class="chip">DASHBOARD</a>
+          <a class="chip">LINKS</a>
+          <a class="chip active">SETTINGS</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── head ────────────────────────────────────────────────────────── -->
+    <div class="head">
+      <div>
+        <h1 class="h1">SYSTEM <span class="b">SETTINGS</span></h1>
+        <div class="sub">AGENT CONFIG · ACCESS · WORKERS</div>
+      </div>
+    </div>
+
+    <!-- ── two-column hub: section nav + active panel ──────────────────── -->
+    <div class="hub">
+      <aside class="snav">
+        <button class="sitem" data-sec="general">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">GENERAL</span>
+            <span class="shint">Limits · domains · account</span>
+          </span>
+        </button>
+        <button class="sitem active" data-sec="repos">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">REPOS</span>
+            <span class="shint">Connected repositories</span>
+          </span>
+        </button>
+        <button class="sitem" data-sec="tokens">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">TOKENS</span>
+            <span class="shint">Agent API keys</span>
+          </span>
+        </button>
+        <button class="sitem" data-sec="devices">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">DEVICES</span>
+            <span class="shint">Paired workers</span>
+          </span>
+        </button>
+      </aside>
+
+      <div class="pane">
+
+        <!-- ═══════════════ GENERAL ═══════════════ -->
+        <div class="sec" id="sec-general">
+          <div class="panel">
+            <div class="phead">
+              <div class="ptitle">GENERAL</div>
+              <div class="ptag">USER CONFIG</div>
+            </div>
+            <div class="pbody">
+              <div class="block">
+                <div class="bhead">AGENT LIMITS</div>
+                <div class="fgrid">
+                  <label class="field">
+                    <span class="flabel">MAX CONCURRENT SPARKS</span>
+                    <input class="inp" type="number" value="4" />
+                    <span class="fhint">How many sparks can run at the same time</span>
+                  </label>
+                  <label class="field">
+                    <span class="flabel">MONTHLY SPENDING LIMIT</span>
+                    <div class="inp-affix">
+                      <span class="affix">$</span>
+                      <input class="inp" type="number" value="250" />
+                    </div>
+                    <span class="fhint">Set to 0 to block all spending</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="bhead">DOMAIN CONTROLS</div>
+                <div class="bdesc">Control which websites the agent can access. Allowlist takes precedence.</div>
+                <div>
+                  <div class="flabel">ALLOWLIST · agent can always access</div>
+                  <div class="row-inline">
+                    <input class="inp" placeholder="e.g. example.com" />
+                    <button class="btn ghost sm">ADD</button>
+                  </div>
+                  <div class="chips">
+                    <span class="tag cyan">github.com<button class="tagx">×</button></span>
+                    <span class="tag cyan">docs.anthropic.com<button class="tagx">×</button></span>
+                    <span class="tag cyan">linear.app<button class="tagx">×</button></span>
+                  </div>
+                </div>
+                <div style="height:14px"></div>
+                <div>
+                  <div class="flabel">BLOCKLIST · agent cannot access</div>
+                  <div class="row-inline">
+                    <input class="inp" placeholder="e.g. example.com" />
+                    <button class="btn ghost sm">ADD</button>
+                  </div>
+                  <div class="chips">
+                    <span class="tag red">facebook.com<button class="tagx">×</button></span>
+                    <span class="tag red">tiktok.com<button class="tagx">×</button></span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="block">
+                <div class="bhead">ACCOUNT</div>
+                <div class="bdesc">Account management is handled through the auth portal at auth.tacticl.ai.</div>
+              </div>
+
+              <div class="savebar">
+                <button class="btn primary" disabled>SAVE CHANGES</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ REPOS ═══════════════ -->
+        <div class="sec show" id="sec-repos">
+          <div class="panel">
+            <div class="phead">
+              <div class="ptitle">REPOS</div>
+              <div class="ptag">ACCESS GRANTS</div>
+              <div class="paction"><button class="btn primary sm" data-modal="repo">+ CONNECT REPO</button></div>
+            </div>
+            <div class="pbody">
+              <div class="rows">
+                <div class="lrow">
+                  <span class="ldot violet"></span>
+                  <div class="lmain">
+                    <div class="lname">tacticl-ai/tacticl-core</div>
+                    <div class="lsub">GITHUB · granted 6d ago</div>
+                  </div>
+                  <span class="tag red">ADMIN</span>
+                  <button class="btn ghost sm danger">REVOKE</button>
+                </div>
+                <div class="lrow">
+                  <span class="ldot violet"></span>
+                  <div class="lmain">
+                    <div class="lname">tacticl-ai/tacticl-web</div>
+                    <div class="lsub">GITHUB · granted 6d ago</div>
+                  </div>
+                  <span class="tag amber">WRITE</span>
+                  <button class="btn ghost sm danger">REVOKE</button>
+                </div>
+                <div class="lrow">
+                  <span class="ldot violet"></span>
+                  <div class="lmain">
+                    <div class="lname">strategiz-io/strategiz-core</div>
+                    <div class="lsub">GITHUB · granted 12d ago</div>
+                  </div>
+                  <span class="tag amber">WRITE</span>
+                  <button class="btn ghost sm danger">REVOKE</button>
+                </div>
+                <div class="lrow">
+                  <span class="ldot violet"></span>
+                  <div class="lmain">
+                    <div class="lname">cidadel-platform/cidadel-core</div>
+                    <div class="lsub">GITHUB · granted 3w ago</div>
+                  </div>
+                  <span class="tag violet">READ</span>
+                  <button class="btn ghost sm danger">REVOKE</button>
+                </div>
+                <div class="lrow">
+                  <span class="ldot violet"></span>
+                  <div class="lmain">
+                    <div class="lname">marketiz/marketiz</div>
+                    <div class="lsub">GITLAB · granted 2d ago</div>
+                  </div>
+                  <span class="tag violet">READ</span>
+                  <button class="btn ghost sm danger">REVOKE</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ TOKENS ═══════════════ -->
+        <div class="sec" id="sec-tokens">
+          <div class="panel">
+            <div class="phead">
+              <div class="ptitle">TOKENS</div>
+              <div class="ptag">AGENT KEYS</div>
+              <div class="paction"><button class="btn primary sm" data-modal="token">+ ADD TOKEN</button></div>
+            </div>
+            <div class="pbody">
+              <div class="rows">
+
+                <div class="card">
+                  <div class="lrow flush">
+                    <span class="ldot cyan"></span>
+                    <div class="lmain"><div class="lname">Anthropic · Production key</div></div>
+                    <span class="tag violet">ANTHROPIC</span>
+                    <button class="btn ghost sm danger">REMOVE</button>
+                  </div>
+                  <div class="lsub mono-token">sk-ant-api03-••••••••••••••••••••••••7f4a</div>
+                  <div class="meter">
+                    <div class="mtop"><span class="mlabel">TODAY</span><span class="mtext">312k / 500k tokens</span></div>
+                    <div class="mtrack"><span class="mfill" style="width:62%"></span></div>
+                  </div>
+                  <div class="meter">
+                    <div class="mtop"><span class="mlabel">THIS MONTH</span><span class="mtext">6.4M / 20M tokens</span></div>
+                    <div class="mtrack"><span class="mfill" style="width:32%"></span></div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="lrow flush">
+                    <span class="ldot cyan"></span>
+                    <div class="lmain"><div class="lname">OpenAI · Vision fallback</div></div>
+                    <span class="tag violet">OPENAI</span>
+                    <button class="btn ghost sm danger">REMOVE</button>
+                  </div>
+                  <div class="lsub mono-token">sk-proj-••••••••••••••••••••••••a91c</div>
+                  <div class="meter">
+                    <div class="mtop"><span class="mlabel">TODAY</span><span class="mtext">186k / 200k tokens</span></div>
+                    <div class="mtrack"><span class="mfill hot" style="width:93%"></span></div>
+                  </div>
+                  <div class="meter">
+                    <div class="mtop"><span class="mlabel">THIS MONTH</span><span class="mtext">2.1M / 5M tokens</span></div>
+                    <div class="mtrack"><span class="mfill" style="width:42%"></span></div>
+                  </div>
+                </div>
+
+                <div class="card">
+                  <div class="lrow flush">
+                    <span class="ldot cyan"></span>
+                    <div class="lmain"><div class="lname">GitHub · PDLC app token</div></div>
+                    <span class="tag violet">GITHUB</span>
+                    <button class="btn ghost sm danger">REMOVE</button>
+                  </div>
+                  <div class="lsub mono-token">ghp_••••••••••••••••••••••••••••3dE2</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════ DEVICES ═══════════════ -->
+        <div class="sec" id="sec-devices">
+          <div class="panel">
+            <div class="phead">
+              <div class="ptitle">DEVICES</div>
+              <div class="ptag">WORKERS</div>
+              <div class="paction"><button class="btn primary sm" data-modal="device">+ ADD DEVICE</button></div>
+            </div>
+            <div class="pbody">
+              <div class="dgrid">
+
+                <div class="dtile">
+                  <div class="dhead">
+                    <span class="ldot cyan"></span>
+                    <div class="lmain">
+                      <div class="lname">Nova Studio</div>
+                      <div class="lsub">macOS 15.4 · desktop</div>
+                    </div>
+                    <button class="btn ghost sm danger">UNPAIR</button>
+                  </div>
+                  <div class="dspec">12 cores · 64GB RAM · 814GB free</div>
+                  <div class="chips">
+                    <span class="tag violet">CODE</span>
+                    <span class="tag violet">DEVOPS</span>
+                    <span class="tag violet">BROWSER</span>
+                  </div>
+                  <div class="ddaemon">2 active daemons</div>
+                  <div class="lsub">last seen just now</div>
+                </div>
+
+                <div class="dtile">
+                  <div class="dhead">
+                    <span class="ldot amber"></span>
+                    <div class="lmain">
+                      <div class="lname">Forge Rig</div>
+                      <div class="lsub">Linux · desktop</div>
+                    </div>
+                    <button class="btn ghost sm danger">UNPAIR</button>
+                  </div>
+                  <div class="dspec">16 cores · 128GB RAM · 1.9TB free</div>
+                  <div class="chips">
+                    <span class="tag violet">CODE</span>
+                    <span class="tag violet">VIDEO</span>
+                  </div>
+                  <div class="ddaemon">3 active daemons</div>
+                  <div class="lsub">last seen 2m ago</div>
+                </div>
+
+                <div class="dtile">
+                  <div class="dhead">
+                    <span class="ldot dim"></span>
+                    <div class="lmain">
+                      <div class="lname">Pixel 9 Pro</div>
+                      <div class="lsub">Android 16 · mobile</div>
+                    </div>
+                    <button class="btn ghost sm danger">UNPAIR</button>
+                  </div>
+                  <div class="dspec">8 cores · 12GB RAM · 96GB free</div>
+                  <div class="chips">
+                    <span class="tag violet">SOCIAL</span>
+                  </div>
+                  <div class="lsub">last seen 4h ago</div>
+                </div>
+
+                <div class="dtile">
+                  <div class="dhead">
+                    <span class="ldot dim"></span>
+                    <div class="lmain">
+                      <div class="lname">iPad Air M3</div>
+                      <div class="lsub">iPadOS 19 · mobile</div>
+                    </div>
+                    <button class="btn ghost sm danger">UNPAIR</button>
+                  </div>
+                  <div class="dspec">8 cores · 8GB RAM · 142GB free</div>
+                  <div class="chips">
+                    <span class="tag violet">RESEARCH</span>
+                  </div>
+                  <div class="lsub">last seen 1d ago</div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="height:46px"></div>
+  </div>
+
+  <!-- ── modal: CONNECT REPOSITORY (hidden by default) ─────────────────── -->
+  <div class="overlay" id="modal-repo" style="display:none">
+    <div class="modal">
+      <div class="mhead">
+        <div class="ptitle">CONNECT REPOSITORY</div>
+        <button class="mx" data-close>×</button>
+      </div>
+      <div class="mbody">
+        <label class="field">
+          <span class="flabel">PROVIDER</span>
+          <select class="inp"><option>GitHub</option><option>GitLab</option><option>Bitbucket</option></select>
+        </label>
+        <label class="field">
+          <span class="flabel">REPOSITORY</span>
+          <input class="inp" placeholder="owner/repo" />
+        </label>
+        <label class="field">
+          <span class="flabel">ACCESS LEVEL</span>
+          <select class="inp"><option>Read</option><option>Write</option><option>Admin</option></select>
+        </label>
+        <div class="savebar">
+          <button class="btn ghost" data-close>CANCEL</button>
+          <button class="btn primary" disabled>CONNECT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── modal: ADD TOKEN (hidden by default) ──────────────────────────── -->
+  <div class="overlay" id="modal-token" style="display:none">
+    <div class="modal">
+      <div class="mhead">
+        <div class="ptitle">ADD TOKEN</div>
+        <button class="mx" data-close>×</button>
+      </div>
+      <div class="mbody">
+        <label class="field">
+          <span class="flabel">PROVIDER</span>
+          <select class="inp"><option>Anthropic</option><option>GitHub</option><option>OpenAI</option></select>
+        </label>
+        <label class="field">
+          <span class="flabel">LABEL</span>
+          <input class="inp" placeholder="e.g. Production key" />
+        </label>
+        <label class="field">
+          <span class="flabel">TOKEN</span>
+          <input class="inp" type="password" placeholder="sk-…" />
+        </label>
+        <div class="savebar">
+          <button class="btn ghost" data-close>CANCEL</button>
+          <button class="btn primary" disabled>ADD</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── modal: CONNECT A DEVICE (hidden by default) ───────────────────── -->
+  <div class="overlay" id="modal-device" style="display:none">
+    <div class="modal">
+      <div class="mhead">
+        <div class="ptitle">CONNECT A DEVICE</div>
+        <button class="mx" data-close>×</button>
+      </div>
+      <div class="mbody">
+        <div class="bdesc">Download Tacticl Device, open it, then enter the pairing code below to link this worker.</div>
+        <label class="field">
+          <span class="flabel">PAIRING CODE</span>
+          <div class="codebox">
+            <span class="code">7F2 9KQ</span>
+            <button class="btn ghost sm">COPY</button>
+          </div>
+        </label>
+        <div class="banner cyan">Waiting for your device to connect… (expires in 5 minutes)</div>
+        <div class="savebar">
+          <button class="btn ghost" data-close>CLOSE</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ── section nav (matches useState<SectionId> switching) ──
+  const items = document.querySelectorAll('.sitem');
+  const secs = document.querySelectorAll('.sec');
+  items.forEach(it => it.addEventListener('click', () => {
+    const id = it.getAttribute('data-sec');
+    items.forEach(x => x.classList.toggle('active', x === it));
+    secs.forEach(s => s.classList.toggle('show', s.id === 'sec-' + id));
+  }));
+
+  // ── modal open/close (visual only) ──
+  document.querySelectorAll('[data-modal]').forEach(b =>
+    b.addEventListener('click', () => {
+      document.getElementById('modal-' + b.getAttribute('data-modal')).style.display = 'flex';
+    }));
+  document.querySelectorAll('.overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if (e.target === ov) ov.style.display = 'none'; });
+    ov.querySelectorAll('[data-close]').forEach(c =>
+      c.addEventListener('click', () => ov.style.display = 'none'));
+  });
+</script>
+</body>
+</html>

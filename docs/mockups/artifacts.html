@@ -1,0 +1,565 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tacticl HUD · Artifact Viewer</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Newsreader:ital,wght@0,400;1,400&display=swap" rel="stylesheet" />
+<style>
+/* HUD design tokens (mirrors src/theme/hud.ts) */
+:root{
+  --accent:#6C63FF; --violet:#6C63FF; --magenta:#B25CFF;
+  --cyan:#03DAC6; --cyan-bright:#15E0C8; --amber:#F5B544; --red:#FF6B6B;
+  --err:#FF5C7A; --idle:#6E6A8F; --txt:#E6E3F5; --txt-muted:#A39FC4;
+  --disp:"Chakra Petch","Inter",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+  --read:"Newsreader",Georgia,serif;
+  --glass-bg:linear-gradient(180deg, rgba(20,26,30,0.72), rgba(12,16,20,0.72));
+  --glass-border:rgba(108,99,255,0.18);
+  --glass-shadow:inset 0 0 40px rgba(108,99,255,0.04), 0 8px 40px rgba(0,0,0,0.5);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{
+  font-family:var(--mono); color:var(--txt);
+  background:
+    radial-gradient(1200px 800px at 50% -8%, rgba(108,99,255,0.13), transparent 60%),
+    radial-gradient(900px 700px at 80% 110%, rgba(178,92,255,0.09), transparent 60%),
+    radial-gradient(700px 600px at 6% 18%, rgba(3,218,198,0.05), transparent 62%),
+    #06060f;
+  min-height:100vh; overflow-x:hidden; -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+  background-image:
+    linear-gradient(rgba(124,99,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(124,99,255,0.05) 1px, transparent 1px);
+  background-size:32px 32px;
+  -webkit-mask-image:radial-gradient(1400px 1000px at 50% 0%, #000 55%, transparent 100%);
+  mask-image:radial-gradient(1400px 1000px at 50% 0%, #000 55%, transparent 100%);
+}
+.scanline{
+  position:fixed; left:0; right:0; height:160px; z-index:1; pointer-events:none;
+  background:linear-gradient(180deg, transparent, rgba(108,99,255,0.06) 45%, rgba(21,224,200,0.05) 55%, transparent);
+  animation:scan 9s linear infinite; opacity:.7;
+}
+@keyframes scan{ 0%{transform:translateY(-200px);} 100%{transform:translateY(105vh);} }
+.app{position:relative; z-index:2; max-width:1480px; margin:0 auto; padding:22px 26px 56px;}
+
+.topbar{display:flex; align-items:center; gap:16px; margin-bottom:18px;}
+.brand{display:flex; align-items:center; gap:11px;}
+.orb{
+  width:30px; height:30px; border-radius:50%;
+  background:radial-gradient(circle at 32% 30%, #cfc9ff, var(--accent) 42%, var(--magenta) 78%);
+  box-shadow:0 0 18px rgba(108,99,255,0.6), inset 0 0 8px rgba(255,255,255,0.45);
+  animation:pulse 3.4s ease-in-out infinite;
+}
+@keyframes pulse{ 0%,100%{box-shadow:0 0 14px rgba(108,99,255,0.5), inset 0 0 8px rgba(255,255,255,0.4);} 50%{box-shadow:0 0 26px rgba(178,92,255,0.7), inset 0 0 10px rgba(255,255,255,0.55);} }
+.brand b{font-family:var(--disp); font-weight:700; letter-spacing:.34em; font-size:14px; color:#fff;}
+.brand span{font-family:var(--mono); font-size:10px; color:var(--txt-muted); letter-spacing:.18em;}
+.topbar .sep{flex:1;}
+.crumbs{font-family:var(--mono); font-size:11.5px; color:var(--txt-muted); display:flex; align-items:center; gap:8px;}
+.crumbs a{color:var(--txt-muted); text-decoration:none;}
+.crumbs a:hover{color:var(--cyan);}
+.crumbs .cur{color:var(--txt);}
+.crumbs .slash{opacity:.4;}
+
+.eyebrow{font-family:var(--mono); font-size:9.5px; letter-spacing:.26em; text-transform:uppercase; color:rgba(170,165,255,.66); display:flex; align-items:center; gap:7px;}
+.eyebrow::before{content:""; width:5px; height:5px; background:var(--accent); box-shadow:0 0 8px var(--accent); border-radius:1px;}
+
+.spark-head{margin-bottom:16px;}
+.spark-title-row{display:flex; align-items:flex-start; gap:16px;}
+.spark-title{font-family:var(--disp); font-weight:600; font-size:24px; color:#fff; line-height:1.18; margin:6px 0 10px; flex:1;}
+.badges{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:10px;}
+.chip{font-family:var(--mono); font-size:10.5px; letter-spacing:.06em; padding:4px 10px; border-radius:6px; border:1px solid var(--glass-border); color:var(--txt-muted); background:rgba(255,255,255,0.02); white-space:nowrap;}
+.chip.run{color:var(--cyan-bright); border-color:rgba(21,224,200,.4); background:rgba(21,224,200,.08);}
+.chip.pb{color:#cfc9ff; border-color:rgba(108,99,255,.4); background:rgba(108,99,255,.08); text-transform:capitalize;}
+.chip.type{color:var(--magenta); border-color:rgba(178,92,255,.4); background:rgba(178,92,255,.08);}
+.meta-row{display:flex; gap:24px; align-items:center; font-family:var(--mono); font-size:11.5px; color:var(--txt-muted);}
+.meta-row b{color:var(--txt); font-weight:500;}
+
+.btn{font-family:var(--disp); font-weight:600; font-size:11px; letter-spacing:.14em; text-transform:uppercase; padding:8px 16px; border-radius:8px; cursor:pointer; border:1px solid transparent; transition:.16s;}
+.btn-primary{background:linear-gradient(135deg,#6C63FF,#B25CFF 55%,#15E0C8); color:#0a0a14; box-shadow:0 6px 22px rgba(108,99,255,.35);}
+.btn-primary:hover{filter:brightness(1.08);}
+.btn-ghost{background:rgba(108,99,255,.05); border-color:rgba(108,99,255,.4); color:#cfc9ff;}
+.btn-ghost:hover{background:rgba(108,99,255,.16); border-color:var(--accent); color:#fff;}
+
+.kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px;}
+.kpi{position:relative; padding:13px 15px; border-radius:10px; background:var(--glass-bg); border:1px solid var(--glass-border); box-shadow:var(--glass-shadow); overflow:hidden;}
+.kpi .kv{font-family:var(--disp); font-weight:700; font-size:21px; color:#fff; line-height:1;}
+.kpi .kl{font-family:var(--mono); font-size:9.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--txt-muted); margin-top:7px;}
+
+.panel{position:relative; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:10px; box-shadow:var(--glass-shadow); backdrop-filter:blur(14px); overflow:hidden;}
+.panel-h{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 16px; border-bottom:1px solid rgba(108,99,255,0.12);}
+.panel-h .t{font-family:var(--disp); font-weight:600; font-size:12px; letter-spacing:.25em; color:var(--accent);}
+.panel-h .tag{font-family:var(--mono); font-size:10px; letter-spacing:.08em; color:rgba(255,255,255,0.4);}
+.bracket{position:absolute; width:14px; height:14px; border-color:rgba(108,99,255,0.55); border-style:solid; border-width:0; pointer-events:none; z-index:2;}
+.bracket.tl{top:6px; left:6px; border-top-width:1.5px; border-left-width:1.5px;}
+.bracket.tr{top:6px; right:6px; border-top-width:1.5px; border-right-width:1.5px;}
+.bracket.bl{bottom:6px; left:6px; border-bottom-width:1.5px; border-left-width:1.5px;}
+.bracket.br{bottom:6px; right:6px; border-bottom-width:1.5px; border-right-width:1.5px;}
+
+.viewer{display:grid; grid-template-columns:308px 1fr; gap:18px; align-items:start;}
+
+.rail-body{padding:10px 10px 14px;}
+.group-label{font-family:var(--mono); font-size:9px; letter-spacing:.24em; text-transform:uppercase; color:rgba(170,165,255,.55); padding:14px 8px 8px; display:flex; align-items:center; gap:7px;}
+.group-label::before{content:""; width:4px; height:4px; border-radius:1px; background:var(--accent); box-shadow:0 0 6px var(--accent);}
+.group-label.first{padding-top:6px;}
+
+.art{display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:8px; cursor:pointer; border:1px solid transparent; transition:.14s; position:relative; margin-bottom:2px;}
+.art:hover{background:rgba(108,99,255,0.06);}
+.art.active{background:rgba(108,99,255,0.10); border-color:rgba(108,99,255,0.3);}
+.art.active::before{content:""; position:absolute; left:-1px; top:8px; bottom:8px; width:2.5px; border-radius:2px; background:var(--rc, var(--accent)); box-shadow:0 0 9px var(--rc, var(--accent));}
+.art .ico{width:30px; height:30px; flex-shrink:0; border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--disp); font-weight:700; font-size:9px; letter-spacing:.02em; color:var(--rc); background:color-mix(in srgb, var(--rc) 15%, transparent); border:1px solid color-mix(in srgb, var(--rc) 45%, transparent);}
+.art .body{flex:1; min-width:0;}
+.art .nm{font-family:var(--disp); font-weight:600; font-size:12px; color:var(--txt); letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.art .sub{font-family:var(--mono); font-size:9.5px; color:var(--txt-muted); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.art .st{flex-shrink:0; width:9px; height:9px; border-radius:50%;}
+.st.done{background:var(--cyan-bright); box-shadow:0 0 8px rgba(21,224,200,.8);}
+.st.active{background:var(--accent); animation:nodepulse 2s ease-in-out infinite;}
+@keyframes nodepulse{0%,100%{box-shadow:0 0 0 0 rgba(108,99,255,.55);}50%{box-shadow:0 0 0 6px rgba(108,99,255,0);}}
+.st.pend{background:transparent; border:1.5px dashed var(--idle);}
+.st.skip{background:var(--idle);}
+
+.bundle{margin:4px 4px 4px; padding:6px; border-radius:10px; border:1px dashed rgba(245,181,68,0.34); background:rgba(245,181,68,0.035);}
+.bundle-h{display:flex; align-items:center; justify-content:space-between; padding:4px 6px 8px;}
+.bundle-h .bt{font-family:var(--disp); font-weight:700; font-size:10.5px; letter-spacing:.12em; color:var(--amber); display:flex; align-items:center; gap:7px;}
+.bundle-h .bt .gico{width:8px; height:8px; border-radius:2px; background:var(--amber); box-shadow:0 0 8px var(--amber);}
+.bundle-h .gate{font-family:var(--mono); font-size:8.5px; letter-spacing:.1em; color:rgba(245,181,68,.8); border:1px solid rgba(245,181,68,.4); border-radius:5px; padding:2px 6px; text-transform:uppercase;}
+.bundle .art.active::before{left:-7px;}
+
+.doc{}
+.onpage{border-right:1px solid rgba(108,99,255,0.14); padding:18px 16px; position:sticky; top:0; align-self:flex-start;}
+.onpage .lbl{font-family:var(--disp); font-size:9px; letter-spacing:.22em; color:rgba(170,165,255,.6); margin-bottom:13px;}
+.onpage .oi{font-family:var(--mono); font-size:11px; color:rgba(238,240,246,.55); padding:6px 11px; border-radius:6px; border-left:2px solid transparent; cursor:pointer; transition:.14s; margin-bottom:2px;}
+.onpage .oi:hover{color:#eef0f6; background:rgba(108,99,255,0.06);}
+.onpage .oi.on{color:#fff; border-left-color:var(--rc, var(--cyan)); background:color-mix(in srgb, var(--rc, var(--cyan)) 8%, transparent);}
+
+.docbody{padding:30px 40px 44px; max-width:840px; min-width:0;}
+.docbody .topmeta{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:18px;}
+.role-pill{font-family:var(--disp); font-weight:700; font-size:10px; letter-spacing:.06em; padding:5px 11px; border-radius:7px; color:var(--rc); background:color-mix(in srgb, var(--rc) 14%, transparent); border:1px solid color-mix(in srgb, var(--rc) 45%, transparent);}
+.metachip{font-family:var(--mono); font-size:10px; color:var(--txt-muted); padding:4px 9px; border-radius:6px; border:1px solid var(--glass-border);}
+.metachip.model{color:#B39DDB; background:rgba(108,99,255,0.12); border-color:rgba(108,99,255,.25);}
+
+.md h1{font-family:var(--disp); font-size:26px; color:#fff; margin:0 0 8px;}
+.md .meta-line{font-family:var(--mono); font-size:11px; color:rgba(238,240,246,.4); margin-bottom:24px;}
+.md h2{font-family:var(--disp); font-size:16px; letter-spacing:1px; color:#bdb8ff; margin:34px 0 14px; padding-bottom:9px; border-bottom:1px solid rgba(108,99,255,0.14); scroll-margin-top:16px;}
+.md h2 .accent{color:var(--rc);}
+.md h3{font-family:var(--disp); font-size:13.5px; color:var(--cyan); margin:22px 0 9px; letter-spacing:.5px;}
+.md p{font-family:var(--read); font-size:16px; line-height:1.7; color:rgba(238,240,246,.86); margin:11px 0;}
+.md ul,.md ol{margin:9px 0; padding-left:24px;}
+.md li{font-family:var(--read); font-size:16px; line-height:1.7; color:rgba(238,240,246,.86); margin:5px 0;}
+.md strong{color:#fff; font-weight:600;}
+.md em{color:#ffd99a; font-style:italic;}
+.md a{color:var(--accent); text-decoration:none; border-bottom:1px solid rgba(108,99,255,.33);}
+.md a:hover{border-bottom-color:var(--accent);}
+.md blockquote{border-left:3px solid var(--cyan); margin:14px 0; padding:7px 18px; background:rgba(3,218,198,0.05); color:rgba(238,240,246,.8); font-family:var(--read); font-style:italic;}
+.md code{font-family:var(--mono); font-size:13px; background:rgba(108,99,255,0.12); color:#cfc9ff; padding:2px 6px; border-radius:5px;}
+.md pre{margin:14px 0; padding:15px 17px; border-radius:11px; border:1px solid rgba(108,99,255,0.18); background:rgba(8,11,13,0.6); overflow-x:auto;}
+.md pre code{display:block; background:none; padding:0; font-size:12.5px; line-height:1.6; color:#cfc9ff; white-space:pre;}
+.md pre .k{color:#B25CFF;} .md pre .s{color:var(--cyan-bright);} .md pre .c{color:#6E6A8F; font-style:italic;} .md pre .n{color:#ffd99a;}
+.md table{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:12.5px; margin:15px 0;}
+.md th,.md td{border:1px solid rgba(108,99,255,0.14); padding:9px 13px; text-align:left;}
+.md th{background:rgba(108,99,255,0.08); color:#bdb8ff; font-family:var(--disp); letter-spacing:.5px; font-weight:600;}
+.md td{color:rgba(238,240,246,.8);}
+.md hr{border:none; border-top:1px solid rgba(108,99,255,0.14); margin:26px 0;}
+.md td.add{color:var(--cyan-bright);} .md td.rem{color:var(--err);}
+.tag-add{color:var(--cyan-bright); font-weight:600;} .tag-rem{color:var(--err); font-weight:600;}
+.md .check{list-style:none; padding-left:2px; margin:11px 0;}
+.md .check li{display:flex; align-items:flex-start; gap:11px; font-family:var(--mono); font-size:13.5px; line-height:1.55; color:rgba(238,240,246,.82); margin:7px 0;}
+.md .check .bx{flex-shrink:0; width:17px; height:17px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:11px; margin-top:1px;}
+.md .check .bx.ok{background:rgba(21,224,200,.16); border:1px solid rgba(21,224,200,.5); color:var(--cyan-bright);}
+.md .check .bx.no{background:transparent; border:1.5px solid var(--idle); color:transparent;}
+.md .check li.done span{color:rgba(238,240,246,.55);}
+.merge-banner{display:flex; align-items:center; gap:14px; padding:14px 18px; border-radius:11px; margin-bottom:22px; border:1px solid rgba(245,181,68,0.32); background:linear-gradient(135deg, rgba(245,181,68,0.08), rgba(178,92,255,0.05));}
+.merge-banner .mg-ico{width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:rgba(245,181,68,0.14); border:1px solid rgba(245,181,68,0.42); color:var(--amber); font-family:var(--disp); font-weight:700; font-size:15px;}
+.merge-banner .mg-t{font-family:var(--disp); font-weight:700; font-size:13px; letter-spacing:.06em; color:#fff;}
+.merge-banner .mg-s{font-family:var(--mono); font-size:10.5px; color:var(--txt-muted); margin-top:3px;}
+.merge-banner .mg-act{margin-left:auto; display:flex; gap:8px;}
+.subtabs{display:flex; gap:6px; margin-bottom:24px; flex-wrap:wrap;}
+.subtab{font-family:var(--disp); font-weight:600; font-size:10.5px; letter-spacing:.08em; padding:7px 13px; border-radius:8px; cursor:pointer; border:1px solid var(--glass-border); color:var(--txt-muted); background:rgba(255,255,255,0.02); transition:.14s; display:flex; align-items:center; gap:8px;}
+.subtab .dot{width:7px; height:7px; border-radius:50%; background:var(--sc);}
+.subtab:hover{color:var(--txt);}
+.subtab.on{color:#fff; border-color:color-mix(in srgb, var(--sc) 55%, transparent); background:color-mix(in srgb, var(--sc) 12%, transparent);}
+
+.foot{margin-top:26px; text-align:center; font-family:var(--mono); font-size:10px; letter-spacing:.16em; color:rgba(163,159,196,.45);}
+
+@media (max-width:1180px){ .viewer{grid-template-columns:1fr;} .kpis{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="orb"></div>
+      <div><b>TACTICL</b><br/><span>PDLC · ARTIFACT VIEWER</span></div>
+    </div>
+    <div class="sep"></div>
+    <div class="crumbs"><a href="#">Sparks</a><span class="slash">/</span><span class="cur">spk_7Q2mK9vXa1</span></div>
+  </div>
+
+  <div class="spark-head">
+    <div class="spark-title-row">
+      <div class="spark-title">Add a rate-limited <code style="font-family:var(--mono);font-size:18px;color:#cfc9ff;background:rgba(108,99,255,.12);padding:1px 7px;border-radius:5px;">/v1/health</code> endpoint with readiness + liveness probes</div>
+      <button class="btn btn-ghost">Open Repo</button>
+    </div>
+    <div class="badges">
+      <span class="chip run">&#9679; RUNNING</span>
+      <span class="chip type">code</span>
+      <span class="chip pb">full pdlc</span>
+      <span class="chip">tacticl-ai / tacticl-core</span>
+      <span class="chip">HIGH</span>
+    </div>
+    <div class="meta-row">
+      <span>Target: <b>Cloud &middot; Arbiter</b></span>
+      <span>Branch: <b>spk/health-endpoint</b></span>
+      <span>started <b>14 minutes ago</b></span>
+    </div>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><div class="bracket tl"></div><div class="bracket br"></div><div class="kv">9/12</div><div class="kl">Roles Done</div></div>
+    <div class="kpi"><div class="kv" style="color:var(--cyan-bright);">$1.84</div><div class="kl">Cost</div></div>
+    <div class="kpi"><div class="kv">14m 22s</div><div class="kl">Elapsed</div></div>
+    <div class="kpi"><div class="kv" style="color:var(--amber);">1</div><div class="kl">Reworks</div></div>
+  </div>
+
+  <div class="viewer">
+    <div class="panel rail">
+      <div class="bracket tl"></div><div class="bracket tr"></div><div class="bracket bl"></div><div class="bracket br"></div>
+      <div class="panel-h"><span class="t">ARTIFACTS</span><span class="tag">12 ROLES &middot; v1</span></div>
+      <div class="rail-body" id="rail"></div>
+    </div>
+
+    <div class="panel doc">
+      <div class="bracket tl"></div><div class="bracket tr"></div><div class="bracket bl"></div><div class="bracket br"></div>
+      <div class="panel-h"><span class="t" id="doc-panel-title">ARTIFACT</span><span class="tag" id="doc-panel-tag">PO &middot; v1</span></div>
+      <div style="display:grid; grid-template-columns:200px 1fr;">
+        <div class="onpage" id="onpage"></div>
+        <div class="docbody" id="docbody"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">TACTICL HUD &middot; STATIC MOCKUP &middot; FOLDED MERGE-GATE MODEL &middot; NO BUILD STEP</div>
+</div>
+
+<script>
+const ROLE = {
+  PO:        {name:'Product Owner',      icon:'PO',   color:'#6C63FF', tag:'PO · v1',       sub:'product-brief.md',      status:'done'},
+  RESEARCHER:{name:'Research Findings',  icon:'RSCH', color:'#15E0C8', tag:'RESEARCH · v1', sub:'research-findings.md',  status:'done'},
+  ARCHITECT: {name:'Architecture',       icon:'ARCH', color:'#B25CFF', tag:'ARCH · v1',     sub:'architecture.md',       status:'done'},
+  DESIGNER:  {name:'Design',             icon:'DSGN', color:'#F48FB1', tag:'DESIGN · v1',   sub:'design.md',             status:'done'},
+  PLANNER:   {name:'Plan',               icon:'PLAN', color:'#64B5F6', tag:'PLAN · v1',     sub:'implementation-plan.md',status:'done'},
+  IMPLEMENTER:{name:'Change Summary',    icon:'IMPL', color:'#03DAC6', tag:'IMPL · v1',     sub:'change-summary.md',     status:'done'},
+  REVIEWER:  {name:'Code Review',        icon:'REV',  color:'#81C784', tag:'REVIEW · v1',   sub:'code-review.md',        status:'done'},
+  TESTER:    {name:'Test Report',        icon:'TEST', color:'#4FC3F7', tag:'TEST · v1',     sub:'test-report.md',        status:'done'},
+  SECURITY_ANALYST:{name:'Security Report',icon:'SEC',color:'#FF6B6B', tag:'SECURITY · v1', sub:'security-report.md',    status:'done'},
+  TECHNICAL_WRITER:{name:'Tech-Writer Docs',icon:'DOCS',color:'#FFB74D',tag:'DOCS · v2',    sub:'docs.md · reworked',status:'done'},
+  DEVOPS:    {name:'DevOps Deploy',      icon:'OPS',  color:'#F5B544', tag:'DEVOPS · v1',   sub:'deploy.md · running…', status:'active'},
+  RETRO_ANALYST:{name:'Retro',          icon:'RETRO',color:'#A39FC4', tag:'RETRO · v1',    sub:'retrospective.md',      status:'pend'}
+};
+
+const DOCS = {
+  PO:`<h1>Product Brief — Health &amp; Readiness Endpoint</h1>
+<div class="meta-line">Product Owner · v1 · spk_7Q2mK9vXa1 · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Problem</h2>
+<p>The <strong>tacticl-core</strong> service exposes no machine-readable health surface. Caddy and the Hetzner compose stack can only infer liveness from a raw TCP connect, so a wedged JVM with an open socket reads as "healthy" while requests stall. Operators learned this the hard way during the <em>2026-06-06 Vault data-host outage</em>.</p>
+<h2><span class="accent">02 ·</span> Goal</h2>
+<p>Ship a first-class <code>/v1/health</code> surface that distinguishes <strong>liveness</strong> (process is up) from <strong>readiness</strong> (downstream deps — Mongo, Vault, Arbiter gRPC — are reachable), with sane rate limiting so it can be polled aggressively without becoming an amplification vector.</p>
+<h2><span class="accent">03 ·</span> Acceptance Criteria</h2>
+<ul class="check">
+<li class="done"><span class="bx ok">✓</span><span><code>GET /v1/health/live</code> returns 200 within 50ms with no dependency calls</span></li>
+<li class="done"><span class="bx ok">✓</span><span><code>GET /v1/health/ready</code> reports per-dependency status (Mongo, Vault, Arbiter)</span></li>
+<li class="done"><span class="bx ok">✓</span><span>Readiness returns <code>503</code> when any required dependency is down</span></li>
+<li><span class="bx no">·</span><span>Endpoint is rate-limited via the shared <code>framework-resilience</code> bucket4j config</span></li>
+<li><span class="bx no">·</span><span>No auth required (probes run inside the compose network)</span></li>
+</ul>
+<h2><span class="accent">04 ·</span> Out of Scope</h2>
+<p>Deep health (replica lag, queue depth) and a Prometheus <code>/metrics</code> exporter are deferred to a follow-up spark.</p>
+<blockquote>Decision: probes are unauthenticated but bound to the internal listener only — Caddy never proxies <code>/v1/health/*</code> to the public edge.</blockquote>`,
+
+  RESEARCHER:`<h1>Research Findings — Health Probe Conventions</h1>
+<div class="meta-line">Researcher · v1 · 18.4K tokens · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Prior Art</h2>
+<p>Surveyed Spring Boot Actuator, Kubernetes probe semantics, and the sibling <strong>strategiz-core</strong> implementation. Actuator's <code>/actuator/health/{liveness,readiness}</code> groups map cleanly onto our needs but pull in the full management endpoint surface, which we don't want exposed.</p>
+<h2><span class="accent">02 ·</span> Key Findings</h2>
+<table>
+<thead><tr><th>Option</th><th>Pros</th><th>Cons</th></tr></thead>
+<tbody>
+<tr><td>Actuator groups</td><td>Battle-tested, group support</td><td>Heavy, exposes mgmt port</td></tr>
+<tr><td>Custom controller</td><td>Full control, lean</td><td>We own the contract</td></tr>
+<tr><td>Spring Cloud probes</td><td>K8s-native</td><td>Not on K8s (Hetzner compose)</td></tr>
+</tbody></table>
+<h2><span class="accent">03 ·</span> Recommendation</h2>
+<p>A thin custom <code>HealthController</code> in <code>service-agent</code> that composes injected <code>HealthIndicator</code> beans. Mirrors the strategiz-core pattern (verified at <code>io.strategiz.health.*</code>) so operators get one mental model across both products.</p>
+<blockquote>Note: bucket4j is already on the classpath via <code>framework-resilience</code> — no new dependency required for rate limiting.</blockquote>`,
+
+  ARCHITECT:`<h1>Architecture — Health Subsystem</h1>
+<div class="meta-line">Architect · v1 · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Component Layout</h2>
+<p>Following the layered module rules: <code>service-agent</code> owns the controller, <code>business-agent</code> owns the indicators, clients stay leaf. No new module.</p>
+<pre><code><span class="c">// service-agent</span>
+<span class="k">class</span> <span class="n">HealthController</span> <span class="k">extends</span> BaseController {
+  <span class="k">private final</span> List&lt;HealthIndicator&gt; indicators;
+
+  @GetMapping(<span class="s">"/v1/health/live"</span>)
+  ResponseEntity&lt;LivenessDto&gt; <span class="n">live</span>() { ... }
+
+  @GetMapping(<span class="s">"/v1/health/ready"</span>)
+  ResponseEntity&lt;ReadinessDto&gt; <span class="n">ready</span>() {
+    <span class="k">var</span> checks = indicators.stream()
+        .map(HealthIndicator::check)
+        .toList();
+    <span class="k">return</span> ReadinessDto.from(checks);
+  }
+}</code></pre>
+<h2><span class="accent">02 ·</span> Dependency Indicators</h2>
+<ul>
+<li><strong>MongoHealthIndicator</strong> — <code>ping</code> against the primary, 250ms timeout</li>
+<li><strong>VaultHealthIndicator</strong> — token self-lookup against <code>http://vault:8200</code></li>
+<li><strong>ArbiterHealthIndicator</strong> — gRPC <code>Health/Check</code> on the arbiter channel</li>
+</ul>
+<h2><span class="accent">03 ·</span> Sequence</h2>
+<blockquote>Readiness fans out to all indicators in parallel with a hard 250ms per-check budget; the aggregate is the worst status. Any <code>DOWN</code> → overall <code>503</code>.</blockquote>`,
+
+  DESIGNER:`<h1>Design — Health Response Contract</h1>
+<div class="meta-line">Designer · v1 · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Response Shape</h2>
+<p>Stable, versioned JSON. <code>status</code> is the contract; <code>checks</code> is advisory and may grow.</p>
+<pre><code>{
+  <span class="s">"status"</span>: <span class="s">"UP"</span>,
+  <span class="s">"version"</span>: <span class="s">"v1"</span>,
+  <span class="s">"checks"</span>: {
+    <span class="s">"mongo"</span>:   { <span class="s">"status"</span>: <span class="s">"UP"</span>, <span class="s">"latencyMs"</span>: <span class="n">11</span> },
+    <span class="s">"vault"</span>:   { <span class="s">"status"</span>: <span class="s">"UP"</span>, <span class="s">"latencyMs"</span>: <span class="n">7</span>  },
+    <span class="s">"arbiter"</span>: { <span class="s">"status"</span>: <span class="s">"UP"</span>, <span class="s">"latencyMs"</span>: <span class="n">23</span> }
+  }
+}</code></pre>
+<h2><span class="accent">02 ·</span> States</h2>
+<table>
+<thead><tr><th>Overall</th><th>HTTP</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td>UP</td><td>200</td><td>All required deps reachable</td></tr>
+<tr><td>DEGRADED</td><td>200</td><td>Optional dep down, core serving</td></tr>
+<tr><td>DOWN</td><td>503</td><td>A required dep unreachable</td></tr>
+</tbody></table>
+<h2><span class="accent">03 ·</span> Liveness</h2>
+<p>Liveness is deliberately trivial — <code>{ "status": "UP" }</code> — so a probe never blocks on a downstream call.</p>`,
+
+  PLANNER:`<h1>Implementation Plan</h1>
+<div class="meta-line">Planner · v1 · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Task Breakdown</h2>
+<ul class="check">
+<li class="done"><span class="bx ok">✓</span><span><strong>T1</strong> — Add <code>HealthIndicator</code> SPI + three impls in <code>business-agent</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><strong>T2</strong> — <code>HealthController</code> with <code>/live</code> + <code>/ready</code> in <code>service-agent</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><strong>T3</strong> — Wire bucket4j rate limit (60 req/min/ip) via <code>framework-resilience</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><strong>T4</strong> — Bind probes to internal listener; exclude from Caddy edge</span></li>
+<li><span class="bx no">·</span><span><strong>T5</strong> — Integration tests + WireMock for down-dependency paths</span></li>
+</ul>
+<h2><span class="accent">02 ·</span> Sequencing</h2>
+<p>T1 → T2 are sequential (controller composes indicators). T3 and T4 parallelize. T5 gates the merge.</p>
+<h2><span class="accent">03 ·</span> Risk</h2>
+<blockquote>The Arbiter gRPC channel is lazily initialized — the readiness check must tolerate a cold channel without throwing, returning <code>DOWN</code> rather than 500.</blockquote>`,
+
+  REVIEWER:`<h1>Code Review</h1>
+<div class="meta-line">Reviewer · v1 · APPROVED with nits · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Verdict</h2>
+<p><strong>Approved.</strong> The change is lean, follows the layered module rules, and uses constructor injection throughout. Two non-blocking nits below.</p>
+<h2><span class="accent">02 ·</span> Comments</h2>
+<ul class="check">
+<li class="done"><span class="bx ok">✓</span><span>Indicators correctly return <code>Optional</code> — no null leakage</span></li>
+<li class="done"><span class="bx ok">✓</span><span>Soft-fail on cold gRPC channel matches the design contract</span></li>
+<li><span class="bx no">·</span><span><em>Nit:</em> extract the 250ms budget into a config property</span></li>
+<li><span class="bx no">·</span><span><em>Nit:</em> <code>LivenessDto</code> could be a record with no fields</span></li>
+</ul>
+<blockquote>Nits are non-blocking and folded into the merge-review bundle for the gate.</blockquote>`,
+
+  TECHNICAL_WRITER:`<h1>Tech-Writer Docs</h1>
+<div class="meta-line">Technical Writer · v2 · reworked once · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Operator Runbook</h2>
+<p>Added <code>docs/runbooks/health-endpoint.md</code> covering probe URLs, expected payloads, and the readiness state table.</p>
+<h3>Probe URLs</h3>
+<pre><code><span class="c"># inside the compose network</span>
+curl -s http://tacticl-core:8080/v1/health/live
+curl -s http://tacticl-core:8080/v1/health/ready | jq .status</code></pre>
+<h2><span class="accent">02 ·</span> Rework Note</h2>
+<blockquote><em>v2:</em> The first draft documented a single <code>/v1/health</code> path. Corrected to the split <code>/live</code> + <code>/ready</code> contract after the Designer artifact landed.</blockquote>`,
+
+  DEVOPS:`<h1>DevOps Deploy</h1>
+<div class="meta-line">DevOps · v1 · running… · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Compose &amp; Caddy</h2>
+<p>Wiring the new probes into the Hetzner compose healthcheck and confirming Caddy drops the path at the edge.</p>
+<pre><code><span class="c"># compose healthcheck (tacticl-core)</span>
+healthcheck:
+  test: [<span class="s">"CMD"</span>, <span class="s">"curl"</span>, <span class="s">"-f"</span>, <span class="s">"http://localhost:8080/v1/health/ready"</span>]
+  interval: 15s
+  timeout: 3s
+  retries: 4</code></pre>
+<h2><span class="accent">02 ·</span> Progress</h2>
+<ul class="check">
+<li class="done"><span class="bx ok">✓</span><span>Image built and pushed to Hetzner registry</span></li>
+<li class="done"><span class="bx ok">✓</span><span>Compose healthcheck added</span></li>
+<li><span class="bx no">·</span><span>Rolling restart of <code>tacticl-core</code> container — in progress…</span></li>
+</ul>`,
+
+  RETRO_ANALYST:`<h1>Retrospective</h1>
+<div class="meta-line">Retro Analyst · v1 · pending — runs after merge</div>
+<h2><span class="accent">01 ·</span> Status</h2>
+<p>The retrospective is generated once the pipeline reaches a terminal state. It will summarize cost-per-role, rework causes, and one actionable process improvement.</p>
+<blockquote>Queued behind the active DevOps deploy. No content yet.</blockquote>`
+};
+
+const MERGE = {
+  IMPLEMENTER:`<h1>Change Summary</h1>
+<div class="meta-line">Implementer · v1 · 6 files · +214 / −12 · model claude-sonnet-4-6</div>
+<h2><span class="accent">01 ·</span> Diff Overview</h2>
+<table>
+<thead><tr><th>File</th><th>Change</th><th>Lines</th></tr></thead>
+<tbody>
+<tr><td>service-agent/.../HealthController.java</td><td class="add">added</td><td><span class="tag-add">+58</span></td></tr>
+<tr><td>business-agent/.../HealthIndicator.java</td><td class="add">added</td><td><span class="tag-add">+19</span></td></tr>
+<tr><td>business-agent/.../MongoHealthIndicator.java</td><td class="add">added</td><td><span class="tag-add">+41</span></td></tr>
+<tr><td>business-agent/.../VaultHealthIndicator.java</td><td class="add">added</td><td><span class="tag-add">+38</span></td></tr>
+<tr><td>business-agent/.../ArbiterHealthIndicator.java</td><td class="add">added</td><td><span class="tag-add">+46</span></td></tr>
+<tr><td>application/.../SecurityConfig.java</td><td>modified</td><td><span class="tag-add">+12</span> <span class="tag-rem">−12</span></td></tr>
+</tbody></table>
+<h2><span class="accent">02 ·</span> Key Change</h2>
+<pre><code><span class="c">// SecurityConfig.java — permit probes, no auth</span>
+.requestMatchers(<span class="s">"/v1/health/**"</span>).permitAll()
+.requestMatchers(<span class="s">"/v1/**"</span>).authenticated()</code></pre>
+<h2><span class="accent">03 ·</span> Notes</h2>
+<p>Indicators use constructor injection only. Readiness fan-out runs on a bounded <code>StructuredTaskScope</code> with a 250ms deadline. No new dependencies added.</p>`,
+
+  TESTER:`<h1>Test Report</h1>
+<div class="meta-line">Tester · v1 · 14 tests · 0 failed · 91.4% line coverage</div>
+<h2><span class="accent">01 ·</span> Results</h2>
+<ul class="check">
+<li class="done"><span class="bx ok">✓</span><span><code>liveness_returns_200_under_50ms</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><code>readiness_all_up_returns_200</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><code>readiness_mongo_down_returns_503</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><code>readiness_vault_down_returns_503</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><code>readiness_arbiter_cold_channel_is_DOWN_not_500</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span><code>rate_limit_429_after_60_requests</code></span></li>
+</ul>
+<h2><span class="accent">02 ·</span> Coverage</h2>
+<table>
+<thead><tr><th>Module</th><th>Line</th><th>Branch</th></tr></thead>
+<tbody>
+<tr><td>service-agent (health)</td><td class="add">94.1%</td><td class="add">88.0%</td></tr>
+<tr><td>business-agent (indicators)</td><td class="add">90.2%</td><td>81.3%</td></tr>
+</tbody></table>
+<blockquote>The cold-channel test reproduces the Arbiter lazy-init risk the Planner flagged — it now returns <code>DOWN</code> cleanly instead of a 500.</blockquote>`,
+
+  SECURITY_ANALYST:`<h1>Security Report</h1>
+<div class="meta-line">Security Analyst · v1 · 0 critical · 1 advisory</div>
+<h2><span class="accent">01 ·</span> Findings</h2>
+<table>
+<thead><tr><th>Severity</th><th>Finding</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td style="color:var(--cyan-bright)">PASS</td><td>Probes unauthenticated but bound to internal listener only</td><td class="add">OK</td></tr>
+<tr><td style="color:var(--cyan-bright)">PASS</td><td>No secrets or dependency credentials in response body</td><td class="add">OK</td></tr>
+<tr><td style="color:var(--amber)">ADVISORY</td><td>Readiness leaks dependency <code>latencyMs</code> — minor recon signal</td><td>ACCEPTED</td></tr>
+</tbody></table>
+<h2><span class="accent">02 ·</span> Verdict</h2>
+<ul class="check">
+<li class="done"><span class="bx ok">✓</span><span>Rate limit caps amplification (60 req/min/ip)</span></li>
+<li class="done"><span class="bx ok">✓</span><span>Caddy edge config confirmed to drop <code>/v1/health/*</code></span></li>
+<li class="done"><span class="bx ok">✓</span><span>No injection surface — endpoints take no user input</span></li>
+</ul>
+<blockquote>Advisory accepted by PO: latency values are operationally useful and the endpoint is not edge-exposed. <strong>Cleared to merge.</strong></blockquote>`
+};
+
+const ORDER = ['PO','RESEARCHER','ARCHITECT','DESIGNER','PLANNER','IMPLEMENTER','REVIEWER','TESTER','SECURITY_ANALYST','TECHNICAL_WRITER','DEVOPS','RETRO_ANALYST'];
+const BUNDLE_KEYS = ['IMPLEMENTER','TESTER','SECURITY_ANALYST'];
+
+function railRow(key){
+  const r = ROLE[key];
+  return '<div class="art" data-key="'+key+'" style="--rc:'+r.color+'">'+
+    '<div class="ico">'+r.icon+'</div>'+
+    '<div class="body"><div class="nm">'+r.name+'</div><div class="sub">'+r.sub+'</div></div>'+
+    '<div class="st '+r.status+'"></div></div>';
+}
+function buildRail(){
+  const rail = document.getElementById('rail');
+  let html = '';
+  html += '<div class="group-label first">Discovery &amp; Design</div>';
+  ['PO','RESEARCHER','ARCHITECT','DESIGNER','PLANNER'].forEach(function(k){ html += railRow(k); });
+  html += '<div class="bundle"><div class="bundle-h"><div class="bt"><span class="gico"></span>MERGE REVIEW</div><div class="gate">GATE · 1 BUNDLE</div></div>';
+  BUNDLE_KEYS.forEach(function(k){ html += railRow(k); });
+  html += '</div>';
+  html += '<div class="group-label">Review &amp; Release</div>';
+  ['REVIEWER','TECHNICAL_WRITER','DEVOPS','RETRO_ANALYST'].forEach(function(k){ html += railRow(k); });
+  rail.innerHTML = html;
+  rail.querySelectorAll('.art').forEach(function(el){ el.addEventListener('click', function(){ select(el.dataset.key); }); });
+}
+
+function outlineFromHtml(html, color){
+  const tmp = document.createElement('div'); tmp.innerHTML = html;
+  const hs = Array.prototype.slice.call(tmp.querySelectorAll('h2'));
+  if(!hs.length) return '';
+  return '<div class="lbl">ON THIS PAGE</div>' + hs.map(function(h,i){
+    const label = h.textContent.replace(/^[0-9]+\s*·\s*/,'').trim();
+    return '<div class="oi '+(i===0?'on':'')+'" style="--rc:'+color+'">'+label+'</div>';
+  }).join('');
+}
+
+function bindOutline(){
+  document.querySelectorAll('.onpage .oi').forEach(function(oi){
+    oi.addEventListener('click', function(){
+      document.querySelectorAll('.onpage .oi').forEach(function(o){ o.classList.remove('on'); });
+      oi.classList.add('on');
+    });
+  });
+}
+
+function renderBundle(activeSub){
+  const subOrder = ['IMPLEMENTER','TESTER','SECURITY_ANALYST'];
+  const active = activeSub || 'IMPLEMENTER';
+  const sub = subOrder.map(function(k){
+    const r = ROLE[k];
+    return '<div class="subtab '+(k===active?'on':'')+'" data-sub="'+k+'" style="--sc:'+r.color+'"><span class="dot"></span>'+r.name+'</div>';
+  }).join('');
+  const banner = '<div class="merge-banner"><div class="mg-ico">⚷</div>'+
+    '<div><div class="mg-t">Merge Review — one reviewable bundle</div>'+
+    '<div class="mg-s">Change Summary · Test Report · Security Report · folded into a single merge gate</div></div>'+
+    '<div class="mg-act"><button class="btn btn-ghost">Request Changes</button><button class="btn btn-primary">Approve &amp; Merge</button></div></div>';
+  const body = MERGE[active];
+  const r = ROLE[active];
+  document.getElementById('doc-panel-title').textContent = 'MERGE REVIEW';
+  document.getElementById('doc-panel-tag').textContent = 'GATE · CHANGE + TEST + SECURITY';
+  document.getElementById('onpage').innerHTML = outlineFromHtml(body, r.color);
+  document.getElementById('docbody').innerHTML =
+    banner +
+    '<div class="topmeta"><span class="role-pill" style="--rc:'+r.color+'">'+r.icon+' · '+r.name+'</span><span class="metachip model">claude-sonnet-4-6</span><span class="metachip">v1</span></div>' +
+    '<div class="subtabs">'+sub+'</div><div class="md" style="--rc:'+r.color+'">'+body+'</div>';
+  document.querySelectorAll('.subtab').forEach(function(t){ t.addEventListener('click', function(){ renderBundle(t.dataset.sub); }); });
+  bindOutline();
+}
+
+function renderSolo(key){
+  const r = ROLE[key];
+  const body = DOCS[key] || '<h1>'+r.name+'</h1><p>No content available.</p>';
+  document.getElementById('doc-panel-title').textContent = 'ARTIFACT';
+  document.getElementById('doc-panel-tag').textContent = r.tag;
+  document.getElementById('onpage').innerHTML = outlineFromHtml(body, r.color);
+  const ver = key==='TECHNICAL_WRITER' ? 'v2 · reworked' : (key==='DEVOPS' ? 'v1 · running' : 'v1');
+  document.getElementById('docbody').innerHTML =
+    '<div class="topmeta"><span class="role-pill" style="--rc:'+r.color+'">'+r.icon+' · '+r.name+'</span><span class="metachip model">claude-sonnet-4-6</span><span class="metachip">'+ver+'</span></div>'+
+    '<div class="md" style="--rc:'+r.color+'">'+body+'</div>';
+  bindOutline();
+}
+
+function select(key){
+  document.querySelectorAll('.art').forEach(function(el){ el.classList.toggle('active', el.dataset.key===key); });
+  if(BUNDLE_KEYS.indexOf(key) !== -1) renderBundle(key);
+  else renderSolo(key);
+}
+
+buildRail();
+select('PO');
+</script>
+</body>
+</html>

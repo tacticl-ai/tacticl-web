@@ -1,0 +1,679 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TACTICL // COMMAND — Jarvis Command Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── HUD tokens — mirrors src/theme/hud.ts (ACCENT/VIOLET = #6C63FF, CYAN sparing,
+       MAGENTA thinking-shift), DISP = Chakra Petch, MONO = JetBrains Mono ── */
+  :root {
+    --accent:  #6C63FF;   /* ACCENT / VIOLET — brand HUD dominant */
+    --violet:  #6C63FF;
+    --magenta: #B25CFF;   /* 'thinking' shift */
+    --cyan:    #03DAC6;   /* sparing rim / arbiter-link accent (source uses #03DAC6) */
+    --cyan2:   #15E0C8;
+    --err:     #FF6B6B;
+    --warn:    #F5B14C;
+    --idle:    #6E6A8F;
+    --txt-bright: #E6E3F5;
+    --txt-muted:  #A39FC4;
+    --bg:      #080b0d;    /* source base */
+    --disp: 'Chakra Petch', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: var(--mono);
+    color: #fff;
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* full-bleed cockpit — violet-dominant ambient glows + faint cyan corner kiss */
+  .stage {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+    background:
+      radial-gradient(1200px 800px at 50% 38%, rgba(108,99,255,0.13), transparent 60%),
+      radial-gradient(900px 700px at 80% 90%, rgba(108,99,255,0.10), transparent 60%),
+      radial-gradient(700px 600px at 12% 6%, rgba(3,218,198,0.05), transparent 62%),
+      var(--bg);
+  }
+
+  /* faint grid (48px cells) masked to a center vignette */
+  .grid-bg {
+    position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background-image:
+      linear-gradient(rgba(108,99,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(108,99,255,0.05) 1px, transparent 1px);
+    background-size: 48px 48px;
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+  }
+  /* slow scanline sweep */
+  .scanline {
+    position: absolute; left: 0; right: 0; height: 120px; pointer-events: none;
+    background: linear-gradient(rgba(108,99,255,0.06), transparent);
+    animation: scan 7s linear infinite;
+  }
+  @keyframes scan { 0% { transform: translateY(-120px); } 100% { transform: translateY(100vh); } }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* ───────────── top HUD bar ───────────── */
+  .topbar {
+    position: relative; z-index: 2;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+    padding: 24px 32px 8px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  }
+  .brand .word {
+    font-family: var(--disp); font-size: 18px; letter-spacing: 6px; font-weight: 600;
+    text-transform: uppercase; color: #fff;
+  }
+  .brand .word .slash { color: var(--accent); }
+
+  .topmeta { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; justify-content: flex-end; }
+  .topmeta .m { font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.45); }
+  .topmeta .link {
+    font-family: var(--mono); font-size: 11px; color: var(--cyan2);
+    text-shadow: 0 0 10px rgba(21,224,200,0.4);
+  }
+
+  /* compact nav chips */
+  .nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .chip {
+    cursor: pointer; user-select: none; text-decoration: none;
+    padding: 5px 14px; border-radius: 999px;
+    border: 1px solid rgba(108,99,255,0.32);
+    font-family: var(--disp); font-size: 10.5px; letter-spacing: 2px; line-height: 1.6;
+    color: rgba(108,99,255,0.85); background: rgba(108,99,255,0.04);
+    transition: all .15s;
+  }
+  .chip:hover { background: rgba(108,99,255,0.14); color: var(--accent); border-color: var(--accent); }
+  .chip.danger {
+    border-color: rgba(255,107,107,0.4); color: rgba(255,107,107,0.85); background: rgba(255,107,107,0.05);
+  }
+  .chip.danger:hover { background: rgba(255,107,107,0.16); color: var(--err); border-color: var(--err); }
+
+  /* ───────────── body column ───────────── */
+  .body {
+    position: relative; z-index: 1;
+    display: flex; flex-direction: column;
+    height: calc(100vh - 84px);
+  }
+  .grid {
+    flex: 1; min-height: 0;
+    display: grid;
+    grid-template-columns: 1fr 1.3fr 1fr;
+    gap: 24px; padding: 16px 32px;
+  }
+
+  /* ───────────── HUD glass panels ───────────── */
+  .panel {
+    position: relative;
+    display: flex; flex-direction: column;
+    min-height: 0;
+    border-radius: 10px;
+    border: 1px solid rgba(108,99,255,0.20);
+    background: linear-gradient(180deg, rgba(20,26,30,0.62), rgba(12,16,20,0.62));
+    backdrop-filter: blur(14px);
+    box-shadow: inset 0 0 40px rgba(108,99,255,0.04), 0 8px 40px rgba(0,0,0,0.5);
+    overflow: hidden;
+  }
+  /* corner ticks */
+  .panel::before, .panel::after {
+    content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none;
+    border-color: rgba(108,99,255,0.5); border-style: solid;
+  }
+  .panel::before { top: 8px; left: 8px; border-width: 1px 0 0 1px; }
+  .panel::after  { bottom: 8px; right: 8px; border-width: 0 1px 1px 0; }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px 12px; border-bottom: 1px solid rgba(108,99,255,0.12);
+  }
+  .panel-title {
+    display: flex; align-items: center; gap: 9px;
+    font-family: var(--disp); font-size: 12px; letter-spacing: 2.5px; color: var(--txt-bright); font-weight: 600;
+  }
+  .panel-title .tick { width: 3px; height: 13px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .panel-tag {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: 1.5px; color: var(--accent);
+    padding: 2px 8px; border: 1px solid rgba(108,99,255,0.3); border-radius: 999px; background: rgba(108,99,255,0.06);
+  }
+  .panel-tag.live { color: var(--cyan2); border-color: rgba(21,224,200,0.3); }
+  .panel-tag.live::before { content: '● '; }
+  .panel-body { padding: 14px 16px; overflow-y: auto; flex: 1; min-height: 0; }
+  .panel-body::-webkit-scrollbar { width: 6px; }
+  .panel-body::-webkit-scrollbar-thumb { background: rgba(108,99,255,0.25); border-radius: 3px; }
+  .collapse {
+    cursor: pointer; width: 22px; height: 22px; display: grid; place-items: center;
+    border: 1px solid rgba(108,99,255,0.28); border-radius: 5px; color: rgba(108,99,255,0.8);
+    background: rgba(108,99,255,0.05); font-size: 13px; line-height: 1; user-select: none;
+  }
+  .collapse:hover { border-color: var(--accent); }
+
+  /* ── comms log: conversation picker ── */
+  .conv-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .conv-eyebrow { font-family: var(--disp); font-size: 10px; letter-spacing: 2px; color: rgba(255,255,255,0.4); }
+  .conv-new {
+    cursor: pointer; padding: 3px 10px; border-radius: 999px;
+    border: 1px solid rgba(108,99,255,0.4); color: var(--accent);
+    font-family: var(--disp); font-size: 10px; letter-spacing: 1.5px; background: rgba(108,99,255,0.06);
+  }
+  .conv-new:hover { background: rgba(108,99,255,0.16); }
+  .conv-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(108,99,255,0.12); }
+  .conv {
+    cursor: pointer; padding: 7px 12px; border-radius: 6px;
+    border: 1px solid rgba(108,99,255,0.16); background: rgba(255,255,255,0.02);
+    font-family: var(--mono); font-size: 12px; color: rgba(255,255,255,0.7);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: border-color .15s;
+  }
+  .conv:hover { border-color: rgba(108,99,255,0.5); }
+  .conv.active { border-color: var(--accent); background: rgba(108,99,255,0.12); color: #fff; }
+
+  /* ── transcript bubbles ── */
+  .transcript { display: flex; flex-direction: column; gap: 14px; }
+  .turn { max-width: 88%; }
+  .turn.me { align-self: flex-end; }
+  .turn.them { align-self: flex-start; }
+  .turn .who {
+    font-family: var(--disp); font-size: 10px; letter-spacing: 2px; margin-bottom: 4px;
+  }
+  .turn.me .who { color: rgba(255,255,255,0.4); text-align: right; }
+  .turn.them .who { color: var(--accent); text-align: left; }
+  .bubble {
+    padding: 11px 16px; border-radius: 12px; font-size: 13.5px; line-height: 1.5;
+    color: rgba(255,255,255,0.92);
+  }
+  .turn.me .bubble { border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); }
+  .turn.them .bubble { border: 1px solid rgba(108,99,255,0.3); background: rgba(108,99,255,0.07); }
+  .bubble.partial { opacity: .7; }
+  .caret { color: var(--accent); animation: pulse 1s ease-in-out infinite; }
+
+  /* ── active operation: PDLC role strip ── */
+  .op-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+  .op-title { font-family: var(--disp); font-size: 13px; color: #fff; letter-spacing: 1px; }
+  .op-tag { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+  .roles { display: flex; flex-direction: column; gap: 11px; }
+  .role { display: flex; align-items: center; gap: 12px; }
+  .role .led { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: rgba(255,255,255,0.15); }
+  .role.done .led   { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .role.active .led { background: var(--violet); box-shadow: 0 0 10px var(--violet); animation: pulse 1.4s ease-in-out infinite; }
+  .role .name { font-family: var(--mono); font-size: 12px; flex: 1; color: rgba(255,255,255,0.4); }
+  .role.done .name, .role.active .name { color: rgba(255,255,255,0.9); }
+  .role .stat { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.25); letter-spacing: 1px; }
+  .role.done .stat   { color: var(--cyan); }
+  .role.active .stat { color: var(--violet); }
+
+  /* human gate */
+  .gate {
+    margin-top: 18px; padding: 13px; border-radius: 12px;
+    border: 1px solid var(--violet); background: rgba(108,99,255,0.08);
+    box-shadow: 0 0 24px rgba(108,99,255,0.18);
+  }
+  .gate-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .gate-head .led { width: 8px; height: 8px; border-radius: 50%; background: var(--violet); box-shadow: 0 0 10px var(--violet); animation: pulse 1.2s ease-in-out infinite; }
+  .gate-head .lbl { font-family: var(--disp); font-size: 11px; letter-spacing: 2px; color: var(--violet); }
+  .gate-title { font-family: var(--mono); font-size: 12.5px; color: rgba(255,255,255,0.92); margin-bottom: 12px; line-height: 1.4; }
+  .gate-input {
+    width: 100%; resize: vertical; min-height: 44px; margin-bottom: 11px; padding: 8px;
+    border-radius: 6px; border: 1px solid rgba(108,99,255,0.35); background: rgba(8,11,13,0.6);
+    color: rgba(255,255,255,0.9); font-family: var(--mono); font-size: 12px; outline: none;
+  }
+  .gate-input::placeholder { color: rgba(255,255,255,0.3); }
+  .gate-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .gate-btn {
+    cursor: pointer; padding: 6px 16px; border-radius: 999px;
+    font-family: var(--disp); font-size: 11px; letter-spacing: 2px; transition: all .15s;
+  }
+  .gate-btn.approve { border: 1px solid var(--cyan); color: var(--cyan); background: rgba(3,218,198,0.08); }
+  .gate-btn.changes { border: 1px solid var(--violet); color: var(--violet); background: rgba(108,99,255,0.08); }
+  .gate-btn.reject  { border: 1px solid var(--err);  color: var(--err);  background: rgba(255,107,107,0.08); }
+
+  /* ───────────── hero ───────────── */
+  .hero {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  }
+  .state-label {
+    font-family: var(--disp); font-size: 22px; letter-spacing: 8px; color: var(--accent);
+    text-shadow: 0 0 20px rgba(108,99,255,0.4);
+  }
+  .ptt {
+    cursor: pointer; user-select: none; padding: 11px 32px; border-radius: 999px;
+    border: 1px solid var(--accent); font-family: var(--disp); font-size: 13px; letter-spacing: 3px;
+    color: var(--accent); background: rgba(108,99,255,0.04); transition: all .15s;
+  }
+  .ptt:hover { background: rgba(108,99,255,0.12); }
+
+  /* ── live status strip ── */
+  .status-strip {
+    display: flex; align-items: center; gap: 18px; margin-top: 2px;
+    padding: 7px 18px; border-radius: 999px;
+    border: 1px solid rgba(108,99,255,0.2); background: rgba(12,16,20,0.55); backdrop-filter: blur(10px);
+  }
+  .ss-item { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10.5px; letter-spacing: 1px; color: rgba(255,255,255,0.4); }
+  .ss-item .led { width: 7px; height: 7px; border-radius: 50%; background: var(--idle); }
+  .ss-item.on { color: rgba(255,255,255,0.9); }
+  .ss-item.on .led { background: var(--accent); box-shadow: 0 0 9px var(--accent); animation: pulse 1.4s ease-in-out infinite; }
+
+  /* ══════════════ THE JARVIS ORB (pure CSS/SVG) ══════════════ */
+  .orb-stage {
+    position: relative; width: 380px; height: 380px;
+    display: grid; place-items: center;
+  }
+  /* outer atmospheric bloom */
+  .orb-bloom {
+    position: absolute; width: 360px; height: 360px; border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      rgba(108,99,255,0.30) 0%, rgba(108,99,255,0.14) 38%,
+      rgba(178,92,255,0.10) 58%, transparent 72%);
+    filter: blur(8px);
+    animation: bloomPulse 5.2s ease-in-out infinite;
+  }
+  @keyframes bloomPulse {
+    0%,100% { transform: scale(1);   opacity: .85; }
+    50%     { transform: scale(1.08); opacity: 1; }
+  }
+
+  /* the sphere body — layered iridescent radial gradients */
+  .orb {
+    position: relative; width: 210px; height: 210px; border-radius: 50%;
+    background:
+      /* off-center hot heart → violet body */
+      radial-gradient(circle at 40% 36%,
+        rgba(245,242,255,0.95) 0%,
+        rgba(178,160,255,0.92) 12%,
+        var(--violet) 40%,
+        #4b42c8 66%,
+        #2a2470 88%),
+      /* iridescent magenta sweep */
+      radial-gradient(circle at 72% 64%,
+        rgba(178,92,255,0.55) 0%, transparent 55%),
+      /* sparing cyan rim kiss */
+      radial-gradient(circle at 20% 82%,
+        rgba(3,218,198,0.30) 0%, transparent 45%);
+    box-shadow:
+      0 0 60px rgba(108,99,255,0.55),
+      0 0 120px rgba(108,99,255,0.30),
+      inset -22px -28px 60px rgba(20,12,48,0.85),
+      inset 14px 16px 44px rgba(220,210,255,0.30);
+    animation: breathe 6s ease-in-out infinite;
+    overflow: hidden;
+  }
+  @keyframes breathe {
+    0%,100% { transform: scale(1);    }
+    50%     { transform: scale(1.045); }
+  }
+  /* drifting internal plasma turbulence */
+  .orb-plasma {
+    position: absolute; inset: -20%; border-radius: 50%;
+    background:
+      radial-gradient(circle at 30% 30%, rgba(178,92,255,0.45) 0%, transparent 30%),
+      radial-gradient(circle at 70% 60%, rgba(108,99,255,0.5) 0%, transparent 32%),
+      radial-gradient(circle at 55% 75%, rgba(3,218,198,0.22) 0%, transparent 28%),
+      radial-gradient(circle at 45% 50%, rgba(245,240,255,0.35) 0%, transparent 22%);
+    mix-blend-mode: screen;
+    animation: swirl 16s linear infinite;
+  }
+  @keyframes swirl { to { transform: rotate(360deg); } }
+  /* iridescent oil-slick sheen sweep */
+  .orb-sheen {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: conic-gradient(from 200deg,
+      transparent 0deg,
+      rgba(178,92,255,0.32) 60deg,
+      rgba(3,218,198,0.20) 120deg,
+      transparent 200deg,
+      rgba(108,99,255,0.28) 300deg,
+      transparent 360deg);
+    mix-blend-mode: screen; opacity: .8;
+    animation: swirlRev 22s linear infinite;
+  }
+  @keyframes swirlRev { to { transform: rotate(-360deg); } }
+  /* crisp off-center specular glint */
+  .orb-glint {
+    position: absolute; width: 64px; height: 50px; top: 30px; left: 44px;
+    background: radial-gradient(ellipse at center, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.20) 45%, transparent 72%);
+    border-radius: 50%; transform: rotate(-22deg); filter: blur(1px);
+  }
+  /* bright iridescent rim ring */
+  .orb-rim {
+    position: absolute; inset: -3px; border-radius: 50%; pointer-events: none;
+    border: 1.5px solid rgba(3,218,198,0.55);
+    box-shadow: 0 0 18px rgba(3,218,198,0.45), inset 0 0 14px rgba(108,99,255,0.4);
+    -webkit-mask-image: linear-gradient(135deg, transparent 8%, black 40%, black 75%, transparent 96%);
+            mask-image: linear-gradient(135deg, transparent 8%, black 40%, black 75%, transparent 96%);
+  }
+
+  /* SVG orbital rings + globe wireframe + particles */
+  .orb-hud { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .ring-a { transform-origin: 190px 190px; animation: spin 26s linear infinite; }
+  .ring-b { transform-origin: 190px 190px; animation: spinRev 34s linear infinite; }
+  .ring-c { transform-origin: 190px 190px; animation: spin 48s linear infinite; }
+  @keyframes spin    { to { transform: rotate(360deg); } }
+  @keyframes spinRev { to { transform: rotate(-360deg); } }
+
+  .globe-spin { transform-origin: 190px 190px; animation: spin 40s linear infinite; }
+
+  .particles circle { animation: twinkle 3.2s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100% { opacity: .25; } 50% { opacity: .9; } }
+  .orbit-field { transform-origin: 190px 190px; animation: spin 60s linear infinite; }
+
+  /* cardinal HUD ticks */
+  .ticks line { stroke: rgba(108,99,255,0.6); stroke-width: 1.5; }
+
+  /* ───────────── command bar ───────────── */
+  .composer-wrap {
+    position: relative; z-index: 3; padding: 8px 32px 24px; display: flex; justify-content: center;
+  }
+  .composer {
+    width: 100%; max-width: 880px;
+    display: flex; align-items: flex-end; gap: 10px;
+    padding: 8px 8px 8px 16px; border-radius: 18px;
+    border: 1px solid rgba(108,99,255,0.28);
+    background: linear-gradient(180deg, rgba(20,26,30,0.78), rgba(12,16,20,0.78));
+    backdrop-filter: blur(14px);
+    box-shadow: inset 0 0 30px rgba(108,99,255,0.05), 0 8px 40px rgba(0,0,0,0.5);
+  }
+  .composer .prompt { font-family: var(--mono); font-size: 14px; color: var(--accent); padding-bottom: 9px; flex-shrink: 0; }
+  .composer input {
+    flex: 1; border: none; background: transparent; outline: none;
+    color: rgba(255,255,255,0.92); font-family: var(--mono); font-size: 13.5px; line-height: 1.5; padding: 9px 0;
+  }
+  .composer input::placeholder { color: rgba(255,255,255,0.32); }
+  .send-btn {
+    cursor: pointer; user-select: none; flex-shrink: 0;
+    padding: 9px 20px; border-radius: 12px;
+    border: 1px solid var(--accent); font-family: var(--disp); font-size: 12px; letter-spacing: 2px;
+    color: var(--accent); background: rgba(108,99,255,0.12); transition: all .15s;
+  }
+  .send-btn:hover { background: rgba(108,99,255,0.22); }
+
+  /* example command chips above the bar */
+  .examples {
+    display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
+    padding: 0 32px 4px;
+  }
+  .ex-chip {
+    cursor: pointer; padding: 5px 13px; border-radius: 999px;
+    border: 1px solid rgba(108,99,255,0.22); background: rgba(108,99,255,0.04);
+    font-family: var(--mono); font-size: 11px; color: var(--txt-muted); transition: all .15s;
+  }
+  .ex-chip:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.1); }
+  .ex-chip .glyph { color: var(--accent); margin-right: 6px; }
+
+  @media (max-width: 1080px) {
+    .grid { grid-template-columns: 1fr; }
+    .panel { display: none; }
+    .body { height: auto; }
+    .stage { height: auto; overflow: visible; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="grid-bg"></div>
+  <div class="scanline"></div>
+
+  <!-- ───────── top HUD bar ───────── -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="dot"></span>
+      <span class="word">TACTICL <span class="slash">//</span> COMMAND</span>
+    </div>
+    <div class="topmeta">
+      <span class="m">PRODUCT · TACTICL</span>
+      <span class="link">◈ ARBITER LINK ACTIVE</span>
+      <span class="m" id="clock">14:32:07</span>
+      <nav class="nav">
+        <a class="chip" href="#">DASHBOARD</a>
+        <a class="chip" href="#">LINKS</a>
+        <a class="chip" href="#">SETTINGS</a>
+        <span class="chip danger">SIGN OUT</span>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ───────── body ───────── -->
+  <div class="body">
+    <div class="grid">
+
+      <!-- LEFT — COMMS LOG -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="tick"></span>COMMS LOG</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="panel-tag live">LIVE</span>
+            <span class="collapse">‹</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="conv-head">
+            <span class="conv-eyebrow">CONVERSATIONS</span>
+            <span class="conv-new">+ NEW</span>
+          </div>
+          <div class="conv-list">
+            <div class="conv active">Add /health endpoint to strategiz-core</div>
+            <div class="conv">Discord alert → pdlc-fix run</div>
+            <div class="conv">Refactor PostPublisherJob retries</div>
+            <div class="conv">Wire ElevenLabs streaming TTS</div>
+          </div>
+
+          <div class="transcript">
+            <div class="turn me">
+              <div class="who">OPERATOR</div>
+              <div class="bubble">let's add a /health endpoint to strategiz-core that pings Mongo + Vault</div>
+            </div>
+            <div class="turn them">
+              <div class="who">TACTICL</div>
+              <div class="bubble">Got it. I'll wire a GET /health in the actuator layer that probes the Mongo replica set and the Vault lease, returns 200/503. Want auth open or gated behind @RequireScope?</div>
+            </div>
+            <div class="turn me">
+              <div class="who">OPERATOR</div>
+              <div class="bubble">leave it open, k8s probes hit it. go ahead and ship it</div>
+            </div>
+            <div class="turn them">
+              <div class="who">TACTICL</div>
+              <div class="bubble partial">Spinning up a SMALL_FEATURE pipeline — Product Owner is framing acceptance criteria now<span class="caret">▋</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENTER — HERO ORB -->
+      <section class="hero">
+        <div class="orb-stage">
+          <div class="orb-bloom"></div>
+
+          <!-- the sphere -->
+          <div class="orb">
+            <div class="orb-plasma"></div>
+            <div class="orb-sheen"></div>
+            <div class="orb-glint"></div>
+            <div class="orb-rim"></div>
+          </div>
+
+          <!-- SVG HUD: globe wireframe, orbital rings, particles, ticks -->
+          <svg class="orb-hud" viewBox="0 0 380 380">
+            <defs>
+              <radialGradient id="node" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#fff" stop-opacity="0.95"/>
+                <stop offset="100%" stop-color="#6C63FF" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- wireframe latitude/longitude globe (reads as a SPHERE) -->
+            <g class="globe-spin" fill="none" stroke="#6C63FF">
+              <ellipse cx="190" cy="190" rx="92" ry="92" stroke-opacity="0.10"/>
+              <ellipse cx="190" cy="190" rx="60" ry="92" stroke-opacity="0.14"/>
+              <ellipse cx="190" cy="190" rx="26" ry="92" stroke-opacity="0.10"/>
+              <ellipse cx="190" cy="148" rx="84" ry="20" stroke-opacity="0.09"/>
+              <ellipse cx="190" cy="190" rx="92" ry="34" stroke-opacity="0.09"/>
+              <ellipse cx="190" cy="232" rx="84" ry="20" stroke-opacity="0.09"/>
+            </g>
+
+            <!-- multi-axis counter-rotating orbital rings (orrery) -->
+            <g class="ring-a" fill="none" stroke="#6C63FF" stroke-opacity="0.55" stroke-width="1.4"
+               stroke-dasharray="34 12" stroke-linecap="round" style="filter:drop-shadow(0 0 4px rgba(108,99,255,0.7))">
+              <ellipse cx="190" cy="190" rx="116" ry="40" transform="rotate(18 190 190)"/>
+              <circle cx="306" cy="190" r="3.4" fill="url(#node)" stroke="none"/>
+            </g>
+            <g class="ring-b" fill="none" stroke="#15E0C8" stroke-opacity="0.5" stroke-width="1.0"
+               stroke-dasharray="22 14" stroke-linecap="round" style="filter:drop-shadow(0 0 4px rgba(21,224,200,0.6))">
+              <ellipse cx="190" cy="190" rx="142" ry="86" transform="rotate(-32 190 190)"/>
+              <circle cx="48" cy="190" r="2.8" fill="#15E0C8" stroke="none"/>
+            </g>
+            <g class="ring-c" fill="none" stroke="#B25CFF" stroke-opacity="0.45" stroke-width="2"
+               stroke-dasharray="48 30" stroke-linecap="round" style="filter:drop-shadow(0 0 5px rgba(178,92,255,0.6))">
+              <ellipse cx="190" cy="190" rx="170" ry="30" transform="rotate(64 190 190)"/>
+            </g>
+
+            <!-- drifting energy motes / nebula particles -->
+            <g class="orbit-field">
+              <g class="particles" fill="#8B82FF">
+                <circle cx="190" cy="58"  r="1.6"/>
+                <circle cx="312" cy="120" r="1.2" style="animation-delay:.4s"/>
+                <circle cx="60"  cy="240" r="1.8" fill="#15E0C8" style="animation-delay:.9s"/>
+                <circle cx="300" cy="270" r="1.3" style="animation-delay:1.3s"/>
+                <circle cx="96"  cy="92"  r="1.1" fill="#B25CFF" style="animation-delay:.7s"/>
+                <circle cx="250" cy="320" r="1.5" style="animation-delay:1.7s"/>
+                <circle cx="334" cy="200" r="1.0" style="animation-delay:2.1s"/>
+                <circle cx="48"  cy="158" r="1.4" fill="#15E0C8" style="animation-delay:.2s"/>
+                <circle cx="150" cy="334" r="1.2" style="animation-delay:1.0s"/>
+                <circle cx="222" cy="50"  r="1.0" fill="#B25CFF" style="animation-delay:2.4s"/>
+              </g>
+            </g>
+
+            <!-- cardinal HUD ticks -->
+            <g class="ticks">
+              <line x1="190" y1="22" x2="190" y2="34"/>
+              <line x1="358" y1="190" x2="346" y2="190"/>
+              <line x1="190" y1="358" x2="190" y2="346"/>
+              <line x1="22" y1="190" x2="34" y2="190"/>
+            </g>
+          </svg>
+        </div>
+
+        <div class="state-label">LISTENING</div>
+
+        <div class="ptt">RELEASE TO SEND</div>
+
+        <!-- slim live-status strip -->
+        <div class="status-strip">
+          <div class="ss-item on"><span class="led"></span>LISTENING</div>
+          <div class="ss-item"><span class="led"></span>THINKING</div>
+          <div class="ss-item"><span class="led"></span>SPEAKING</div>
+          <div class="ss-item"><span class="led"></span>IDLE</div>
+        </div>
+      </section>
+
+      <!-- RIGHT — ACTIVE OPERATION -->
+      <section class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><span class="tick"></span>ACTIVE OPERATION</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="panel-tag">PDLC</span>
+            <span class="collapse">›</span>
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="op-head">
+            <span class="op-title">pdlc-run-7f3a · IMPLEMENT</span>
+            <span class="op-tag">PDLC-RUN</span>
+          </div>
+
+          <div class="roles">
+            <div class="role done">   <span class="led"></span><span class="name">Product Owner</span><span class="stat">DONE</span></div>
+            <div class="role done">   <span class="led"></span><span class="name">Architect</span>    <span class="stat">DONE</span></div>
+            <div class="role done">   <span class="led"></span><span class="name">Designer</span>     <span class="stat">DONE</span></div>
+            <div class="role done">   <span class="led"></span><span class="name">Planner</span>      <span class="stat">DONE</span></div>
+            <div class="role active"> <span class="led"></span><span class="name">Implementer</span>  <span class="stat">RUNNING</span></div>
+            <div class="role">        <span class="led"></span><span class="name">Reviewer</span>     <span class="stat">QUEUED</span></div>
+            <div class="role">        <span class="led"></span><span class="name">Test</span>         <span class="stat">QUEUED</span></div>
+            <div class="role">        <span class="led"></span><span class="name">DevOps</span>       <span class="stat">QUEUED</span></div>
+          </div>
+
+          <!-- human-in-the-loop gate -->
+          <div class="gate">
+            <div class="gate-head">
+              <span class="led"></span>
+              <span class="lbl">HUMAN GATE</span>
+            </div>
+            <div class="gate-title">Implementer wants to merge PR #214 — adds HealthController + Mongo/Vault probes (+184 / −6). Approve merge?</div>
+            <textarea class="gate-input" placeholder="optional feedback…" rows="2"></textarea>
+            <div class="gate-actions">
+              <span class="gate-btn approve">APPROVE</span>
+              <span class="gate-btn changes">CHANGES</span>
+              <span class="gate-btn reject">REJECT</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- example command chips -->
+    <div class="examples">
+      <span class="ex-chip"><span class="glyph">⌁</span>Build a /metrics endpoint with Prometheus</span>
+      <span class="ex-chip"><span class="glyph">⌁</span>Schedule a LinkedIn post for 9am</span>
+      <span class="ex-chip"><span class="glyph">⌁</span>How's pdlc-run-7f3a going?</span>
+      <span class="ex-chip"><span class="glyph">⌁</span>Research competitors to Marketiz</span>
+    </div>
+
+    <!-- command bar -->
+    <div class="composer-wrap">
+      <div class="composer">
+        <span class="prompt">&gt;</span>
+        <input type="text" placeholder="Speak or type a command — Enter to send, Shift+Enter for a new line" aria-label="Command input" />
+        <span class="send-btn">SEND</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // live clock — matches CommandCenter's en-US 24h render
+  const clk = document.getElementById('clock');
+  function tick() {
+    clk.textContent = new Date().toLocaleTimeString('en-US', { hour12: false });
+  }
+  tick(); setInterval(tick, 1000);
+
+  // ambient status-strip cycle (listening → thinking → speaking → idle) so the
+  // static mock breathes through the four VoiceState values
+  const states = ['listening','thinking','speaking','idle'];
+  const labels = { listening:'LISTENING', thinking:'THINKING', speaking:'SPEAKING', idle:'READY' };
+  const hints  = { listening:'RELEASE TO SEND', thinking:'WORKING IT THROUGH…', speaking:'TACTICL IS RESPONDING', idle:'HOLD TO SPEAK' };
+  const items = document.querySelectorAll('.ss-item');
+  const stateLabel = document.querySelector('.state-label');
+  const ptt = document.querySelector('.ptt');
+  let si = 0;
+  setInterval(() => {
+    si = (si + 1) % states.length;
+    const s = states[si];
+    items.forEach((el, i) => el.classList.toggle('on', i === si));
+    stateLabel.textContent = labels[s];
+    ptt.textContent = hints[s];
+    // magenta accent on 'thinking', violet otherwise (mirrors source)
+    const c = s === 'thinking' ? '#B25CFF' : '#6C63FF';
+    stateLabel.style.color = c;
+    stateLabel.style.textShadow = '0 0 20px ' + c + '66';
+  }, 2600);
+</script>
+</body>
+</html>

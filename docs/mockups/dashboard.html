@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TACTICL // DASHBOARD — Development Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Static re-skin of src/pages/DashboardPage.tsx — scoped tokens reproduced 1:1 ── */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:#070a0c}
+
+.dash-root{position:fixed;inset:0;overflow-y:auto;color:#eef0f6;font-family:var(--mono);letter-spacing:.2px;
+  --accent:#6C63FF;--magenta:#B25CFF;--cyan:#15E0C8;--red:#FF6B6B;--amber:#F5B544;
+  --ink:#070a0c;--glass1:rgba(22,28,34,.66);--glass2:rgba(11,15,19,.66);
+  --disp:"Chakra Petch",sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--line:rgba(108,99,255,.14);
+  background:radial-gradient(1300px 820px at 50% -8%,rgba(108,99,255,.16),transparent 58%),
+    radial-gradient(1000px 760px at 92% 110%,rgba(178,92,255,.10),transparent 60%),
+    radial-gradient(760px 620px at 4% 18%,rgba(21,224,200,.06),transparent 60%),var(--ink);}
+.dash-root .grid-bg{position:fixed;inset:0;pointer-events:none;opacity:.45;z-index:0;
+  background-image:linear-gradient(rgba(108,99,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.06) 1px,transparent 1px);
+  background-size:54px 54px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 32%,#000 35%,transparent 78%);
+  mask-image:radial-gradient(ellipse 80% 70% at 50% 32%,#000 35%,transparent 78%);}
+.dash-root .scan{position:fixed;left:0;right:0;height:160px;z-index:1;pointer-events:none;
+  background:linear-gradient(rgba(108,99,255,.07),transparent);animation:dscan 8s linear infinite;}
+@keyframes dscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
+.dash-root .stage{position:relative;z-index:2}
+.dash-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
+.dash-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
+.dash-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
+.dash-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:dhalo 2.2s ease-out infinite}
+@keyframes dhalo{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+.dash-root .sep{color:var(--accent)}
+.dash-root .topright{display:flex;align-items:center;gap:18px}
+.dash-root .muted{color:rgba(238,240,246,.42);font-size:11px}
+.dash-root .nav{display:flex;gap:7px}
+.dash-root .chip{padding:6px 13px;border-radius:999px;border:1px solid rgba(108,99,255,.3);font-family:var(--disp);font-size:10.5px;letter-spacing:2px;color:rgba(170,165,255,.9);background:rgba(108,99,255,.05);cursor:pointer;transition:.18s;text-decoration:none}
+.dash-root .chip:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.16)}
+.dash-root .chip.active{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2);box-shadow:0 0 18px rgba(108,99,255,.25)}
+.dash-root .head{padding:14px 34px 2px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.dash-root .h1{font-family:var(--disp);font-size:30px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
+.dash-root .h1 .b{background:linear-gradient(90deg,var(--accent),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+.dash-root .sub{font-size:11px;color:rgba(238,240,246,.4);letter-spacing:3px;margin-top:8px}
+.dash-root .summary{display:flex;gap:9px;flex-wrap:wrap}
+.dash-root .stat{display:flex;align-items:center;gap:9px;padding:9px 15px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(16px)}
+.dash-root .stat .n{font-family:var(--disp);font-size:19px;font-weight:600}
+.dash-root .stat .l{font-size:9.5px;letter-spacing:1.6px;color:rgba(238,240,246,.42)}
+.dash-root .sdot{width:8px;height:8px;border-radius:50%}
+.dash-root .panel{margin:16px 34px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),inset 0 0 60px rgba(108,99,255,.04),0 18px 60px rgba(0,0,0,.55);position:relative}
+.dash-root .panel::before,.dash-root .panel::after{content:"";position:absolute;width:18px;height:18px;border:0 solid rgba(108,99,255,.6);pointer-events:none}
+.dash-root .panel::before{top:8px;left:8px;border-top-width:1.5px;border-left-width:1.5px}
+.dash-root .panel::after{bottom:8px;right:8px;border-bottom-width:1.5px;border-right-width:1.5px}
+.dash-root .lhead{display:grid;grid-template-columns:118px 250px 1fr 60px 70px 104px;gap:16px;align-items:center;padding:13px 22px;border-bottom:1px solid var(--line);font-family:var(--disp);font-size:9.5px;letter-spacing:1.8px;color:rgba(238,240,246,.4)}
+.dash-root .row{display:grid;grid-template-columns:118px 250px 1fr 60px 70px 104px;gap:16px;align-items:center;padding:16px 22px;border-bottom:1px solid rgba(108,99,255,.06);cursor:pointer;transition:.2s;opacity:0;transform:translateY(10px);animation:drise .55s cubic-bezier(.2,.7,.2,1) forwards}
+.dash-root .row:hover{background:rgba(108,99,255,.06)}
+.dash-root .row:hover .bname{color:#fff}
+@keyframes drise{to{opacity:1;transform:none}}
+.dash-root .bname{font-family:var(--disp);font-size:14px;color:#eef0f6;transition:.2s;font-weight:500}
+.dash-root .brepo{font-size:10.5px;color:rgba(238,240,246,.38);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:230px}
+.dash-root .pill{font-family:var(--disp);font-size:9.5px;letter-spacing:1.3px;padding:5px 11px;border-radius:999px;white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.dash-root .pdot{width:6px;height:6px;border-radius:50%}
+.dash-root .p-run{color:#bdb8ff;border:1px solid var(--accent);background:rgba(108,99,255,.13)} .dash-root .p-run .pdot{background:var(--accent);box-shadow:0 0 8px var(--accent);animation:dblink 1.3s ease-in-out infinite}
+.dash-root .p-block{color:#ffd99a;border:1px solid var(--amber);background:rgba(245,181,68,.12)} .dash-root .p-block .pdot{background:var(--amber);box-shadow:0 0 8px var(--amber);animation:dblink 1s ease-in-out infinite}
+.dash-root .p-done{color:#8ff0e4;border:1px solid var(--cyan);background:rgba(21,224,200,.1)} .dash-root .p-done .pdot{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+.dash-root .p-fail{color:#ffb0b0;border:1px solid var(--red);background:rgba(255,107,107,.12)} .dash-root .p-fail .pdot{background:var(--red)}
+.dash-root .p-queue{color:rgba(238,240,246,.5);border:1px solid rgba(238,240,246,.2);background:rgba(255,255,255,.03)} .dash-root .p-queue .pdot{background:rgba(238,240,246,.35)}
+.dash-root .strip{display:flex;align-items:flex-start;position:relative}
+.dash-root .node{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;position:relative;min-width:0}
+.dash-root .seg{position:absolute;top:6px;left:-50%;width:100%;height:2px;z-index:0}
+.dash-root .seg.fdone{background:var(--cyan)}
+.dash-root .seg.fcur{background:linear-gradient(90deg,var(--cyan),var(--accent))}
+.dash-root .seg.fblock{background:linear-gradient(90deg,var(--cyan),var(--amber))}
+.dash-root .seg.ftodo{background:rgba(238,240,246,.12)}
+.dash-root .seg.ffail{background:linear-gradient(90deg,var(--cyan),var(--red))}
+.dash-root .nd{width:13px;height:13px;border-radius:50%;position:relative;z-index:1}
+.dash-root .n-done{background:var(--cyan);box-shadow:0 0 9px rgba(21,224,200,.7)}
+.dash-root .n-cur{background:var(--accent);box-shadow:0 0 12px var(--accent);animation:dblink 1.25s ease-in-out infinite}
+.dash-root .n-cur::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:dhalo 1.8s ease-out infinite}
+.dash-root .n-block{background:var(--amber);box-shadow:0 0 12px var(--amber);animation:dblink 1s ease-in-out infinite}
+.dash-root .n-block::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--amber);animation:dhalo 1.6s ease-out infinite}
+.dash-root .n-fail{background:var(--red);box-shadow:0 0 9px var(--red)}
+.dash-root .n-todo{background:rgba(238,240,246,.16);border:1px solid rgba(238,240,246,.2)}
+.dash-root .nl{font-size:8.5px;letter-spacing:.3px;color:rgba(238,240,246,.34);white-space:nowrap;text-align:center}
+.dash-root .nl.on{color:#eef0f6}
+.dash-root .nl.cyan{color:#8ff0e4}
+@keyframes dblink{0%,100%{opacity:1}50%{opacity:.35}}
+.dash-root .small{font-size:11px;color:rgba(238,240,246,.5)}
+.dash-root .act{font-family:var(--disp);font-size:10px;letter-spacing:1px;color:rgba(170,165,255,.9);text-align:right;white-space:nowrap}
+.dash-root .review{color:var(--amber);font-weight:600;animation:dtextglow 1.6s ease-in-out infinite}
+@keyframes dtextglow{0%,100%{text-shadow:0 0 0 rgba(245,181,68,0)}50%{text-shadow:0 0 12px rgba(245,181,68,.85)}}
+.dash-root .prtag{font-size:10px;color:var(--amber);margin-top:3px;letter-spacing:.3px;opacity:.9}
+.dash-root .legend{display:flex;gap:18px;padding:12px 24px;font-size:10px;color:rgba(238,240,246,.45);border-top:1px solid var(--line);flex-wrap:wrap}
+.dash-root .legend span{display:inline-flex;align-items:center;gap:7px}
+.dash-root .lz{width:9px;height:9px;border-radius:50%}
+.dash-root .lz.blink{animation:dblink 1.2s ease-in-out infinite}
+.dash-root .empty{padding:34px 24px;text-align:center;font-size:12.5px;color:rgba(238,240,246,.5)}
+.dash-root .empty.err{color:#ffb0b0}
+</style>
+</head>
+<body>
+<div class="dash-root">
+  <div class="grid-bg"></div>
+  <div class="scan"></div>
+
+  <div class="stage">
+    <div class="top">
+      <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> DASHBOARD</div>
+      <div class="topright">
+        <span class="muted">PRODUCT · TACTICL</span>
+        <div class="nav">
+          <a class="chip">COMMAND</a>
+          <a class="chip active">DASHBOARD</a>
+          <a class="chip">LINKS</a>
+          <a class="chip">SETTINGS</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="head">
+      <div>
+        <h1 class="h1">DEVELOPMENT <span class="b">PIPELINE</span></h1>
+        <div class="sub">LIVE AGENT TRACKING · 5 BUILDS</div>
+      </div>
+      <div class="summary">
+        <div class="stat"><span class="sdot" style="background:var(--accent);box-shadow:0 0 9px var(--accent)"></span><span class="n">2</span><span class="l">RUNNING</span></div>
+        <div class="stat"><span class="sdot" style="background:var(--amber);box-shadow:0 0 9px var(--amber)"></span><span class="n">1</span><span class="l">NEEDS YOU</span></div>
+        <div class="stat"><span class="sdot" style="background:var(--cyan);box-shadow:0 0 9px var(--cyan)"></span><span class="n">1</span><span class="l">MERGED</span></div>
+        <div class="stat"><span class="sdot" style="background:var(--red);box-shadow:0 0 9px var(--red)"></span><span class="n">1</span><span class="l">FAILED</span></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="lhead">
+        <div>STATUS</div><div>BUILD</div>
+        <div>AGENTS&nbsp;·&nbsp; done&nbsp; ◉ live&nbsp; ○ queued</div>
+        <div>COST</div><div>UPDATED</div><div></div>
+      </div>
+
+      <!-- ── RUNNING (FULL_PDLC, currentRole = IMPLEMENTER) ── -->
+      <div class="row" style="animation-delay:.05s">
+        <div><span class="pill p-run"><span class="pdot"></span>RUNNING</span></div>
+        <div>
+          <div class="bname">Realtime presence service</div>
+          <div class="brepo">FULL_PDLC</div>
+        </div>
+        <div class="strip">
+          <div class="node"><span class="nd n-done"></span><span class="nl cyan">PO</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Research</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Architect</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Designer</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Planner</span></div>
+          <div class="node"><span class="seg fcur"></span><span class="nd n-cur"></span><span class="nl on">Implementer</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Reviewer</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Test</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Security</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Docs</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">DevOps</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Retro</span></div>
+        </div>
+        <div class="small">$4.18</div>
+        <div class="small">now</div>
+        <div class="act"><span>OPEN →</span></div>
+      </div>
+
+      <!-- ── BLOCKED at merge gate (SMALL_FEATURE, checkpoint on REVIEWER) ── -->
+      <div class="row" style="animation-delay:.12s">
+        <div><span class="pill p-block"><span class="pdot"></span>NEEDS YOU</span></div>
+        <div>
+          <div class="bname">Stripe webhook idempotency</div>
+          <div class="brepo">SMALL_FEATURE</div>
+          <div class="prtag">▲ awaiting your approval</div>
+        </div>
+        <div class="strip">
+          <div class="node"><span class="nd n-done"></span><span class="nl cyan">PO</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Planner</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Implementer</span></div>
+          <div class="node"><span class="seg fblock"></span><span class="nd n-block"></span><span class="nl on">Reviewer</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Test</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Retro</span></div>
+        </div>
+        <div class="small">$1.92</div>
+        <div class="small">7m</div>
+        <div class="act"><span class="review">REVIEW →</span></div>
+      </div>
+
+      <!-- ── RUNNING (BUG_FIX, currentRole = TESTER) ── -->
+      <div class="row" style="animation-delay:.19s">
+        <div><span class="pill p-run"><span class="pdot"></span>RUNNING</span></div>
+        <div>
+          <div class="bname">Discord alert text truncation</div>
+          <div class="brepo">BUG_FIX</div>
+        </div>
+        <div class="strip">
+          <div class="node"><span class="nd n-done"></span><span class="nl cyan">Research</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Implementer</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Reviewer</span></div>
+          <div class="node"><span class="seg fcur"></span><span class="nd n-cur"></span><span class="nl on">Test</span></div>
+          <div class="node"><span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Retro</span></div>
+        </div>
+        <div class="small">$0.71</div>
+        <div class="small">2m</div>
+        <div class="act"><span>OPEN →</span></div>
+      </div>
+
+      <!-- ── MERGED (UI_CHANGE, COMPLETED) ── -->
+      <div class="row" style="animation-delay:.26s">
+        <div><span class="pill p-done"><span class="pdot"></span>MERGED</span></div>
+        <div>
+          <div class="bname">Voice sphere idle pulse</div>
+          <div class="brepo">UI_CHANGE</div>
+        </div>
+        <div class="strip">
+          <div class="node"><span class="nd n-done"></span><span class="nl cyan">PO</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Designer</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Implementer</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Reviewer</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Test</span></div>
+        </div>
+        <div class="small">$2.34</div>
+        <div class="small">3h</div>
+        <div class="act"><span>OPEN →</span></div>
+      </div>
+
+      <!-- ── FAILED (INFRA_CHANGE, failed at DEVOPS) ── -->
+      <div class="row" style="animation-delay:.33s">
+        <div><span class="pill p-fail"><span class="pdot"></span>FAILED</span></div>
+        <div>
+          <div class="bname">Vault address rollout</div>
+          <div class="brepo">INFRA_CHANGE</div>
+        </div>
+        <div class="strip">
+          <div class="node"><span class="nd n-done"></span><span class="nl cyan">Architect</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Planner</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Implementer</span></div>
+          <div class="node"><span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Security</span></div>
+          <div class="node"><span class="seg ffail"></span><span class="nd n-fail"></span><span class="nl on">DevOps</span></div>
+        </div>
+        <div class="small">$5.06</div>
+        <div class="small">1d</div>
+        <div class="act"><span>LOG →</span></div>
+      </div>
+
+      <div class="legend">
+        <span><span class="lz" style="background:var(--cyan);box-shadow:0 0 7px var(--cyan)"></span>done</span>
+        <span><span class="lz blink" style="background:var(--accent);box-shadow:0 0 9px var(--accent)"></span>working now</span>
+        <span><span class="lz blink" style="background:var(--amber);box-shadow:0 0 9px var(--amber)"></span>waiting on you</span>
+        <span><span class="lz" style="background:var(--red)"></span>failed</span>
+        <span><span class="lz" style="background:rgba(238,240,246,.18);border:1px solid rgba(238,240,246,.25)"></span>queued</span>
+      </div>
+    </div>
+    <div style="height:46px"></div>
+  </div>
+</div>
+</body>
+</html>

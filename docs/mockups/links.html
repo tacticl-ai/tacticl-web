@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TACTICL // LINKS</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#070a0c}
+.links-root{position:fixed;inset:0;overflow-y:auto;color:#eef0f6;font-family:var(--mono);letter-spacing:.2px;
+  --accent:#6C63FF;--magenta:#B25CFF;--cyan:#15E0C8;--red:#FF6B6B;--amber:#F5B544;
+  --ink:#070a0c;--glass1:rgba(22,28,34,.66);--glass2:rgba(11,15,19,.66);
+  --disp:"Chakra Petch",sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace;--line:rgba(108,99,255,.14);
+  background:radial-gradient(1300px 820px at 50% -8%,rgba(108,99,255,.16),transparent 58%),
+    radial-gradient(1000px 760px at 92% 110%,rgba(178,92,255,.10),transparent 60%),
+    radial-gradient(760px 620px at 4% 18%,rgba(21,224,200,.06),transparent 60%),var(--ink);}
+.links-root .grid-bg{position:fixed;inset:0;pointer-events:none;opacity:.45;z-index:0;
+  background-image:linear-gradient(rgba(108,99,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.06) 1px,transparent 1px);
+  background-size:54px 54px;-webkit-mask-image:radial-gradient(ellipse 80% 70% at 50% 32%,#000 35%,transparent 78%);mask-image:radial-gradient(ellipse 80% 70% at 50% 32%,#000 35%,transparent 78%);}
+.links-root .scan{position:fixed;left:0;right:0;height:160px;z-index:1;pointer-events:none;
+  background:linear-gradient(rgba(108,99,255,.07),transparent);animation:lscan 8s linear infinite;}
+@keyframes lscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
+.links-root .stage{position:relative;z-index:2}
+.links-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
+.links-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
+.links-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
+.links-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:lhalo 2.2s ease-out infinite}
+@keyframes lhalo{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
+.links-root .sep{color:var(--accent)}
+.links-root .topright{display:flex;align-items:center;gap:18px}
+.links-root .muted{color:rgba(238,240,246,.42);font-size:11px}
+.links-root .nav{display:flex;gap:7px}
+.links-root .chip{padding:6px 13px;border-radius:999px;border:1px solid rgba(108,99,255,.3);font-family:var(--disp);font-size:10.5px;letter-spacing:2px;color:rgba(170,165,255,.9);background:rgba(108,99,255,.05);cursor:pointer;transition:.18s;text-decoration:none}
+.links-root .chip:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.16)}
+.links-root .chip.active{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2);box-shadow:0 0 18px rgba(108,99,255,.25)}
+.links-root .head{padding:14px 34px 2px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px}
+.links-root .h1{font-family:var(--disp);font-size:30px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
+.links-root .h1 .b{background:linear-gradient(90deg,var(--accent),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
+.links-root .sub{font-size:11px;color:rgba(238,240,246,.4);letter-spacing:3px;margin-top:8px}
+.links-root .summary{display:flex;gap:9px;flex-wrap:wrap}
+.links-root .stat{display:flex;align-items:center;gap:9px;padding:9px 15px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(16px)}
+.links-root .stat .n{font-family:var(--disp);font-size:19px;font-weight:600}
+.links-root .stat .l{font-size:9.5px;letter-spacing:1.6px;color:rgba(238,240,246,.42)}
+.links-root .sdot{width:8px;height:8px;border-radius:50%}
+.links-root .banner{margin:14px 34px 0;display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:11px 18px;border:1px solid var(--red);border-radius:12px;background:rgba(255,107,107,.1);color:#ffb0b0;font-size:12px}
+.links-root .banner a{font-family:var(--disp);font-size:10px;letter-spacing:1.5px;color:#ffb0b0;cursor:pointer}
+.links-root .banner a:hover{color:#fff}
+.links-root .panel{margin:16px 34px 0;border:1px solid var(--line);border-radius:16px;overflow:hidden;
+  background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(18px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),inset 0 0 60px rgba(108,99,255,.04),0 18px 60px rgba(0,0,0,.55);position:relative}
+.links-root .empty{padding:34px 24px;text-align:center;font-size:12.5px;color:rgba(238,240,246,.5)}
+.links-root .empty.err{color:#ffb0b0;display:flex;flex-direction:column;gap:12px;align-items:center}
+.links-root .retry,.links-root .empty .retry{font-family:var(--disp);font-size:10.5px;letter-spacing:1.5px;color:var(--amber);cursor:pointer}
+.links-root .retry:hover{text-shadow:0 0 12px rgba(245,181,68,.7)}
+.links-root .section{margin:20px 34px 0;opacity:0;transform:translateY(10px);animation:lrise .55s cubic-bezier(.2,.7,.2,1) forwards}
+@keyframes lrise{to{opacity:1;transform:none}}
+.links-root .shead{display:flex;align-items:center;gap:14px;margin-bottom:13px}
+.links-root .glyph{width:34px;height:34px;border-radius:10px;border:1px solid;display:flex;align-items:center;justify-content:center;font-size:16px;background:rgba(108,99,255,.05);flex-shrink:0}
+.links-root .stitle{flex:1;min-width:0}
+.links-root .sname{font-family:var(--disp);font-size:16px;letter-spacing:3px;font-weight:600;text-transform:uppercase}
+.links-root .sdesc{font-size:10.5px;color:rgba(238,240,246,.4);margin-top:2px}
+.links-root .badge{font-family:var(--disp);font-size:10px;letter-spacing:1.4px;padding:5px 12px;border-radius:999px;border:1px solid var(--line);color:rgba(238,240,246,.7);background:rgba(108,99,255,.05);white-space:nowrap}
+.links-root .badge.soon{color:rgba(238,240,246,.45);border-color:rgba(238,240,246,.2)}
+.links-root .soonbox{border:1px dashed rgba(238,240,246,.16);border-radius:14px;padding:26px 24px;text-align:center;
+  font-size:12px;color:rgba(238,240,246,.42);background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(14px)}
+.links-root .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:14px}
+.links-root .card{position:relative;border:1px solid var(--line);border-radius:16px;overflow:hidden;padding:18px 18px 16px 22px;
+  background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(16px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 12px 40px rgba(0,0,0,.45);transition:.2s}
+.links-root .card:hover{border-color:var(--ca);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 34px color-mix(in srgb,var(--ca) 22%,transparent)}
+.links-root .card.on{border-color:color-mix(in srgb,var(--ca) 45%,var(--line))}
+.links-root .card .stripe{position:absolute;top:0;left:0;width:4px;height:100%;background:transparent;transition:.2s}
+.links-root .card.on .stripe{background:var(--ca)}
+.links-root .cardtop{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.links-root .logo{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 4px 14px rgba(0,0,0,.4);font-family:var(--disp);font-weight:700;font-size:16px;color:#fff}
+.links-root .logo img{width:100%;height:100%;object-fit:cover}
+.links-root .logo svg{width:18px;height:18px}
+.links-root .meta{min-width:0;flex:1}
+.links-root .pname{font-family:var(--disp);font-size:14px;font-weight:500;color:#eef0f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.links-root .phandle{font-size:10.5px;color:rgba(238,240,246,.4);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.links-root .statusrow{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:15px}
+.links-root .tag{font-family:var(--disp);font-size:9px;letter-spacing:1.2px;padding:4px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.links-root .tag .tdot{width:5px;height:5px;border-radius:50%}
+.links-root .tag.linked{color:#8ff0e4;border:1px solid var(--cyan);background:rgba(21,224,200,.1)}
+.links-root .tag.linked .tdot{background:var(--cyan);box-shadow:0 0 7px var(--cyan)}
+.links-root .tag.idle{color:rgba(238,240,246,.5);border:1px solid rgba(238,240,246,.2);background:rgba(255,255,255,.03)}
+.links-root .tag.idle .tdot{background:rgba(238,240,246,.35)}
+.links-root .tag.warn{color:#ffd99a;border:1px solid var(--amber);background:rgba(245,181,68,.12)}
+.links-root .cardact{display:flex}
+.links-root .btn{font-family:var(--disp);font-size:10.5px;letter-spacing:1.4px;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.18s;width:100%;text-align:center}
+.links-root .btn:disabled{opacity:.55;cursor:default}
+.links-root .btn.con{color:#fff;border:1px solid var(--accent);background:rgba(108,99,255,.16)}
+.links-root .btn.con:hover:not(:disabled){background:rgba(108,99,255,.28);box-shadow:0 0 18px rgba(108,99,255,.3)}
+.links-root .btn.dis{color:#ffb0b0;border:1px solid rgba(255,107,107,.5);background:rgba(255,107,107,.08)}
+.links-root .btn.dis:hover:not(:disabled){border-color:var(--red);background:rgba(255,107,107,.16)}
+</style>
+</head>
+<body>
+<div class="links-root">
+  <div class="grid-bg"></div>
+  <div class="scan"></div>
+
+  <div class="stage">
+    <div class="top">
+      <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> LINKS</div>
+      <div class="topright">
+        <span class="muted">PRODUCT · TACTICL</span>
+        <div class="nav">
+          <a class="chip">COMMAND</a>
+          <a class="chip">DASHBOARD</a>
+          <a class="chip active">LINKS</a>
+          <a class="chip">SETTINGS</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="head">
+      <div>
+        <h1 class="h1">CONNECTED <span class="b">CHANNELS</span></h1>
+        <div class="sub">INTEGRATION GRID · 12 CHANNELS</div>
+      </div>
+      <div class="summary">
+        <div class="stat"><span class="sdot" style="background:var(--cyan);box-shadow:0 0 9px var(--cyan)"></span><span class="n">7</span><span class="l">LINKED</span></div>
+        <div class="stat"><span class="sdot" style="background:rgba(238,240,246,.4);box-shadow:0 0 9px rgba(238,240,246,.4)"></span><span class="n">5</span><span class="l">AVAILABLE</span></div>
+        <div class="stat"><span class="sdot" style="background:var(--amber);box-shadow:0 0 9px var(--amber)"></span><span class="n">2</span><span class="l">NEEDS YOU</span></div>
+      </div>
+    </div>
+
+    <!-- ── SOCIAL ─────────────────────────────────────────────── -->
+    <div class="section" style="animation-delay:.05s">
+      <div class="shead">
+        <span class="glyph" style="color:var(--accent);border-color:var(--accent)">◈</span>
+        <div class="stitle">
+          <div class="sname">Social</div>
+          <div class="sdesc">Channels the agent can compose, schedule, and publish to.</div>
+        </div>
+        <span class="badge" style="border-color:var(--accent);color:var(--accent)">3 / 5</span>
+      </div>
+      <div class="cards">
+
+        <div class="card on" style="--ca:var(--accent)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#1DA1F2">𝕏</span>
+            <div class="meta">
+              <div class="pname">X / Twitter</div>
+              <div class="phandle">@tacticl_hq</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card on" style="--ca:var(--accent)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#0A66C2">in</span>
+            <div class="meta">
+              <div class="pname">LinkedIn</div>
+              <div class="phandle">Tacticl AI</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+            <span class="tag warn">⚠ RECONNECT</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card on" style="--ca:var(--accent)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:linear-gradient(135deg,#feda75,#d62976 55%,#4f5bd5)">◎</span>
+            <div class="meta">
+              <div class="pname">Instagram</div>
+              <div class="phandle">@tacticl.ai</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card" style="--ca:var(--accent)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#FF0000">▶</span>
+            <div class="meta">
+              <div class="pname">YouTube</div>
+              <div class="phandle">not linked</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
+          </div>
+          <div class="cardact"><button class="btn con">CONNECT →</button></div>
+        </div>
+
+        <div class="card" style="--ca:var(--accent)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#222">♪</span>
+            <div class="meta">
+              <div class="pname">TikTok</div>
+              <div class="phandle">not linked</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
+          </div>
+          <div class="cardact"><button class="btn con">CONNECT →</button></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── MEDIA ──────────────────────────────────────────────── -->
+    <div class="section" style="animation-delay:.13s">
+      <div class="shead">
+        <span class="glyph" style="color:var(--red);border-color:var(--red)">◉</span>
+        <div class="stitle">
+          <div class="sname">Media</div>
+          <div class="sdesc">Read-only sources the agent pulls assets from for posts.</div>
+        </div>
+        <span class="badge" style="border-color:var(--red);color:var(--red)">1 / 2</span>
+      </div>
+      <div class="cards">
+
+        <div class="card on" style="--ca:var(--red)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#4285F4">▦</span>
+            <div class="meta">
+              <div class="pname">Google Photos</div>
+              <div class="phandle">cuztomiz@hotmail.com</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card" style="--ca:var(--red)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#0061FF">▤</span>
+            <div class="meta">
+              <div class="pname">Dropbox</div>
+              <div class="phandle">not linked</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
+          </div>
+          <div class="cardact"><button class="btn con">CONNECT →</button></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── DEVELOPER ──────────────────────────────────────────── -->
+    <div class="section" style="animation-delay:.21s">
+      <div class="shead">
+        <span class="glyph" style="color:var(--cyan);border-color:var(--cyan)">⌘</span>
+        <div class="stitle">
+          <div class="sname">Developer</div>
+          <div class="sdesc">Repos, chat ingress, and devices that run your PDLC sparks.</div>
+        </div>
+        <span class="badge" style="border-color:var(--cyan);color:var(--cyan)">3 / 4</span>
+      </div>
+      <div class="cards">
+
+        <div class="card on" style="--ca:var(--cyan)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#222">⌥</span>
+            <div class="meta">
+              <div class="pname">GitHub Org</div>
+              <div class="phandle">strategiz-io · 14 repos</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card on" style="--ca:var(--cyan)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#5865F2">◆</span>
+            <div class="meta">
+              <div class="pname">Discord</div>
+              <div class="phandle">#pdlc-alerts · strategiz</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card on" style="--ca:var(--cyan)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#229ED9">✈</span>
+            <div class="meta">
+              <div class="pname">Telegram</div>
+              <div class="phandle">@tacticl_bot</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag linked"><span class="tdot"></span>LINKED</span>
+            <span class="tag warn">DISABLED</span>
+          </div>
+          <div class="cardact"><button class="btn dis">DISCONNECT</button></div>
+        </div>
+
+        <div class="card" style="--ca:var(--cyan)">
+          <span class="stripe"></span>
+          <div class="cardtop">
+            <span class="logo" style="background:#06B6D4">▣</span>
+            <div class="meta">
+              <div class="pname">Desktop Device</div>
+              <div class="phandle">not linked</div>
+            </div>
+          </div>
+          <div class="statusrow">
+            <span class="tag idle"><span class="tdot"></span>AVAILABLE</span>
+          </div>
+          <div class="cardact"><button class="btn con">CONNECT →</button></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── PRODUCTIVITY (coming soon) ─────────────────────────── -->
+    <div class="section" style="animation-delay:.29s">
+      <div class="shead">
+        <span class="glyph" style="color:var(--amber);border-color:var(--amber)">⬡</span>
+        <div class="stitle">
+          <div class="sname">Productivity</div>
+          <div class="sdesc">Docs, notes, and task tools — task automation surfaces.</div>
+        </div>
+        <span class="badge soon">COMING SOON</span>
+      </div>
+      <div class="soonbox">
+        Productivity integrations like Slack, Notion, and Google Drive are on the way.
+      </div>
+    </div>
+
+    <div style="height:46px"></div>
+  </div>
+</div>
+</body>
+</html>

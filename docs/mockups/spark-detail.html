@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tacticl · Spark Detail — Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ─── Tokens ───────────────────────────────────────────── */
+  :root {
+    --bg-0: #06060f;
+    --bg-1: #0c0b1a;
+    --primary: #6C63FF;
+    --cyan: #15E0C8;
+    --magenta: #B25CFF;
+    --txt-muted: #A39FC4;
+    --txt-bright: #E6E3F5;
+    --ok: #15E0C8;
+    --warn: #F5B14C;
+    --err: #FF5C7A;
+    --idle: #6E6A8F;
+
+    --panel-bg: rgba(255,255,255,0.035);
+    --panel-bg-hi: rgba(255,255,255,0.05);
+    --panel-border: rgba(124,99,255,0.20);
+    --panel-border-soft: rgba(124,99,255,0.14);
+    --radius: 10px;
+
+    /* role color map — reproduced from source TYPE_COLORS + node states */
+    --role-research: #64B5F6;
+    --role-code: #BB86FC;
+    --role-social: #03DAC6;
+    --role-devops: #FF9800;
+
+    --done: #4CAF50;
+    --done-2: #388E3C;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg-0);
+    color: var(--txt-bright);
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-size: 14px;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  body {
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ─── Ambient cockpit background ───────────────────────── */
+  .bg-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  .bg-base {
+    background:
+      radial-gradient(1100px 700px at 78% -8%, rgba(108,99,255,0.22), transparent 60%),
+      radial-gradient(900px 620px at 6% 8%, rgba(178,92,255,0.16), transparent 60%),
+      radial-gradient(1000px 800px at 50% 118%, rgba(21,224,200,0.10), transparent 55%),
+      linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  }
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(124,99,255,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,99,255,0.05) 1px, transparent 1px);
+    background-size: 32px 32px;
+    mask-image: radial-gradient(circle at 50% 30%, black 55%, transparent 100%);
+  }
+  .bg-scanline {
+    background: linear-gradient(180deg, transparent 0%, rgba(124,99,255,0.06) 48%, rgba(21,224,200,0.05) 50%, transparent 100%);
+    height: 240px;
+    width: 100%;
+    position: absolute;
+    top: -240px;
+    animation: scan 8.5s linear infinite;
+    opacity: 0.65;
+  }
+  @keyframes scan {
+    0%   { transform: translateY(0); }
+    100% { transform: translateY(calc(100vh + 240px)); }
+  }
+
+  /* ─── Shell ────────────────────────────────────────────── */
+  .shell {
+    position: relative;
+    z-index: 1;
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px 80px;
+  }
+
+  /* ─── Top bar ──────────────────────────────────────────── */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 4px;
+    margin-bottom: 22px;
+    backdrop-filter: blur(14px);
+    background: linear-gradient(180deg, rgba(6,6,15,0.92), rgba(6,6,15,0.55));
+    border-bottom: 1px solid var(--panel-border-soft);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .brand-mark {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--magenta) 55%, var(--cyan));
+    box-shadow: 0 0 18px rgba(108,99,255,0.5);
+    position: relative;
+  }
+  .brand-mark::after {
+    content: "";
+    position: absolute; inset: 7px;
+    border-radius: 4px;
+    border: 1.5px solid rgba(255,255,255,0.85);
+    clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  }
+  .brand-name {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    font-size: 15px;
+  }
+  .brand-name span { color: var(--primary); }
+  .topbar-title {
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 12px;
+    color: var(--txt-muted);
+  }
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+  .pill-live {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    font-family: "Chakra Petch", sans-serif;
+    color: var(--cyan);
+    border: 1px solid rgba(21,224,200,0.3);
+    border-radius: 999px;
+    padding: 5px 12px;
+    background: rgba(21,224,200,0.07);
+  }
+  .pill-live .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--cyan); box-shadow: 0 0 10px var(--cyan);
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, #2a2640, #161427);
+    border: 1px solid var(--panel-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--txt-bright);
+    font-family: "Chakra Petch", sans-serif; font-weight: 600;
+  }
+  @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+
+  /* ─── Header (breadcrumb / title / badges) ─────────────── */
+  .breadcrumb {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--txt-muted);
+    margin-bottom: 14px;
+  }
+  .breadcrumb a { color: var(--txt-muted); text-decoration: none; }
+  .breadcrumb a:hover { color: var(--txt-bright); text-decoration: underline; }
+  .breadcrumb .sep { color: var(--idle); }
+  .breadcrumb .crumb-id { color: var(--txt-bright); }
+
+  .title-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 18px; margin-bottom: 14px;
+  }
+  .spark-title {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 600;
+    font-size: 26px;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+    color: #fff;
+    flex: 1; min-width: 0;
+  }
+  .btn-cancel {
+    flex-shrink: 0;
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-size: 11px; font-weight: 600;
+    color: var(--err);
+    background: rgba(255,92,122,0.06);
+    border: 1px solid rgba(255,92,122,0.4);
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .btn-cancel:hover { background: rgba(255,92,122,0.14); box-shadow: 0 0 16px rgba(255,92,122,0.25); }
+
+  .badges {
+    display: flex; gap: 9px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 14px;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px;
+    font-family: "JetBrains Mono", monospace;
+    border-radius: 7px;
+    padding: 5px 11px;
+    border: 1px solid var(--panel-border-soft);
+    color: var(--txt-muted);
+    background: rgba(255,255,255,0.025);
+  }
+  .chip.status-exec {
+    color: var(--primary);
+    border-color: rgba(108,99,255,0.55);
+    background: rgba(108,99,255,0.12);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-family: "Chakra Petch", sans-serif; font-weight: 600; font-size: 10px;
+  }
+  .chip.status-exec .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--primary); box-shadow: 0 0 8px var(--primary);
+    animation: pulse-dot 1.8s ease-in-out infinite;
+  }
+  .chip.type-code {
+    color: var(--role-code);
+    border-color: rgba(187,134,252,0.4);
+    background: rgba(187,134,252,0.12);
+  }
+  .chip.playbook { text-transform: capitalize; }
+  .chip.prio-high {
+    color: var(--warn);
+    border-color: rgba(245,177,76,0.4);
+    background: rgba(245,177,76,0.10);
+  }
+
+  .meta-row {
+    display: flex; gap: 26px; align-items: center;
+    font-size: 12.5px; color: var(--txt-muted);
+    margin-bottom: 26px;
+  }
+  .meta-row strong { color: var(--txt-bright); font-weight: 600; }
+
+  /* ─── Eyebrow label ────────────────────────────────────── */
+  .eyebrow {
+    display: flex; align-items: center; gap: 9px;
+    font-family: "JetBrains Mono", monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-size: 10px;
+    color: var(--txt-muted);
+    margin-bottom: 14px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 8px; height: 8px;
+    background: var(--primary);
+    box-shadow: 0 0 10px var(--primary);
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+
+  /* ─── Panel ────────────────────────────────────────────── */
+  .panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 14px 40px rgba(0,0,0,0.4);
+    position: relative;
+  }
+  .panel::before {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), transparent 30%);
+    pointer-events: none;
+  }
+
+  /* ─── KPI strip ────────────────────────────────────────── */
+  .kpi-strip {
+    display: flex;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .kpi {
+    flex: 1;
+    text-align: center;
+    padding: 18px 16px;
+    border-right: 1px solid rgba(124,99,255,0.12);
+    position: relative;
+  }
+  .kpi:last-child { border-right: none; }
+  .kpi-value {
+    font-family: "Chakra Petch", sans-serif;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #fff;
+  }
+  .kpi-value.cyan { color: var(--cyan); text-shadow: 0 0 18px rgba(21,224,200,0.35); }
+  .kpi-value.warn { color: var(--warn); }
+  .kpi-label {
+    font-size: 9px;
+    color: var(--idle);
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    margin-top: 6px;
+    font-family: "Chakra Petch", sans-serif;
+  }
+
+  /* ─── Role timeline strip ──────────────────────────────── */
+  .role-strip-wrap { padding: 18px 20px 14px; margin-bottom: 22px; }
+  .role-strip {
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    padding: 8px 2px 4px;
+  }
+  .role-strip::-webkit-scrollbar { height: 5px; }
+  .role-strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+  .role-cell { display: flex; align-items: flex-start; }
+  .connector {
+    width: 26px; height: 2px;
+    margin-top: 19px;
+    flex-shrink: 0;
+    border-radius: 2px;
+  }
+  .connector.done { background: var(--done); box-shadow: 0 0 8px rgba(76,175,80,0.4); }
+  .connector.pending { background: #3a3752; }
+
+  .role-node {
+    display: flex; flex-direction: column; align-items: center;
+    min-width: 62px; flex-shrink: 0; cursor: pointer;
+  }
+  .node-circle {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    position: relative; flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  .role-node:hover .node-circle { transform: scale(1.08); }
+  .node-circle.completed {
+    background: linear-gradient(135deg, var(--done), var(--done-2));
+    box-shadow: 0 0 14px rgba(76,175,80,0.35);
+  }
+  .node-circle.active {
+    background: var(--primary);
+    box-shadow: 0 0 0 0 rgba(108,99,255,0.5);
+    animation: pdlc-pulse 2s ease-in-out infinite;
+  }
+  @keyframes pdlc-pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(108,99,255,0.55); }
+    50%     { box-shadow: 0 0 0 9px rgba(108,99,255,0); }
+  }
+  .node-circle.failed { background: var(--err); box-shadow: 0 0 12px rgba(255,92,122,0.4); }
+  .node-circle.skipped { background: #4a4760; }
+  .node-circle.pending { background: transparent; border: 2px dashed #4a4760; }
+
+  .node-abbr {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 700; font-size: 9.5px;
+    color: #fff; line-height: 1; letter-spacing: 0.04em;
+  }
+  .node-circle.pending .node-abbr { color: #76739a; }
+  .node-circle.skipped .node-abbr { text-decoration: line-through; color: #cfcce0; }
+
+  .rework-badge {
+    position: absolute; top: -5px; right: -6px;
+    background: var(--warn);
+    border-radius: 8px;
+    padding: 1px 4px;
+    min-width: 17px; text-align: center;
+  }
+  .rework-badge span {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 8.5px; font-weight: 700; color: #0c0b1a; line-height: 1;
+  }
+  .skipped-dot {
+    position: absolute; bottom: -2px; right: -2px;
+    width: 9px; height: 9px; border-radius: 50%; background: var(--warn);
+    border: 1.5px solid var(--bg-1);
+  }
+
+  .node-meta {
+    margin-top: 7px;
+    display: flex; flex-direction: column; align-items: center; gap: 1px;
+  }
+  .node-meta .m {
+    font-size: 9px; color: var(--idle); line-height: 1.3; white-space: nowrap;
+  }
+  .node-meta .m.elapsed { color: var(--magenta); font-size: 10px; }
+
+  /* ─── Two column: active panel | event timeline ───────── */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1.25fr 0.85fr;
+    gap: 22px;
+    margin-bottom: 22px;
+  }
+  @media (max-width: 880px) { .two-col { grid-template-columns: 1fr; } }
+
+  .panel-pad { padding: 18px 20px; }
+
+  /* Active role panel */
+  .active-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .active-role-name {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 700; font-size: 16px; color: #fff;
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .model-chip {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px; font-weight: 600;
+    color: #c4b8ff;
+    background: rgba(108,99,255,0.15);
+    border: 1px solid rgba(108,99,255,0.3);
+    border-radius: 6px; padding: 3px 9px;
+  }
+  .progress-log {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    background: #0a0918;
+    border: 1px solid rgba(124,99,255,0.14);
+    border-radius: 8px;
+    padding: 14px 16px;
+    max-height: 230px;
+    overflow-y: auto;
+    line-height: 1.7;
+  }
+  .progress-log::-webkit-scrollbar { width: 5px; }
+  .progress-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+  .log-line { display: flex; gap: 8px; }
+  .log-line .ts { color: #4f4c6b; flex-shrink: 0; }
+  .log-line .msg { color: var(--txt-muted); white-space: pre-wrap; word-break: break-word; }
+  .log-line .msg.ok { color: var(--done); }
+  .log-line .msg.tool { color: var(--cyan); }
+  .log-line .msg.warn { color: var(--warn); }
+  .cursor {
+    display: inline-block; width: 7px; height: 1em;
+    background: var(--primary); margin-left: 3px;
+    vertical-align: text-bottom;
+    animation: blink-cursor 1s step-end infinite;
+  }
+  @keyframes blink-cursor { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+  /* Event timeline */
+  .timeline { position: relative; padding-left: 18px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 3px; top: 4px; bottom: 4px;
+    width: 1px; background: rgba(255,255,255,0.10);
+  }
+  .tl-event { position: relative; margin-bottom: 15px; padding-left: 14px; }
+  .tl-dot {
+    position: absolute; left: -11px; top: 5px;
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .tl-desc { font-size: 12.5px; line-height: 1.4; color: var(--txt-bright); }
+  .tl-ts { font-size: 10px; color: var(--idle); }
+  .tl-meta { font-size: 10px; color: var(--idle); display: block; margin-top: 1px; }
+
+  /* ─── Pipeline controls ────────────────────────────────── */
+  .controls {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px; padding: 14px 20px; margin-bottom: 22px; flex-wrap: wrap;
+  }
+  .controls-left { display: flex; align-items: center; gap: 14px; font-size: 12px; color: var(--txt-muted); }
+  .controls-left .running {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: "Chakra Petch", sans-serif; text-transform: uppercase;
+    letter-spacing: 0.12em; font-size: 11px; color: var(--cyan);
+  }
+  .controls-left .running .dot {
+    width: 7px; height: 7px; border-radius: 50%; background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan); animation: pulse-dot 1.6s ease-in-out infinite;
+  }
+  .controls-right { display: flex; gap: 10px; }
+  .btn {
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    font-size: 11px; font-weight: 600;
+    border-radius: 8px; padding: 9px 16px; cursor: pointer;
+    transition: all 0.18s ease; border: 1px solid transparent;
+  }
+  .btn-ghost {
+    color: var(--txt-bright);
+    border-color: var(--panel-border);
+    background: rgba(124,99,255,0.06);
+  }
+  .btn-ghost:hover { background: rgba(124,99,255,0.14); }
+  .btn-primary {
+    color: #0a0918;
+    background: linear-gradient(135deg, var(--primary), var(--magenta) 55%, var(--cyan));
+    box-shadow: 0 0 22px rgba(108,99,255,0.4);
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+
+  /* ─── Artifact tabs (per-role result cards) ────────────── */
+  .artifact-section { margin-bottom: 22px; }
+  .tabs {
+    display: flex; gap: 4px; overflow-x: auto;
+    border-bottom: 1px solid var(--panel-border-soft);
+    padding-bottom: 0;
+  }
+  .tabs::-webkit-scrollbar { height: 4px; }
+  .tabs::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+  .tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12px;
+    color: var(--txt-muted);
+    padding: 10px 14px;
+    border-bottom: 2px solid transparent;
+    cursor: pointer; white-space: nowrap;
+    transition: color 0.15s ease;
+  }
+  .tab:hover { color: var(--txt-bright); }
+  .tab.active { color: #fff; border-bottom-color: var(--primary); }
+  .tab.disabled { opacity: 0.3; cursor: default; }
+  .tab .tok { font-size: 10px; color: var(--done); }
+  .tab.active .tok { color: var(--done); }
+
+  .artifact-body { margin-top: 16px; }
+  .artifact-meta { display: flex; gap: 7px; margin-bottom: 14px; flex-wrap: wrap; }
+  .chip-sm {
+    font-size: 10px; border-radius: 6px; padding: 3px 9px;
+    border: 1px solid var(--panel-border-soft);
+    color: var(--txt-muted); background: rgba(255,255,255,0.025);
+  }
+  .chip-sm.model { color: #c4b8ff; background: rgba(108,99,255,0.15); border-color: rgba(108,99,255,0.3); }
+
+  /* markdown card */
+  .md-card {
+    background: #0a0918;
+    border: 1px solid rgba(124,99,255,0.16);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .md-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(124,99,255,0.06);
+    border-bottom: 1px solid rgba(124,99,255,0.14);
+  }
+  .md-tag {
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase; letter-spacing: 0.12em;
+    font-size: 10px; color: var(--cyan);
+  }
+  .md-meta-r { font-size: 10px; color: var(--idle); }
+  .md-content { padding: 18px 20px; font-size: 13px; line-height: 1.75; color: var(--txt-bright); }
+  .md-content h3 {
+    font-family: "Chakra Petch", sans-serif;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 13px; color: #fff; margin: 18px 0 8px; font-weight: 600;
+  }
+  .md-content h3:first-child { margin-top: 0; }
+  .md-content p { color: var(--txt-muted); margin-bottom: 10px; }
+  .md-content ul { list-style: none; padding-left: 0; margin-bottom: 12px; }
+  .md-content li {
+    color: var(--txt-muted); padding-left: 20px; position: relative; margin-bottom: 6px;
+  }
+  .md-content li::before {
+    content: "▸"; position: absolute; left: 4px; color: var(--primary);
+  }
+  .md-content code {
+    font-family: "JetBrains Mono", monospace;
+    background: rgba(108,99,255,0.14);
+    color: #c4b8ff; padding: 1px 6px; border-radius: 4px; font-size: 12px;
+  }
+  .md-content .codeblock {
+    background: #060512; border: 1px solid rgba(124,99,255,0.12);
+    border-radius: 8px; padding: 14px 16px; margin: 12px 0;
+    font-size: 12px; line-height: 1.6; color: var(--cyan); overflow-x: auto;
+  }
+  .md-content .codeblock .kw { color: var(--magenta); }
+  .md-content .codeblock .cm { color: #5a5775; }
+
+  .foot {
+    text-align: center; color: var(--idle); font-size: 11px;
+    letter-spacing: 0.1em; margin-top: 30px;
+    font-family: "Chakra Petch", sans-serif; text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Ambient background -->
+  <div class="bg-layer bg-base"></div>
+  <div class="bg-layer bg-grid"></div>
+  <div class="bg-layer"><div class="bg-scanline"></div></div>
+
+  <div class="shell">
+
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-mark"></div>
+        <div class="brand-name">TACTI<span>CL</span></div>
+        <div class="topbar-title">Spark Detail</div>
+      </div>
+      <div class="topbar-right">
+        <span class="pill-live"><span class="dot"></span>Live</span>
+        <div class="avatar">GJ</div>
+      </div>
+    </div>
+
+    <!-- Header: breadcrumb -->
+    <div class="breadcrumb">
+      <a href="#">Sparks</a>
+      <span class="sep">/</span>
+      <span class="crumb-id">spk_8f3a91c2...</span>
+    </div>
+
+    <!-- Title row -->
+    <div class="title-row">
+      <div class="spark-title">Add a /health readiness endpoint to strategiz-core</div>
+      <button class="btn-cancel">Cancel</button>
+    </div>
+
+    <!-- Badges -->
+    <div class="badges">
+      <span class="chip status-exec"><span class="dot"></span>Executing</span>
+      <span class="chip type-code">code</span>
+      <span class="chip playbook">Small Feature</span>
+      <span class="chip prio-high">HIGH</span>
+    </div>
+
+    <!-- Execution target + elapsed -->
+    <div class="meta-row">
+      <span>Target: <strong>Cloud · arbiter-prod</strong></span>
+      <span>started 7 minutes ago</span>
+    </div>
+
+    <!-- KPI strip (buildPdlcMetrics) -->
+    <div class="kpi-strip">
+      <div class="kpi">
+        <div class="kpi-value">5/9</div>
+        <div class="kpi-label">Roles Done</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value cyan">$1.84</div>
+        <div class="kpi-label">Cost</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value">7 minutes</div>
+        <div class="kpi-label">Elapsed</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-value warn">1</div>
+        <div class="kpi-label">Reworks</div>
+      </div>
+    </div>
+
+    <!-- Role timeline strip -->
+    <div class="eyebrow">Pipeline · Role Timeline</div>
+    <div class="panel role-strip-wrap">
+      <div class="role-strip">
+
+        <!-- PO — completed -->
+        <div class="role-cell">
+          <div class="role-node">
+            <div class="node-circle completed"><span class="node-abbr">PO</span></div>
+            <div class="node-meta">
+              <span class="m">42s</span>
+              <span class="m">sonnet-4</span>
+              <span class="m">3.1K tok</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESEARCHER — completed -->
+        <div class="role-cell">
+          <div class="connector done"></div>
+          <div class="role-node">
+            <div class="node-circle completed"><span class="node-abbr">RSCH</span></div>
+            <div class="node-meta">
+              <span class="m">1m 18s</span>
+              <span class="m">sonnet-4</span>
+              <span class="m">12.4K tok</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ARCHITECT — completed -->
+        <div class="role-cell">
+          <div class="connector done"></div>
+          <div class="role-node">
+            <div class="node-circle completed"><span class="node-abbr">ARCH</span></div>
+            <div class="node-meta">
+              <span class="m">58s</span>
+              <span class="m">sonnet-4</span>
+              <span class="m">9.7K tok</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLANNER — completed -->
+        <div class="role-cell">
+          <div class="connector done"></div>
+          <div class="role-node">
+            <div class="node-circle completed"><span class="node-abbr">PLAN</span></div>
+            <div class="node-meta">
+              <span class="m">36s</span>
+              <span class="m">sonnet-4</span>
+              <span class="m">6.2K tok</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- IMPLEMENTER — completed, rework x2 -->
+        <div class="role-cell">
+          <div class="connector done"></div>
+          <div class="role-node">
+            <div class="node-circle completed">
+              <span class="node-abbr">IMPL</span>
+              <div class="rework-badge"><span>x2</span></div>
+            </div>
+            <div class="node-meta">
+              <span class="m">3m 41s</span>
+              <span class="m">sonnet-4</span>
+              <span class="m">48.9K tok</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- REVIEWER — active -->
+        <div class="role-cell">
+          <div class="connector done"></div>
+          <div class="role-node">
+            <div class="node-circle active"><span class="node-abbr">REV</span></div>
+            <div class="node-meta">
+              <span class="m elapsed">1m 12s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- TESTER — pending -->
+        <div class="role-cell">
+          <div class="connector pending"></div>
+          <div class="role-node">
+            <div class="node-circle pending"><span class="node-abbr">TEST</span></div>
+          </div>
+        </div>
+
+        <!-- SECURITY — skipped (required warning dot) -->
+        <div class="role-cell">
+          <div class="connector pending"></div>
+          <div class="role-node">
+            <div class="node-circle skipped">
+              <span class="node-abbr">SEC</span>
+              <div class="skipped-dot"></div>
+            </div>
+            <div class="node-meta"><span class="m">skipped</span></div>
+          </div>
+        </div>
+
+        <!-- DEVOPS — pending -->
+        <div class="role-cell">
+          <div class="connector pending"></div>
+          <div class="role-node">
+            <div class="node-circle pending"><span class="node-abbr">OPS</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Two-column: ActiveRolePanel | EventTimeline -->
+    <div class="two-col">
+
+      <!-- Active role panel -->
+      <div class="panel panel-pad">
+        <div class="active-head">
+          <span class="active-role-name">Reviewer</span>
+          <span class="model-chip">claude-sonnet-4-20250514</span>
+        </div>
+        <div class="progress-log" id="progressLog">
+          <div class="log-line"><span class="ts">14:32:08</span><span class="msg">› Loading IMPLEMENTER diff (14 files, +312 −47)</span></div>
+          <div class="log-line"><span class="ts">14:32:11</span><span class="msg tool">⚙ read_file src/main/java/io/strategiz/health/HealthController.java</span></div>
+          <div class="log-line"><span class="ts">14:32:19</span><span class="msg">› Checking readiness probe against ApplicationContext refresh state</span></div>
+          <div class="log-line"><span class="ts">14:32:27</span><span class="msg tool">⚙ grep "actuator" build.gradle.kts</span></div>
+          <div class="log-line"><span class="ts">14:32:34</span><span class="msg warn">⚠ HealthController missing @RequireScope on /v1/health — flag for SECURITY</span></div>
+          <div class="log-line"><span class="ts">14:32:48</span><span class="msg">› Verifying Optional&lt;HealthStatus&gt; return contract per module rules</span></div>
+          <div class="log-line"><span class="ts">14:33:02</span><span class="msg ok">✓ Constructor injection confirmed — no @Autowired fields</span></div>
+          <div class="log-line"><span class="ts">14:33:14</span><span class="msg">› Drafting review verdict<span class="cursor"></span></span></div>
+        </div>
+      </div>
+
+      <!-- Event timeline -->
+      <div class="panel panel-pad">
+        <div class="eyebrow" style="margin-bottom:16px;">Event Timeline</div>
+        <div class="timeline">
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#6C63FF;"></div>
+            <div class="tl-desc">Reviewer started</div>
+            <div class="tl-ts">14:32:06</div>
+          </div>
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#03DAC6;"></div>
+            <div class="tl-desc">Implementer produced artifact</div>
+            <div class="tl-ts">14:32:01</div>
+            <span class="tl-meta">3m 41s · sonnet-4 · 48.9K tok</span>
+          </div>
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#4CAF50;"></div>
+            <div class="tl-desc">Implementer rework completed</div>
+            <div class="tl-ts">14:31:58</div>
+          </div>
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#FF9800;"></div>
+            <div class="tl-desc">Rework triggered for Implementer</div>
+            <div class="tl-ts">14:28:12</div>
+          </div>
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#FF9800;"></div>
+            <div class="tl-desc">Security Analyst skipped</div>
+            <div class="tl-ts">14:24:40</div>
+          </div>
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#4CAF50;"></div>
+            <div class="tl-desc">Planner completed</div>
+            <div class="tl-ts">14:24:38</div>
+            <span class="tl-meta">36s · sonnet-4 · 6.2K tok</span>
+          </div>
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#4CAF50;"></div>
+            <div class="tl-desc">Architect completed</div>
+            <div class="tl-ts">14:24:02</div>
+            <span class="tl-meta">58s · sonnet-4 · 9.7K tok</span>
+          </div>
+          <div class="tl-event">
+            <div class="tl-dot" style="background:#888;"></div>
+            <div class="tl-desc">Pipeline started</div>
+            <div class="tl-ts">14:25:54</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Pipeline controls (active) -->
+    <div class="panel controls">
+      <div class="controls-left">
+        <span class="running"><span class="dot"></span>Running</span>
+        <span>Reviewer · iteration 1 · merge gate pending</span>
+      </div>
+      <div class="controls-right">
+        <button class="btn btn-ghost">Pause</button>
+        <button class="btn btn-primary">Resume Merge Gate</button>
+      </div>
+    </div>
+
+    <!-- Artifact tabs (per-role result cards) -->
+    <div class="eyebrow">Role Artifacts</div>
+    <div class="panel panel-pad artifact-section">
+      <div class="tabs">
+        <div class="tab">PO <span class="tok">3.1K</span></div>
+        <div class="tab">Research <span class="tok">12.4K</span></div>
+        <div class="tab active">Arch <span class="tok">9.7K</span></div>
+        <div class="tab">Plan <span class="tok">6.2K</span></div>
+        <div class="tab">Impl <span class="tok">48.9K</span></div>
+        <div class="tab">Review</div>
+        <div class="tab disabled">Test</div>
+        <div class="tab disabled">Security</div>
+        <div class="tab disabled">DevOps</div>
+      </div>
+
+      <div class="artifact-body">
+        <div class="artifact-meta">
+          <span class="chip-sm model">claude-sonnet-4-20250514</span>
+          <span class="chip-sm">9.7K tokens</span>
+          <span class="chip-sm">architecture · v1</span>
+        </div>
+
+        <div class="md-card">
+          <div class="md-head">
+            <span class="md-tag">Arch · v1</span>
+            <span class="md-meta-r">architecture · v1</span>
+          </div>
+          <div class="md-content">
+            <h3>Approach</h3>
+            <p>Expose readiness via a dedicated <code>HealthController</code> at <code>/v1/health</code> rather than overloading Spring Actuator's <code>/actuator/health</code>, so the product owns the contract and response shape. Liveness stays on Actuator; readiness aggregates downstream dependency probes.</p>
+
+            <h3>Components</h3>
+            <ul>
+              <li><code>HealthController</code> — REST entrypoint, extends <code>BaseController</code>, returns <code>Optional&lt;HealthStatus&gt;</code></li>
+              <li><code>HealthService</code> — aggregates probes (Mongo, Vault, Arbiter gRPC), extends <code>BaseService</code></li>
+              <li><code>HealthStatus</code> — immutable record: <code>status</code>, <code>checks[]</code>, <code>timestamp</code></li>
+            </ul>
+
+            <h3>Contract</h3>
+            <div class="codeblock"><span class="cm"># GET /v1/health → 200 (ready) | 503 (degraded)</span>
+{
+  <span class="kw">"status"</span>: "UP",
+  <span class="kw">"checks"</span>: [
+    { "name": "mongo",   "status": "UP" },
+    { "name": "vault",   "status": "UP" },
+    { "name": "arbiter", "status": "UP" }
+  ]
+}</div>
+
+            <h3>Constraints</h3>
+            <ul>
+              <li>No new module — lands in <code>service-health</code> under existing layered rules</li>
+              <li>Probe timeout 2s per dependency; degrade open (report DOWN, never block)</li>
+              <li>Open question routed to SECURITY: should <code>/v1/health</code> require <code>@RequireScope</code>?</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="foot">Tacticl HUD · PDLC Pipeline Engine · spk_8f3a91c2</div>
+
+  </div>
+
+  <script>
+    // Ambient: keep the active-role log auto-scrolled to bottom
+    (function () {
+      var log = document.getElementById('progressLog');
+      if (log) log.scrollTop = log.scrollHeight;
+    })();
+  </script>
+
+</body>
+</html>

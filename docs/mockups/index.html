@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tacticl — Look &amp; Feel Mockups</title>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --violet:#6C63FF; --violet-soft:#9b95ff; --cyan:#15E0C8; --magenta:#B25CFF;
+    --bg-0:#06060f; --bg-1:#0c0b1a; --txt-1:#E6E3F5; --txt-2:#A39FC4; --txt-3:#6E6A8F;
+    --line:rgba(124,99,255,0.18);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:"JetBrains Mono",ui-monospace,monospace;
+    color:var(--txt-1); background:var(--bg-0); min-height:100vh; overflow-x:hidden;
+    background-image:
+      radial-gradient(900px 600px at 12% -10%, rgba(108,99,255,0.16), transparent 60%),
+      radial-gradient(800px 600px at 100% 0%, rgba(21,224,200,0.10), transparent 55%),
+      radial-gradient(900px 700px at 50% 120%, rgba(178,92,255,0.12), transparent 60%),
+      linear-gradient(180deg,var(--bg-0),var(--bg-1));
+  }
+  .grid{position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(rgba(124,99,255,0.05) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(124,99,255,0.05) 1px,transparent 1px);
+    background-size:34px 34px; mask-image:radial-gradient(circle at 50% 30%,#000 30%,transparent 90%);}
+  .scan{position:fixed;left:0;right:0;height:160px;z-index:0;pointer-events:none;
+    background:linear-gradient(180deg,transparent,rgba(108,99,255,0.06),transparent);
+    animation:scan 8s linear infinite}
+  @keyframes scan{0%{transform:translateY(-200px)}100%{transform:translateY(110vh)}}
+  .wrap{position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:64px 28px 90px}
+  .eyebrow{font-size:11px;letter-spacing:.34em;text-transform:uppercase;color:var(--violet-soft);
+    display:flex;align-items:center;gap:9px;margin-bottom:14px}
+  .eyebrow::before{content:"";width:8px;height:8px;border-radius:2px;
+    background:linear-gradient(135deg,var(--violet),var(--magenta));box-shadow:0 0 12px var(--violet)}
+  h1{font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:40px;letter-spacing:.04em;
+    text-transform:uppercase;line-height:1.05}
+  h1 b{background:linear-gradient(135deg,var(--violet),var(--magenta) 55%,var(--cyan));
+    -webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--txt-2);margin-top:14px;max-width:680px;line-height:1.6;font-size:13.5px}
+  .meta{margin-top:10px;color:var(--txt-3);font-size:11.5px;letter-spacing:.06em}
+  .grid-cards{margin-top:44px;display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px}
+  a.card{display:block;text-decoration:none;color:inherit;position:relative;
+    background:rgba(255,255,255,0.035);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}
+  a.card:hover{transform:translateY(-4px);border-color:rgba(124,99,255,0.5);
+    box-shadow:0 16px 50px -18px rgba(108,99,255,0.55)}
+  .thumb{height:118px;position:relative;border-bottom:1px solid var(--line);
+    background:radial-gradient(120px 90px at 20% 20%,rgba(108,99,255,0.28),transparent 70%),
+               radial-gradient(140px 100px at 85% 90%,rgba(21,224,200,0.20),transparent 70%),
+               linear-gradient(135deg,#0b0a1c,#13112b);overflow:hidden}
+  .thumb .ico{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:13px;letter-spacing:.22em;
+    text-transform:uppercase;color:rgba(230,227,245,0.92)}
+  .thumb .glow{position:absolute;width:90px;height:90px;border-radius:50%;top:14px;left:50%;
+    transform:translateX(-50%);filter:blur(2px);
+    background:radial-gradient(circle at 38% 34%,#fff,rgba(178,92,255,0.7) 30%,rgba(108,99,255,0.55) 55%,transparent 72%);
+    opacity:.5;animation:breathe 4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.4;transform:translateX(-50%) scale(.96)}50%{opacity:.65;transform:translateX(-50%) scale(1.04)}}
+  .cbody{padding:16px 18px 18px}
+  .cbody .nm{font-family:"Chakra Petch",sans-serif;font-weight:600;font-size:15px;letter-spacing:.06em;
+    text-transform:uppercase;display:flex;align-items:center;justify-content:space-between}
+  .cbody .nm .route{font-family:"JetBrains Mono";font-size:11px;color:var(--cyan);letter-spacing:.02em;text-transform:none}
+  .cbody p{margin-top:9px;color:var(--txt-2);font-size:12.3px;line-height:1.55}
+  .foot{margin-top:60px;color:var(--txt-3);font-size:11px;letter-spacing:.08em;border-top:1px solid var(--line);padding-top:18px}
+  .pill{display:inline-block;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--cyan);
+    border:1px solid rgba(21,224,200,0.3);border-radius:999px;padding:2px 9px;margin-left:8px}
+</style>
+</head>
+<body>
+  <div class="grid"></div><div class="scan"></div>
+  <div class="wrap">
+    <div class="eyebrow">Tacticl · Design Reference</div>
+    <h1>Look &amp; Feel <b>Mockups</b></h1>
+    <p class="sub">The current full-bleed HUD surfaces, regenerated as standalone static renders from the live React
+      components. Violet&nbsp;#6C63FF · cyan&nbsp;#15E0C8 · magenta&nbsp;#B25CFF, Chakra&nbsp;Petch + JetBrains&nbsp;Mono.
+      Click any surface to open its mockup.</p>
+    <p class="meta">tacticl-web/docs/mockups · 7 surfaces · regenerated 2026-06-20</p>
+
+    <div class="grid-cards">
+      <a class="card" href="command.html"><div class="thumb"><div class="glow"></div><div class="ico">◉ Jarvis Orb</div></div>
+        <div class="cbody"><div class="nm">Command<span class="route">/command</span></div>
+        <p>Voice-sphere command center — iridescent Jarvis orb, comms log, active-operation role strip + human gate.</p></div></a>
+
+      <a class="card" href="dashboard.html"><div class="thumb"><div class="ico">▤ Pipeline Board</div></div>
+        <div class="cbody"><div class="nm">Dashboard<span class="route">/dashboard</span></div>
+        <p>Development-pipeline board: KPI strip + agent-timeline rows across builds (running · merge gate · merged · failed).</p></div></a>
+
+      <a class="card" href="links.html"><div class="thumb"><div class="ico">⌁ Connections</div></div>
+        <div class="cbody"><div class="nm">Links<span class="route">/links</span></div>
+        <p>Connected channels — GitHub org, Discord, Telegram, social, devices — connected vs available with status pills.</p></div></a>
+
+      <a class="card" href="settings.html"><div class="thumb"><div class="ico">⚙ Repos · Tokens · Devices</div></div>
+        <div class="cbody"><div class="nm">Settings<span class="route">/settings</span></div>
+        <p>Settings hub: repo grants, API tokens (masked + usage), and paired devices under one section nav.</p></div></a>
+
+      <a class="card" href="onboard.html"><div class="thumb"><div class="ico">⊹ Register Product</div></div>
+        <div class="cbody"><div class="nm">Onboard<span class="route">/onboard</span></div>
+        <p>4-step Register Product wizard — Product · Repositories (Install GitHub App) · Channels · Review.</p></div></a>
+
+      <a class="card" href="spark-detail.html"><div class="thumb"><div class="ico">◇ Pipeline Detail</div></div>
+        <div class="cbody"><div class="nm">Spark Detail<span class="route">/sparks/:id</span></div>
+        <p>Single-pipeline detail: role timeline, live log, event stream, per-role artifact tabs.</p></div></a>
+
+      <a class="card" href="artifacts.html"><div class="thumb"><div class="ico">❖ Artifact Viewer</div></div>
+        <div class="cbody"><div class="nm">Artifacts<span class="pill">all types</span></div>
+        <p>Two-pane viewer for all 12 PDLC artifacts — with the folded merge-gate bundle (change summary + test + security).</p></div></a>
+    </div>
+
+    <div class="foot">TACTICL // LOOK &amp; FEEL — static mockups generated from live source. Open any tile to view full-screen.</div>
+  </div>
+</body>
+</html>
