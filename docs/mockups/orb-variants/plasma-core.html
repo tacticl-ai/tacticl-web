@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tacticl — Plasma Core</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --violet: #6C63FF;
+    --magenta: #B25CFF;
+    --cyan: #15E0C8;
+    --cyan2: #03DAC6;
+    --hot: #ffffff;
+    --bg0: #06060f;
+    --bg1: #0c0b1a;
+    --orb: clamp(320px, 42vmin, 460px);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body { height: 100%; }
+
+  body {
+    font-family: "JetBrains Mono", monospace;
+    background: var(--bg0);
+    color: #c9c6e6;
+    overflow: hidden;
+    min-height: 100vh;
+  }
+
+  /* ============================================================
+     COCKPIT BACKDROP
+     ============================================================ */
+  .cockpit {
+    position: fixed;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(120% 90% at 15% 8%, rgba(108,99,255,.16), transparent 55%),
+      radial-gradient(110% 80% at 88% 10%, rgba(21,224,200,.10), transparent 52%),
+      radial-gradient(130% 100% at 50% 118%, rgba(178,92,255,.12), transparent 60%),
+      linear-gradient(160deg, var(--bg0) 0%, var(--bg1) 100%);
+    isolation: isolate;
+  }
+
+  /* faint grid, masked to fade at the edges */
+  .grid {
+    position: absolute;
+    inset: -2px;
+    background-image:
+      linear-gradient(rgba(154,148,210,.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(154,148,210,.055) 1px, transparent 1px);
+    background-size: 34px 34px;
+    -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, #000 30%, transparent 82%);
+            mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, #000 30%, transparent 82%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* slow vertical scanline sweep */
+  .scanline {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(108,99,255,.05) 46%,
+      rgba(21,224,200,.10) 50%,
+      rgba(108,99,255,.05) 54%,
+      transparent 100%
+    );
+    background-size: 100% 38%;
+    background-repeat: no-repeat;
+    mix-blend-mode: screen;
+    animation: sweep 7.5s linear infinite;
+    opacity: .7;
+  }
+  @keyframes sweep {
+    0%   { background-position: 0 -42%; }
+    100% { background-position: 0 142%; }
+  }
+
+  /* fine vignette to seat everything into the dark */
+  .vignette {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: radial-gradient(ellipse 80% 80% at 50% 48%, transparent 55%, rgba(2,2,8,.62) 100%);
+  }
+
+  /* ============================================================
+     BRAND TAG (top-left, minimal)
+     ============================================================ */
+  .brand {
+    position: absolute;
+    top: clamp(18px, 3vmin, 34px);
+    left: clamp(20px, 3.4vmin, 40px);
+    z-index: 6;
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 600;
+    letter-spacing: .26em;
+    text-transform: uppercase;
+    font-size: clamp(11px, 1.35vmin, 14px);
+    color: #d9d6f2;
+    text-shadow: 0 0 16px rgba(108,99,255,.4);
+  }
+  .brand .slash { color: var(--violet); }
+  .brand .sub {
+    display: block;
+    margin-top: 4px;
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 400;
+    letter-spacing: .34em;
+    font-size: clamp(8px, .92vmin, 10px);
+    color: rgba(154,148,210,.5);
+  }
+
+  /* tiny status readout top-right */
+  .sysreadout {
+    position: absolute;
+    top: clamp(18px, 3vmin, 34px);
+    right: clamp(20px, 3.4vmin, 40px);
+    z-index: 6;
+    text-align: right;
+    font-size: clamp(8px, 1vmin, 10px);
+    letter-spacing: .22em;
+    color: rgba(154,148,210,.5);
+    line-height: 1.7;
+  }
+  .sysreadout b { color: var(--cyan); font-weight: 500; }
+
+  /* ============================================================
+     ORB STAGE
+     ============================================================ */
+  .stage {
+    position: relative;
+    z-index: 5;
+    width: var(--orb);
+    height: var(--orb);
+    display: grid;
+    place-items: center;
+    transform: translateY(-2vmin);
+    animation: bob 9s ease-in-out infinite;
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateY(-2vmin); }
+    50%      { transform: translateY(-3.1vmin); }
+  }
+
+  /* common: every orb layer is a centered absolute circle */
+  .layer {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    will-change: transform, opacity;
+  }
+
+  /* -- outer bloom halo (soft, large, breathing) -- */
+  .bloom {
+    width: 142%; height: 142%;
+    left: -21%; top: -21%;
+    background: radial-gradient(circle at 50% 50%,
+      rgba(178,92,255,.42) 0%,
+      rgba(108,99,255,.30) 28%,
+      rgba(21,224,200,.12) 52%,
+      transparent 70%);
+    filter: blur(34px);
+    mix-blend-mode: screen;
+    animation: bloomPulse 4.2s ease-in-out infinite;
+    z-index: 0;
+  }
+  @keyframes bloomPulse {
+    0%, 100% { transform: scale(1);    opacity: .85; }
+    50%      { transform: scale(1.07); opacity: 1; }
+  }
+
+  /* secondary cyan corona, slower, offset */
+  .corona {
+    width: 118%; height: 118%;
+    left: -9%; top: -9%;
+    background: radial-gradient(circle at 50% 50%,
+      transparent 48%,
+      rgba(21,224,200,.22) 60%,
+      rgba(21,224,200,.05) 72%,
+      transparent 80%);
+    filter: blur(8px);
+    mix-blend-mode: screen;
+    animation: coronaSpin 26s linear infinite;
+    z-index: 1;
+  }
+  @keyframes coronaSpin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ============================================================
+     ORB BODY — the molten sphere
+     ============================================================ */
+  .orb {
+    position: relative;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    z-index: 4;
+    overflow: hidden;
+    /* base globe shading so the sphere reads as 3-D */
+    background:
+      radial-gradient(circle at 38% 32%,
+        rgba(255,255,255,.10) 0%,
+        rgba(178,92,255,.0) 24%),
+      radial-gradient(circle at 50% 54%,
+        #2a1450 0%,
+        #1b0c38 46%,
+        #120726 70%,
+        #0a0418 100%);
+    box-shadow:
+      inset 0 0 60px rgba(10,4,24,.9),
+      inset -22px -26px 80px rgba(4,2,14,.95),
+      0 0 70px rgba(108,99,255,.34),
+      0 0 130px rgba(178,92,255,.22);
+    animation: orbBreath 4.2s ease-in-out infinite;
+  }
+  @keyframes orbBreath {
+    0%, 100% { box-shadow: inset 0 0 60px rgba(10,4,24,.9), inset -22px -26px 80px rgba(4,2,14,.95), 0 0 70px rgba(108,99,255,.34), 0 0 130px rgba(178,92,255,.22); }
+    50%      { box-shadow: inset 0 0 60px rgba(10,4,24,.9), inset -22px -26px 80px rgba(4,2,14,.95), 0 0 92px rgba(108,99,255,.5),  0 0 170px rgba(178,92,255,.34); }
+  }
+
+  /* drifting conic plasma layer 1 (violet→magenta swirl) */
+  .plasma1 {
+    background: conic-gradient(from 0deg at 46% 44%,
+      rgba(108,99,255,.0) 0deg,
+      rgba(108,99,255,.55) 50deg,
+      rgba(178,92,255,.85) 120deg,
+      rgba(108,99,255,.30) 200deg,
+      rgba(178,92,255,.7) 280deg,
+      rgba(108,99,255,.0) 360deg);
+    filter: blur(10px);
+    mix-blend-mode: screen;
+    opacity: .9;
+    animation: spinA 14s linear infinite;
+  }
+  @keyframes spinA { to { transform: rotate(360deg); } }
+
+  /* drifting conic plasma layer 2 (counter-rotating, magenta heavy) */
+  .plasma2 {
+    background: conic-gradient(from 140deg at 56% 58%,
+      rgba(178,92,255,.0) 0deg,
+      rgba(178,92,255,.7) 70deg,
+      rgba(108,99,255,.4) 150deg,
+      rgba(178,92,255,.85) 230deg,
+      rgba(255,120,240,.45) 300deg,
+      rgba(178,92,255,.0) 360deg);
+    filter: blur(14px);
+    mix-blend-mode: screen;
+    opacity: .8;
+    animation: spinB 19s linear infinite reverse;
+  }
+  @keyframes spinB { to { transform: rotate(360deg); } }
+
+  /* radial turbulence blobs that drift + scale (heat convection) */
+  .plasma3 {
+    background:
+      radial-gradient(circle at 30% 64%, rgba(178,92,255,.7) 0%, transparent 30%),
+      radial-gradient(circle at 70% 36%, rgba(108,99,255,.65) 0%, transparent 32%),
+      radial-gradient(circle at 60% 72%, rgba(255,110,230,.45) 0%, transparent 26%);
+    filter: blur(16px);
+    mix-blend-mode: screen;
+    animation: convect 8s ease-in-out infinite alternate;
+  }
+  @keyframes convect {
+    0%   { transform: scale(1) translate(0,0) rotate(0deg); }
+    50%  { transform: scale(1.12) translate(3%,-3%) rotate(8deg); }
+    100% { transform: scale(1) translate(-3%,2%) rotate(-6deg); }
+  }
+
+  /* secondary turbulence, different phase */
+  .plasma4 {
+    background:
+      radial-gradient(circle at 44% 30%, rgba(108,99,255,.6) 0%, transparent 26%),
+      radial-gradient(circle at 26% 50%, rgba(178,92,255,.55) 0%, transparent 28%);
+    filter: blur(20px);
+    mix-blend-mode: screen;
+    opacity: .85;
+    animation: convect2 6.4s ease-in-out infinite alternate;
+  }
+  @keyframes convect2 {
+    0%   { transform: scale(1.05) translate(2%,2%); }
+    100% { transform: scale(.95) translate(-2%,-2%) rotate(-10deg); }
+  }
+
+  /* ---- white-hot pulsing NUCLEUS that visibly breathes ---- */
+  .nucleus {
+    width: 56%; height: 56%;
+    left: 22%; top: 22%;
+    background: radial-gradient(circle at 50% 48%,
+      #ffffff 0%,
+      #ffffff 14%,
+      rgba(255,235,255,.95) 24%,
+      rgba(190,150,255,.8) 42%,
+      rgba(140,90,255,.4) 60%,
+      transparent 76%);
+    filter: blur(3px);
+    mix-blend-mode: screen;
+    box-shadow: 0 0 60px rgba(255,255,255,.5);
+    animation: nucleusBreath 4.2s ease-in-out infinite;
+    z-index: 5;
+  }
+  @keyframes nucleusBreath {
+    0%, 100% { transform: scale(.92); opacity: .9; filter: blur(3px); }
+    45%      { transform: scale(1.12); opacity: 1; filter: blur(1.5px); }
+    60%      { transform: scale(1.04); opacity: 1; }
+  }
+
+  /* inner hot ring that flickers around the nucleus */
+  .hotring {
+    width: 70%; height: 70%;
+    left: 15%; top: 15%;
+    background: radial-gradient(circle at 50% 50%,
+      transparent 55%,
+      rgba(255,200,255,.35) 64%,
+      rgba(178,92,255,.0) 74%);
+    filter: blur(6px);
+    mix-blend-mode: screen;
+    animation: flicker 3.3s ease-in-out infinite;
+    z-index: 5;
+  }
+  @keyframes flicker {
+    0%,100% { opacity: .55; transform: scale(1); }
+    33%     { opacity: .9;  transform: scale(1.04) rotate(4deg); }
+    66%     { opacity: .65; transform: scale(.98) rotate(-3deg); }
+  }
+
+  /* ---- heat-shimmer overlay (subtle distortion bands) ---- */
+  .shimmer {
+    background: repeating-linear-gradient(
+      102deg,
+      transparent 0px,
+      rgba(255,255,255,.04) 2px,
+      transparent 5px,
+      transparent 11px
+    );
+    mix-blend-mode: overlay;
+    opacity: .5;
+    animation: shimmerDrift 5s linear infinite;
+    z-index: 6;
+  }
+  @keyframes shimmerDrift {
+    0%   { transform: translateY(0)   skewX(0deg); }
+    50%  { transform: translateY(-4%) skewX(1.5deg); }
+    100% { transform: translateY(0)   skewX(0deg); }
+  }
+
+  /* ---- bright off-center SPECULAR glint ---- */
+  .specular {
+    width: 34%; height: 26%;
+    left: 20%; top: 16%;
+    background: radial-gradient(ellipse at 50% 50%,
+      rgba(255,255,255,.95) 0%,
+      rgba(255,255,255,.4) 28%,
+      transparent 62%);
+    filter: blur(4px);
+    transform: rotate(-22deg);
+    mix-blend-mode: screen;
+    opacity: .9;
+    animation: glint 4.2s ease-in-out infinite;
+    z-index: 7;
+  }
+  @keyframes glint {
+    0%,100% { opacity: .7; transform: rotate(-22deg) scale(.95); }
+    50%     { opacity: 1;  transform: rotate(-22deg) scale(1.05); }
+  }
+
+  /* tiny secondary spark-specular near the rim */
+  .specular2 {
+    width: 10%; height: 8%;
+    left: 64%; top: 70%;
+    background: radial-gradient(circle, rgba(255,255,255,.9), transparent 70%);
+    filter: blur(2px);
+    mix-blend-mode: screen;
+    animation: glint 3.1s ease-in-out infinite .8s;
+    z-index: 7;
+  }
+
+  /* ---- FRESNEL rim light (intense cyan edge) ---- */
+  .fresnel {
+    border-radius: 50%;
+    box-shadow:
+      inset 0 0 22px 2px rgba(21,224,200,.55),
+      inset 0 0 50px 6px rgba(21,224,200,.20);
+    z-index: 8;
+    animation: fresnelPulse 4.2s ease-in-out infinite;
+  }
+  @keyframes fresnelPulse {
+    0%,100% { box-shadow: inset 0 0 22px 2px rgba(21,224,200,.5),  inset 0 0 50px 6px rgba(21,224,200,.18); }
+    50%     { box-shadow: inset 0 0 28px 3px rgba(21,224,200,.85), inset 0 0 64px 9px rgba(21,224,200,.30); }
+  }
+
+  /* a crisp cyan outline ring sitting on the silhouette */
+  .rimring {
+    border-radius: 50%;
+    border: 1.5px solid rgba(21,224,200,.45);
+    box-shadow: 0 0 18px rgba(21,224,200,.5), inset 0 0 8px rgba(21,224,200,.4);
+    mix-blend-mode: screen;
+    z-index: 8;
+    animation: rimSpinGlow 4.2s ease-in-out infinite;
+  }
+  @keyframes rimSpinGlow {
+    0%,100% { opacity: .6; }
+    50%     { opacity: 1; }
+  }
+
+  /* ============================================================
+     SVG FILAMENT ARCS — crackling electric discharge
+     ============================================================ */
+  .arcs {
+    position: absolute;
+    inset: -8%;
+    width: 116%; height: 116%;
+    z-index: 9;
+    pointer-events: none;
+    overflow: visible;
+  }
+  .arc {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 4px rgba(21,224,200,.9)) drop-shadow(0 0 9px rgba(178,92,255,.7));
+  }
+  .arc-core   { stroke: #ffffff; stroke-width: 1.4; }
+  .arc-glow   { stroke: var(--cyan); stroke-width: 3.2; opacity: .55; }
+  .arc-violet { stroke: var(--magenta); }
+
+  /* animated dash-offset = the lightning "travels" then fades */
+  .crackle {
+    stroke-dasharray: 26 360;
+    animation: crackleMove 1.6s linear infinite, crackleFade 1.6s ease-in-out infinite;
+  }
+  @keyframes crackleMove { to { stroke-dashoffset: -386; } }
+  @keyframes crackleFade {
+    0%, 12% { opacity: 0; }
+    18%     { opacity: 1; }
+    60%     { opacity: .85; }
+    100%    { opacity: 0; }
+  }
+  .a2 { animation-delay: .5s; }
+  .a3 { animation-delay: .95s; }
+  .a4 { animation-delay: 1.25s; }
+  .a5 { animation-delay: .25s; }
+
+  /* leaping rim spark nodes where arcs hit the edge */
+  .rimnode {
+    fill: #fff;
+    filter: drop-shadow(0 0 5px var(--cyan)) drop-shadow(0 0 10px var(--magenta));
+    animation: nodePop 1.6s ease-in-out infinite;
+  }
+  .n2 { animation-delay: .5s; }
+  .n3 { animation-delay: .95s; }
+  @keyframes nodePop {
+    0%, 40%  { opacity: 0; r: 0; }
+    52%      { opacity: 1; }
+    100%     { opacity: 0; }
+  }
+
+  /* faint orbiting particles around the orb */
+  .orbit {
+    position: absolute;
+    inset: -14%;
+    z-index: 3;
+    border-radius: 50%;
+    animation: coronaSpin 30s linear infinite;
+    pointer-events: none;
+  }
+  .orbit::before, .orbit::after {
+    content: "";
+    position: absolute;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan), 0 0 20px var(--cyan);
+    top: 4%; left: 50%;
+  }
+  .orbit::after {
+    background: var(--magenta);
+    box-shadow: 0 0 10px var(--magenta), 0 0 20px var(--magenta);
+    top: auto; bottom: 8%; left: 30%;
+    width: 4px; height: 4px;
+  }
+
+  /* ============================================================
+     STATE LABEL + DOT STRIP (minimal, under orb)
+     ============================================================ */
+  .hud {
+    position: absolute;
+    z-index: 6;
+    bottom: clamp(36px, 7vmin, 78px);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+  }
+  .state {
+    font-family: "Chakra Petch", sans-serif;
+    font-weight: 600;
+    letter-spacing: .42em;
+    text-transform: uppercase;
+    font-size: clamp(12px, 1.55vmin, 16px);
+    color: #eae8ff;
+    text-shadow: 0 0 18px rgba(21,224,200,.55);
+    padding-left: .42em; /* compensate tracking */
+  }
+  .state .dot-live {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--cyan);
+    margin-right: .9em;
+    box-shadow: 0 0 10px var(--cyan);
+    animation: livePulse 1.3s ease-in-out infinite;
+    vertical-align: middle;
+  }
+  @keyframes livePulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50%     { opacity: .35; transform: scale(.7); }
+  }
+  .strip { display: flex; gap: 12px; align-items: center; }
+  .pip {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+  }
+  .pip i {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(154,148,210,.28);
+    display: block;
+    transition: all .3s;
+  }
+  .pip span {
+    font-size: 7.5px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: rgba(154,148,210,.42);
+  }
+  .pip.active i {
+    background: var(--cyan);
+    box-shadow: 0 0 10px var(--cyan), 0 0 18px rgba(21,224,200,.6);
+    animation: livePulse 1.3s ease-in-out infinite;
+  }
+  .pip.active span { color: var(--cyan); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+  <main class="cockpit">
+    <div class="grid"></div>
+    <div class="scanline"></div>
+
+    <header class="brand">
+      TACTICL <span class="slash">//</span> COMMAND
+      <span class="sub">FUSION CORE · ONLINE</span>
+    </header>
+
+    <div class="sysreadout">
+      CORE TEMP <b>STABLE</b><br />
+      PLASMA <b>CONTAINED</b><br />
+      LINK <b>SECURE</b>
+    </div>
+
+    <!-- ============ ORB ============ -->
+    <div class="stage">
+      <div class="bloom layer"></div>
+      <div class="corona layer"></div>
+      <div class="orbit"></div>
+
+      <div class="orb">
+        <div class="plasma1 layer"></div>
+        <div class="plasma2 layer"></div>
+        <div class="plasma3 layer"></div>
+        <div class="plasma4 layer"></div>
+        <div class="hotring layer"></div>
+        <div class="nucleus layer"></div>
+        <div class="shimmer layer"></div>
+        <div class="specular layer"></div>
+        <div class="specular2 layer"></div>
+        <div class="fresnel layer"></div>
+        <div class="rimring layer"></div>
+      </div>
+
+      <!-- electric filament arcs -->
+      <svg class="arcs" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <!-- arc 1: across the surface, left to upper-right -->
+        <path class="arc arc-glow crackle"  d="M 96 250 C 150 180, 180 210, 210 150 S 270 120, 300 96" />
+        <path class="arc arc-core crackle"  d="M 96 250 C 150 180, 180 210, 210 150 S 270 120, 300 96" />
+
+        <!-- arc 2: lances down across nucleus -->
+        <path class="arc arc-glow crackle a2"   d="M 130 120 C 170 160, 150 210, 200 230 S 250 280, 290 300" />
+        <path class="arc arc-violet crackle a2" d="M 130 120 C 170 160, 150 210, 200 230 S 250 280, 290 300" stroke-width="1.3" />
+
+        <!-- arc 3: short jagged crackle, leaps to rim -->
+        <path class="arc arc-glow crackle a3"  d="M 210 200 C 240 190, 250 240, 300 235 S 340 220, 360 250" />
+        <path class="arc arc-core crackle a3"  d="M 210 200 C 240 190, 250 240, 300 235 S 340 220, 360 250" stroke-width="1.1" />
+
+        <!-- arc 4: bottom sweep -->
+        <path class="arc arc-glow crackle a4"   d="M 120 300 C 160 320, 200 290, 240 320 S 300 340, 330 300" />
+        <path class="arc arc-violet crackle a4" d="M 120 300 C 160 320, 200 290, 240 320 S 300 340, 330 300" stroke-width="1.2" />
+
+        <!-- arc 5: top arch leaping off the rim -->
+        <path class="arc arc-glow crackle a5"  d="M 150 80 C 190 50, 240 60, 270 40 S 320 70, 340 60" />
+        <path class="arc arc-core crackle a5"  d="M 150 80 C 190 50, 240 60, 270 40 S 320 70, 340 60" stroke-width="1.1" />
+
+        <!-- rim discharge nodes -->
+        <circle class="rimnode"    cx="300" cy="96"  r="3.4" />
+        <circle class="rimnode n2" cx="360" cy="250" r="3" />
+        <circle class="rimnode n3" cx="330" cy="300" r="3.2" />
+      </svg>
+    </div>
+
+    <!-- ============ HUD ============ -->
+    <div class="hud">
+      <div class="state"><span class="dot-live"></span>LISTENING</div>
+      <div class="strip">
+        <div class="pip active"><i></i><span>Listen</span></div>
+        <div class="pip"><i></i><span>Think</span></div>
+        <div class="pip"><i></i><span>Speak</span></div>
+        <div class="pip"><i></i><span>Idle</span></div>
+      </div>
+    </div>
+
+    <div class="vignette"></div>
+  </main>
+
+  <script>
+    /* Gentle parallax: the orb leans toward the cursor for a touch of life. */
+    (function () {
+      const stage = document.querySelector('.stage');
+      const orb = document.querySelector('.orb');
+      if (!stage || !orb) return;
+      let tx = 0, ty = 0, cx = 0, cy = 0;
+
+      window.addEventListener('pointermove', function (e) {
+        const nx = (e.clientX / window.innerWidth - 0.5);
+        const ny = (e.clientY / window.innerHeight - 0.5);
+        tx = nx * 14;   // px shift
+        ty = ny * 14;
+      });
+
+      function tick() {
+        cx += (tx - cx) * 0.06;
+        cy += (ty - cy) * 0.06;
+        orb.style.transform =
+          'translate(' + cx.toFixed(2) + 'px,' + cy.toFixed(2) + 'px) ' +
+          'rotateX(' + (-cy * 0.4).toFixed(2) + 'deg) ' +
+          'rotateY(' + (cx * 0.4).toFixed(2) + 'deg)';
+        requestAnimationFrame(tick);
+      }
+      tick();
+    })();
+
+    /* Demo cycle through the HUD states so the strip feels live. */
+    (function () {
+      const states = [
+        { label: 'LISTENING', idx: 0 },
+        { label: 'THINKING',  idx: 1 },
+        { label: 'SPEAKING',  idx: 2 },
+        { label: 'IDLE',      idx: 3 }
+      ];
+      const pips = document.querySelectorAll('.pip');
+      const stateEl = document.querySelector('.state');
+      let i = 0;
+      setInterval(function () {
+        i = (i + 1) % states.length;
+        const s = states[i];
+        pips.forEach(function (p, n) { p.classList.toggle('active', n === s.idx); });
+        // keep the live dot, swap the word
+        stateEl.lastChild.textContent = s.label;
+      }, 3200);
+    })();
+  </script>
+</body>
+</html>
