@@ -107,14 +107,14 @@ body{background:#070a0c}
 
   <div class="stage">
     <div class="top">
-      <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> DASHBOARD</div>
+      <a href="index.html" class="brand" style="text-decoration:none;color:inherit"><span class="beacon"></span>TACTICL <span class="sep">//</span> DASHBOARD</a>
       <div class="topright">
         <span class="muted">PRODUCT · TACTICL</span>
         <div class="nav">
-          <a class="chip">COMMAND</a>
-          <a class="chip active">DASHBOARD</a>
-          <a class="chip">LINKS</a>
-          <a class="chip">SETTINGS</a>
+          <a class="chip" href="command.html">COMMAND</a>
+          <a class="chip active" href="dashboard.html" style="color:#fff;border-color:var(--accent);background:rgba(108,99,255,0.14)">DASHBOARD</a>
+          <a class="chip" href="links.html">LINKS</a>
+          <a class="chip" href="settings.html">SETTINGS</a>
         </div>
       </div>
     </div>
@@ -140,7 +140,7 @@ body{background:#070a0c}
       </div>
 
       <!-- ── RUNNING (FULL_PDLC, currentRole = IMPLEMENTER) ── -->
-      <div class="row" style="animation-delay:.05s">
+      <div class="row" style="animation-delay:.05s" onclick="location.href='spark-detail.html'">
         <div><span class="pill p-run"><span class="pdot"></span>RUNNING</span></div>
         <div>
           <div class="bname">Realtime presence service</div>
@@ -166,7 +166,7 @@ body{background:#070a0c}
       </div>
 
       <!-- ── BLOCKED at merge gate (SMALL_FEATURE, checkpoint on REVIEWER) ── -->
-      <div class="row" style="animation-delay:.12s">
+      <div class="row" style="animation-delay:.12s" onclick="location.href='spark-detail.html'">
         <div><span class="pill p-block"><span class="pdot"></span>NEEDS YOU</span></div>
         <div>
           <div class="bname">Stripe webhook idempotency</div>
@@ -187,7 +187,7 @@ body{background:#070a0c}
       </div>
 
       <!-- ── RUNNING (BUG_FIX, currentRole = TESTER) ── -->
-      <div class="row" style="animation-delay:.19s">
+      <div class="row" style="animation-delay:.19s" onclick="location.href='spark-detail.html'">
         <div><span class="pill p-run"><span class="pdot"></span>RUNNING</span></div>
         <div>
           <div class="bname">Discord alert text truncation</div>
@@ -206,7 +206,7 @@ body{background:#070a0c}
       </div>
 
       <!-- ── MERGED (UI_CHANGE, COMPLETED) ── -->
-      <div class="row" style="animation-delay:.26s">
+      <div class="row" style="animation-delay:.26s" onclick="location.href='spark-detail.html'">
         <div><span class="pill p-done"><span class="pdot"></span>MERGED</span></div>
         <div>
           <div class="bname">Voice sphere idle pulse</div>
@@ -225,7 +225,7 @@ body{background:#070a0c}
       </div>
 
       <!-- ── FAILED (INFRA_CHANGE, failed at DEVOPS) ── -->
-      <div class="row" style="animation-delay:.33s">
+      <div class="row" style="animation-delay:.33s" onclick="location.href='spark-detail.html'">
         <div><span class="pill p-fail"><span class="pdot"></span>FAILED</span></div>
         <div>
           <div class="bname">Vault address rollout</div>

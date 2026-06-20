@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19, TypeScript, MUI 7, Zustand (spark progress store), TanStack React Query 5, date-fns, existing WebSocket infrastructure.
 
-**Design mockup:** `docs/spark-control-dashboard-mockup.html` — open in browser for visual reference.
+**Design mockup:** see the current HUD set in `docs/mockups/` (open `docs/mockups/index.html`) — the dashboard surface supersedes the original Spark Control mockup.
 
 ---
 

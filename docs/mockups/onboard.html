@@ -223,9 +223,13 @@ body{background:#070a0c}
   <div class="stage">
     <!-- ── top bar (shared HUD chrome) ─────────────────────────────────── -->
     <div class="top">
-      <div class="brand"><span class="beacon"></span>TACTICL <span class="sep">//</span> ONBOARD</div>
+      <a class="brand" href="index.html" style="text-decoration:none;color:inherit"><span class="beacon"></span>TACTICL <span class="sep">//</span> ONBOARD</a>
       <div class="topright">
-        <span class="muted">FIRST RUN · PRODUCT SETUP</span>
+        <a class="btn ghost sm" href="command.html" style="text-decoration:none">COMMAND</a>
+        <a class="btn ghost sm" href="dashboard.html" style="text-decoration:none">DASHBOARD</a>
+        <a class="btn ghost sm" href="links.html" style="text-decoration:none">LINKS</a>
+        <a class="btn ghost sm" href="settings.html" style="text-decoration:none">SETTINGS</a>
+        <span class="muted">FIRST RUN · PRODUCT SETUP · <a href="dashboard.html" style="color:#bdb8ff;text-decoration:none">SKIP TO DASHBOARD →</a></span>
       </div>
     </div>
 
@@ -500,7 +504,7 @@ body{background:#070a0c}
         <!-- review-step nav (REGISTER) -->
         <div class="wiznav">
           <button class="btn ghost">← BACK</button>
-          <button class="btn primary">REGISTER →</button>
+          <a class="btn primary" href="dashboard.html" style="text-decoration:none">REGISTER →</a>
         </div>
 
       </div>

@@ -176,15 +176,32 @@
     font-family: var(--disp); font-size: 10px; letter-spacing: 1.5px; background: rgba(108,99,255,0.06);
   }
   .conv-new:hover { background: rgba(108,99,255,0.16); }
-  .conv-list { display: flex; flex-direction: column; gap: 6px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(108,99,255,0.12); }
+  .conv-list { display: flex; flex-direction: column; gap: 7px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid rgba(108,99,255,0.12); }
   .conv {
-    cursor: pointer; padding: 7px 12px; border-radius: 6px;
+    cursor: pointer; padding: 9px 11px; border-radius: 7px;
     border: 1px solid rgba(108,99,255,0.16); background: rgba(255,255,255,0.02);
-    font-family: var(--mono); font-size: 12px; color: rgba(255,255,255,0.7);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: border-color .15s;
+    transition: border-color .15s, background .15s;
   }
-  .conv:hover { border-color: rgba(108,99,255,0.5); }
-  .conv.active { border-color: var(--accent); background: rgba(108,99,255,0.12); color: #fff; }
+  .conv:hover { border-color: rgba(108,99,255,0.5); background: rgba(108,99,255,0.05); }
+  .conv.active { border-color: var(--accent); background: rgba(108,99,255,0.12); box-shadow: inset 2px 0 0 var(--accent); }
+  .conv-row { display: flex; align-items: center; gap: 8px; }
+  .conv-dot { width: 7px; height: 7px; border-radius: 50%; flex: none; background: #6E6A8F; }
+  .conv-dot.run { background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: convpulse 1.6s ease-in-out infinite; }
+  .conv-dot.gate { background: #F5B14C; box-shadow: 0 0 8px #F5B14C; }
+  .conv-dot.done { background: var(--cyan); }
+  @keyframes convpulse { 0%,100% { opacity: .45; } 50% { opacity: 1; } }
+  .conv-title { font-family: var(--mono); font-size: 12px; color: rgba(255,255,255,0.72);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
+  .conv.active .conv-title { color: #fff; }
+  .conv-time { font-family: var(--mono); font-size: 10px; color: rgba(255,255,255,0.35); flex: none; }
+  .conv-snip { margin-top: 4px; font-family: var(--mono); font-size: 10.5px; line-height: 1.4;
+    color: rgba(255,255,255,0.4); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .conv.active .conv-snip { color: rgba(255,255,255,0.55); }
+  /* idle active-operation (conversation with no live pipeline) */
+  .op-idle { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; padding: 46px 16px; color: rgba(255,255,255,0.4); gap: 11px; }
+  .op-idle .oi-glyph { font-size: 26px; opacity: .5; filter: drop-shadow(0 0 10px rgba(108,99,255,0.5)); }
+  .op-idle .oi-msg { font-family: var(--mono); font-size: 12px; line-height: 1.55; max-width: 210px; }
 
   /* ── transcript bubbles ── */
   .transcript { display: flex; flex-direction: column; gap: 14px; }
@@ -441,10 +458,11 @@
       <span class="link">◈ ARBITER LINK ACTIVE</span>
       <span class="m" id="clock">14:32:07</span>
       <nav class="nav">
-        <a class="chip" href="#">DASHBOARD</a>
-        <a class="chip" href="#">LINKS</a>
-        <a class="chip" href="#">SETTINGS</a>
-        <span class="chip danger">SIGN OUT</span>
+        <a class="chip" href="command.html" style="color:#fff;border-color:var(--accent);background:rgba(108,99,255,0.14)">COMMAND</a>
+        <a class="chip" href="dashboard.html">DASHBOARD</a>
+        <a class="chip" href="links.html">LINKS</a>
+        <a class="chip" href="settings.html">SETTINGS</a>
+        <a class="chip danger" href="index.html">SIGN OUT</a>
       </nav>
     </div>
   </header>
@@ -467,31 +485,9 @@
             <span class="conv-eyebrow">CONVERSATIONS</span>
             <span class="conv-new">+ NEW</span>
           </div>
-          <div class="conv-list">
-            <div class="conv active">Add /health endpoint to strategiz-core</div>
-            <div class="conv">Discord alert → pdlc-fix run</div>
-            <div class="conv">Refactor PostPublisherJob retries</div>
-            <div class="conv">Wire ElevenLabs streaming TTS</div>
-          </div>
+          <div class="conv-list" id="convList"></div>
 
-          <div class="transcript">
-            <div class="turn me">
-              <div class="who">OPERATOR</div>
-              <div class="bubble">let's add a /health endpoint to strategiz-core that pings Mongo + Vault</div>
-            </div>
-            <div class="turn them">
-              <div class="who">TACTICL</div>
-              <div class="bubble">Got it. I'll wire a GET /health in the actuator layer that probes the Mongo replica set and the Vault lease, returns 200/503. Want auth open or gated behind @RequireScope?</div>
-            </div>
-            <div class="turn me">
-              <div class="who">OPERATOR</div>
-              <div class="bubble">leave it open, k8s probes hit it. go ahead and ship it</div>
-            </div>
-            <div class="turn them">
-              <div class="who">TACTICL</div>
-              <div class="bubble partial">Spinning up a SMALL_FEATURE pipeline — Product Owner is framing acceptance criteria now<span class="caret">▋</span></div>
-            </div>
-          </div>
+          <div class="transcript" id="transcript"></div>
         </div>
       </section>
 
@@ -591,38 +587,7 @@
             <span class="collapse">›</span>
           </div>
         </div>
-        <div class="panel-body">
-          <div class="op-head">
-            <span class="op-title">pdlc-run-7f3a · IMPLEMENT</span>
-            <span class="op-tag">PDLC-RUN</span>
-          </div>
-
-          <div class="roles">
-            <div class="role done">   <span class="led"></span><span class="name">Product Owner</span><span class="stat">DONE</span></div>
-            <div class="role done">   <span class="led"></span><span class="name">Architect</span>    <span class="stat">DONE</span></div>
-            <div class="role done">   <span class="led"></span><span class="name">Designer</span>     <span class="stat">DONE</span></div>
-            <div class="role done">   <span class="led"></span><span class="name">Planner</span>      <span class="stat">DONE</span></div>
-            <div class="role active"> <span class="led"></span><span class="name">Implementer</span>  <span class="stat">RUNNING</span></div>
-            <div class="role">        <span class="led"></span><span class="name">Reviewer</span>     <span class="stat">QUEUED</span></div>
-            <div class="role">        <span class="led"></span><span class="name">Test</span>         <span class="stat">QUEUED</span></div>
-            <div class="role">        <span class="led"></span><span class="name">DevOps</span>       <span class="stat">QUEUED</span></div>
-          </div>
-
-          <!-- human-in-the-loop gate -->
-          <div class="gate">
-            <div class="gate-head">
-              <span class="led"></span>
-              <span class="lbl">HUMAN GATE</span>
-            </div>
-            <div class="gate-title">Implementer wants to merge PR #214 — adds HealthController + Mongo/Vault probes (+184 / −6). Approve merge?</div>
-            <textarea class="gate-input" placeholder="optional feedback…" rows="2"></textarea>
-            <div class="gate-actions">
-              <span class="gate-btn approve">APPROVE</span>
-              <span class="gate-btn changes">CHANGES</span>
-              <span class="gate-btn reject">REJECT</span>
-            </div>
-          </div>
-        </div>
+        <div class="panel-body" id="opBody"></div>
       </section>
 
     </div>
@@ -674,6 +639,148 @@
     stateLabel.style.color = c;
     stateLabel.style.textShadow = '0 0 20px ' + c + '66';
   }, 2600);
+
+  // ── multi-conversation: swap between conversations ──────────────────────────
+  // Each conversation carries its own transcript AND its own live operation (or
+  // none). Clicking a conversation swaps the COMMS LOG transcript + the ACTIVE
+  // OPERATION panel; "+ NEW" opens a fresh channel. DOM is built with
+  // createElement/textContent (no innerHTML) — all data is local + static.
+  const CONVERSATIONS = [
+    { id:'c1', title:'Add /health endpoint to strategiz-core', time:'2m', status:'gate',
+      snippet:'Implementer wants to merge PR #214…',
+      transcript:[
+        ['me',"let's add a /health endpoint to strategiz-core that pings Mongo + Vault"],
+        ['them',"Got it. I'll wire a GET /health in the actuator layer that probes the Mongo replica set and the Vault lease, returns 200/503. Want auth open or gated behind @RequireScope?"],
+        ['me',"leave it open, k8s probes hit it. go ahead and ship it"],
+        ['them',"Spinning up a SMALL_FEATURE pipeline — it's parked at the merge gate now, waiting on you →",true],
+      ],
+      op:{ title:'pdlc-run-7f3a · IMPLEMENT', tag:'PDLC-RUN',
+        roles:[['Product Owner','done','DONE'],['Architect','done','DONE'],['Designer','done','DONE'],
+               ['Planner','done','DONE'],['Implementer','active','RUNNING'],['Reviewer','','QUEUED'],
+               ['Test','','QUEUED'],['DevOps','','QUEUED']],
+        gate:'Implementer wants to merge PR #214 — adds HealthController + Mongo/Vault probes (+184 / −6). Approve merge?' } },
+    { id:'c2', title:'Discord alert → pdlc-fix run', time:'14m', status:'run',
+      snippet:'Implementer is patching the null-caption NPE…',
+      transcript:[
+        ['them',"Discord alert ingested: 'Telegram text webhook 500s on empty caption'. Open a pdlc-fix run on tacticl-core?"],
+        ['me',"yes, fix it"],
+        ['them',"On it. Investigator traced the NPE to TacticlConversationAdapter.extractText() on a null caption; Implementer is patching the guard + adding a regression test now.",true],
+      ],
+      op:{ title:'pdlc-fix-2b9c · IMPLEMENT', tag:'PDLC-FIX',
+        roles:[['Investigator','done','DONE'],['Fix Planner','done','DONE'],
+               ['Implementer','active','RUNNING'],['Test','','QUEUED']],
+        gate:null } },
+    { id:'c3', title:'Refactor PostPublisherJob retries', time:'1h', status:'done',
+      snippet:'Merged PR #207 — exponential backoff + jitter ✓',
+      transcript:[
+        ['me',"the PostPublisherJob retries hammer the API on failure — add backoff"],
+        ['them',"Done — a REFACTOR run swapped the fixed 2s retry for exponential backoff w/ jitter (@Backoff multiplier 2, max 3). Merged PR #207, all green."],
+        ['me',"nice"],
+      ],
+      op:null },
+    { id:'c4', title:'Wire ElevenLabs streaming TTS', time:'3h', status:'idle',
+      snippet:'Holding — no pipeline yet.',
+      transcript:[
+        ['me',"I want the voice sphere to actually speak via ElevenLabs streaming"],
+        ['them',"Good one. Before I start a build: stream over the existing WS to the sphere, or a separate audio channel? And which voice preset — the default 'Tacticl' one?"],
+        ['me',"existing WS, default preset. let me think on the latency budget before we build"],
+        ['them',"Sounds good — I'll hold. Ping me when you want to kick off the pipeline."],
+      ],
+      op:null },
+  ];
+
+  const convList = document.getElementById('convList');
+  const transcriptEl = document.getElementById('transcript');
+  const opBody = document.getElementById('opBody');
+  let activeId = CONVERSATIONS[0].id;
+  let newCounter = 0;
+  const mk = (tag, cls, text) => { const e = document.createElement(tag);
+    if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+
+  function renderList() {
+    convList.replaceChildren();
+    CONVERSATIONS.forEach(c => {
+      const el = mk('div', 'conv' + (c.id === activeId ? ' active' : ''));
+      el.dataset.id = c.id;
+      const row = mk('div', 'conv-row');
+      const dot = c.status === 'run' ? 'run' : c.status === 'gate' ? 'gate' : c.status === 'done' ? 'done' : '';
+      row.append(mk('span', 'conv-dot ' + dot), mk('span', 'conv-title', c.title), mk('span', 'conv-time', c.time));
+      el.append(row, mk('div', 'conv-snip', c.snippet));
+      el.addEventListener('click', () => select(c.id));
+      convList.append(el);
+    });
+  }
+
+  function renderTranscript(c) {
+    transcriptEl.replaceChildren();
+    c.transcript.forEach(([who, text, partial]) => {
+      const turn = mk('div', 'turn ' + (who === 'me' ? 'me' : 'them'));
+      turn.append(mk('div', 'who', who === 'me' ? 'OPERATOR' : 'TACTICL'));
+      const b = mk('div', 'bubble' + (partial ? ' partial' : ''), text);
+      if (partial) b.append(mk('span', 'caret', '▋'));
+      turn.append(b);
+      transcriptEl.append(turn);
+    });
+    transcriptEl.scrollTop = transcriptEl.scrollHeight;
+  }
+
+  function renderOp(c) {
+    opBody.replaceChildren();
+    if (!c.op) {
+      const idle = mk('div', 'op-idle');
+      idle.append(mk('div', 'oi-glyph', '◇'));
+      const msg = mk('div', 'oi-msg');
+      msg.append(document.createTextNode('No live pipeline in this conversation.'), mk('br'),
+                 document.createTextNode('Ask Tacticl to build something to spin one up.'));
+      idle.append(msg);
+      opBody.append(idle);
+      return;
+    }
+    const o = c.op;
+    const head = mk('div', 'op-head');
+    head.append(mk('span', 'op-title', o.title), mk('span', 'op-tag', o.tag));
+    opBody.append(head);
+    const roles = mk('div', 'roles');
+    o.roles.forEach(([name, state, stat]) => {
+      const r = mk('div', 'role' + (state ? ' ' + state : ''));
+      r.append(mk('span', 'led'), mk('span', 'name', name), mk('span', 'stat', stat));
+      roles.append(r);
+    });
+    opBody.append(roles);
+    if (o.gate) {
+      const g = mk('div', 'gate');
+      const gh = mk('div', 'gate-head');
+      gh.append(mk('span', 'led'), mk('span', 'lbl', 'HUMAN GATE'));
+      g.append(gh, mk('div', 'gate-title', o.gate));
+      const ta = mk('textarea', 'gate-input'); ta.placeholder = 'optional feedback…'; ta.rows = 2;
+      const ga = mk('div', 'gate-actions');
+      ga.append(mk('span', 'gate-btn approve', 'APPROVE'), mk('span', 'gate-btn changes', 'CHANGES'),
+                mk('span', 'gate-btn reject', 'REJECT'));
+      g.append(ta, ga);
+      opBody.append(g);
+    }
+  }
+
+  function select(id) {
+    activeId = id;
+    const c = CONVERSATIONS.find(x => x.id === id);
+    if (!c) return;
+    document.querySelectorAll('.conv').forEach(el => el.classList.toggle('active', el.dataset.id === id));
+    renderTranscript(c);
+    renderOp(c);
+  }
+
+  renderList();
+  select(activeId);
+
+  document.querySelector('.conv-new').addEventListener('click', () => {
+    const id = 'new-' + (++newCounter);
+    CONVERSATIONS.unshift({ id, title:'New conversation', time:'now', status:'idle',
+      snippet:'Say what you want to build…',
+      transcript:[['them',"New channel open. What should we build, research, or automate?"]], op:null });
+    renderList();
+    select(id);
+  });
 </script>
 </body>
 </html>
