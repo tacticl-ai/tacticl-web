@@ -230,6 +230,74 @@ body{background:#070a0c}
   color:#15E0C8; font-family:'Chakra Petch',sans-serif; font-size:11px; letter-spacing:1px;
   text-decoration:none; cursor:pointer; }
 .dash-root .prodsw-new:hover { color:#5ff0e0; }
+
+/* ── SUMMON FAB (mini orb) — fixed bottom-right — copied 1:1 from dashboard.html ── */
+.summon-fab{position:fixed;right:26px;bottom:26px;z-index:120;width:60px;height:60px;border:none;cursor:pointer;
+  border-radius:50%;padding:0;background:radial-gradient(circle at 34% 30%,#cfa0ff 0%,#6C63FF 34%,#B25CFF 64%,#15E0C8 110%);
+  box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 0 22px rgba(108,99,255,.6),0 10px 30px rgba(0,0,0,.55);
+  animation:sumpulse 2.6s ease-in-out infinite;transition:transform .18s ease}
+.summon-fab:hover{transform:scale(1.08)}
+.summon-fab::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1.5px solid rgba(108,99,255,.55);
+  animation:sumhalo 2.6s ease-out infinite;pointer-events:none}
+@keyframes sumpulse{0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 0 18px rgba(108,99,255,.5),0 10px 30px rgba(0,0,0,.55)}
+  50%{box-shadow:0 0 0 1px rgba(255,255,255,.16) inset,0 0 34px rgba(178,92,255,.75),0 10px 34px rgba(0,0,0,.55)}}
+@keyframes sumhalo{0%{transform:scale(.7);opacity:.85}100%{transform:scale(1.9);opacity:0}}
+.summon-hint{position:fixed;right:26px;bottom:8px;z-index:120;display:flex;align-items:center;gap:5px;
+  padding:3px 8px;border-radius:999px;border:1px solid rgba(108,99,255,.28);background:rgba(14,16,26,.82);
+  color:rgba(238,240,246,.7);font-family:'JetBrains Mono',ui-monospace,monospace;font-size:10px;letter-spacing:.5px;
+  pointer-events:none;backdrop-filter:blur(8px)}
+.summon-hint kbd{font-family:inherit;font-size:10px;color:#cfcaff}
+
+/* ── COMMAND OVERLAY: scrim + right-sliding sheet — copied 1:1 from dashboard.html ── */
+.cmd-scrim{position:fixed;inset:0;z-index:200;background:rgba(4,6,9,.62);backdrop-filter:blur(7px);
+  opacity:0;visibility:hidden;transition:opacity .26s ease,visibility .26s ease}
+.cmd-scrim.open{opacity:1;visibility:visible}
+.cmd-sheet{position:fixed;top:0;right:0;bottom:0;z-index:210;width:460px;max-width:92vw;display:flex;flex-direction:column;
+  background:linear-gradient(180deg,rgba(16,20,26,.97),rgba(9,12,16,.98));border-left:1px solid rgba(108,99,255,.28);
+  box-shadow:-24px 0 70px rgba(0,0,0,.6);transform:translateX(100%);opacity:0;
+  transition:transform .3s cubic-bezier(.2,.7,.2,1),opacity .3s ease;color:#eef0f6;
+  font-family:'JetBrains Mono',ui-monospace,monospace}
+.cmd-scrim.open .cmd-sheet{transform:translateX(0);opacity:1}
+.cmd-head{display:flex;align-items:center;gap:12px;padding:16px 18px 12px;border-bottom:1px solid rgba(108,99,255,.14)}
+.cmd-title{font-family:'Chakra Petch',sans-serif;font-size:13px;letter-spacing:1.5px;color:#eef0f6;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmd-expand{font-family:'Chakra Petch',sans-serif;font-size:10px;letter-spacing:1.5px;color:#15E0C8;
+  text-decoration:none;padding:5px 9px;border:1px solid rgba(21,224,200,.3);border-radius:7px;transition:.18s}
+.cmd-expand:hover{color:#5ff0e0;border-color:rgba(21,224,200,.6);background:rgba(21,224,200,.08)}
+.cmd-close{background:none;border:1px solid rgba(108,99,255,.22);border-radius:7px;color:rgba(238,240,246,.7);
+  cursor:pointer;font-size:13px;line-height:1;padding:6px 9px;transition:.18s}
+.cmd-close:hover{color:#fff;border-color:rgba(108,99,255,.55);background:rgba(108,99,255,.12)}
+.cmd-orbwrap{display:flex;flex-direction:column;align-items:center;gap:9px;padding:22px 18px 10px}
+.cmd-orb{width:130px;height:130px;border-radius:50%;position:relative;
+  background:radial-gradient(circle at 36% 30%,#d7b6ff 0%,#8f7bff 26%,#6C63FF 50%,#7b3fd6 78%,#3a1d6e 100%);
+  box-shadow:0 0 40px rgba(108,99,255,.45),inset 0 0 40px rgba(0,0,0,.35);animation:orbpulse 3s ease-in-out infinite}
+.cmd-orb::before{content:"";position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 64% 70%,rgba(21,224,200,.4),transparent 52%);mix-blend-mode:screen}
+.cmd-orb::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:1.5px solid rgba(21,224,200,.55);
+  box-shadow:0 0 18px rgba(21,224,200,.45);animation:orbrim 3s ease-in-out infinite}
+@keyframes orbpulse{0%,100%{transform:scale(1);box-shadow:0 0 36px rgba(108,99,255,.4),inset 0 0 40px rgba(0,0,0,.35)}
+  50%{transform:scale(1.045);box-shadow:0 0 52px rgba(178,92,255,.6),inset 0 0 40px rgba(0,0,0,.35)}}
+@keyframes orbrim{0%,100%{opacity:.55}50%{opacity:1}}
+.cmd-listen{display:flex;align-items:center;gap:8px;font-family:'Chakra Petch',sans-serif;font-size:10px;
+  letter-spacing:2.5px;color:#8ff0e4}
+.cmd-listen .ldot{width:7px;height:7px;border-radius:50%;background:#15E0C8;box-shadow:0 0 8px #15E0C8;
+  animation:dblink 1.3s ease-in-out infinite}
+.cmd-chat{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:11px;padding:14px 18px}
+.cmd-bub{max-width:84%;padding:9px 13px;border-radius:13px;font-size:12.5px;line-height:1.5}
+.cmd-bub.op{align-self:flex-end;background:rgba(108,99,255,.16);border:1px solid rgba(108,99,255,.3);color:#eef0f6;
+  border-bottom-right-radius:4px}
+.cmd-bub.ai{align-self:flex-start;background:rgba(21,224,200,.08);border:1px solid rgba(21,224,200,.22);color:#dfeeec;
+  border-bottom-left-radius:4px}
+.cmd-bub .who{display:block;font-family:'Chakra Petch',sans-serif;font-size:8.5px;letter-spacing:1.5px;
+  margin-bottom:4px;opacity:.6}
+.cmd-inputrow{display:flex;align-items:center;gap:9px;padding:13px 18px 18px;border-top:1px solid rgba(108,99,255,.14)}
+.cmd-input{flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(108,99,255,.26);border-radius:10px;
+  padding:11px 14px;color:#eef0f6;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:12.5px;outline:none}
+.cmd-input::placeholder{color:rgba(238,240,246,.4)}
+.cmd-input:focus{border-color:rgba(108,99,255,.6);box-shadow:0 0 0 3px rgba(108,99,255,.12)}
+.cmd-send{background:linear-gradient(135deg,#6C63FF,#B25CFF);border:none;border-radius:10px;color:#fff;cursor:pointer;
+  padding:11px 14px;font-size:13px;line-height:1;box-shadow:0 0 16px rgba(108,99,255,.45);transition:transform .15s}
+.cmd-send:hover{transform:translateY(-1px)}
 </style>
 </head>
 <body>
@@ -258,9 +326,7 @@ body{background:#070a0c}
         <span class="link">◈ ARBITER LINK ACTIVE</span>
         <span class="muted" id="clock">14:33:21</span>
         <div class="nav">
-          <a class="chip" href="command.html">COMMAND</a>
           <a class="chip" href="dashboard.html" style="color:#fff;border-color:var(--accent);background:rgba(108,99,255,0.14)">DASHBOARD</a>
-          <a class="chip" href="links.html">LINKS</a>
           <a class="chip" href="settings.html">SETTINGS</a>
           <a class="chip danger" href="index.html">SIGN OUT</a>
         </div>
@@ -490,6 +556,53 @@ curl -s localhost:8080<span class="kw">/v1/health</span> | jq .status
     <div style="height:20px"></div>
   </div>
 </div>
+
+<!-- ── SUMMON control (mini orb FAB + ⌘K hint) — copied 1:1 from dashboard.html ── -->
+<button class="summon-fab" type="button" aria-label="Summon Tacticl command" onclick="openCmd()"></button>
+<div class="summon-hint"><span>SUMMON</span><kbd>⌘K</kbd></div>
+
+<!-- ── COMMAND OVERLAY (scrim + right sheet) — static markup toggled via .open ── -->
+<div class="cmd-scrim" id="cmdScrim" onclick="if(event.target===this)closeCmd()">
+  <aside class="cmd-sheet" role="dialog" aria-label="Command center">
+    <div class="cmd-head">
+      <span class="cmd-title">/health endpoint</span>
+      <a class="cmd-expand" href="command.html">⤢ EXPAND</a>
+      <button class="cmd-close" type="button" aria-label="Close" onclick="closeCmd()">✕</button>
+    </div>
+    <div class="cmd-orbwrap">
+      <div class="cmd-orb"></div>
+      <div class="cmd-listen"><span class="ldot"></span>LISTENING</div>
+    </div>
+    <div class="cmd-chat">
+      <div class="cmd-bub op"><span class="who">OPERATOR</span>Add a readiness endpoint at /v1/health to strategiz-core.</div>
+      <div class="cmd-bub ai"><span class="who">TACTICL</span>Done — running it as a SMALL_FEATURE build. PO through Implementer are complete; Reviewer is live on the merge gate now.</div>
+      <div class="cmd-bub op"><span class="who">OPERATOR</span>Why is it asking for me?</div>
+      <div class="cmd-bub ai"><span class="who">TACTICL</span>Reviewer flagged a missing @RequireScope on /v1/health. Approve the merge gate and I'll let it land, or I can route it back to Implementer.</div>
+    </div>
+    <div class="cmd-inputrow">
+      <input class="cmd-input" type="text" placeholder="Speak or type a command…" aria-label="Command input" />
+      <button class="cmd-send" type="button" aria-label="Send">➤</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+  // ── command overlay open/close — copied 1:1 from dashboard.html ──
+  (function(){
+    var scrim = document.getElementById('cmdScrim');
+    window.openCmd = function(){ scrim.classList.add('open'); };
+    window.closeCmd = function(){ scrim.classList.remove('open'); };
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') { closeCmd(); return; }
+      var t = e.target, tag = t && t.tagName;
+      var typing = tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable);
+      // Cmd/Ctrl+K opens the overlay
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openCmd(); return; }
+      // plain "k" opens it too (ignored while typing in a field)
+      if (!typing && !e.metaKey && !e.ctrlKey && !e.altKey && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); openCmd(); }
+    });
+  })();
+</script>
 
 <script>
   // live clock — same en-US 24h render as command.html
