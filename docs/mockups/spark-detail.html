@@ -46,12 +46,13 @@ body{background:#070a0c}
 .dash-root .chip{padding:6px 13px;border-radius:999px;border:1px solid rgba(108,99,255,.3);font-family:var(--disp);font-size:11.9px;letter-spacing:2px;color:rgba(170,165,255,.9);background:rgba(108,99,255,.05);cursor:pointer;transition:.18s;text-decoration:none}
 .dash-root .chip:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.16)}
 .dash-root .chip.active{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2);box-shadow:0 0 18px rgba(108,99,255,.25)}
-/* COMMAND — the central, primary nav tab (prominent main hub) */
-.dash-root .chip.cmd{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;color:#fff;border-color:var(--accent);background:rgba(108,99,255,.16);box-shadow:0 0 18px rgba(108,99,255,.22)}
-.dash-root .chip.cmd:hover{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.24);box-shadow:0 0 22px rgba(108,99,255,.32)}
+/* COMMAND — the central, primary nav tab (prominent main hub).
+   Treatment lifted 1:1 from dashboard.html .chip-command so the chrome cannot drift. */
+.dash-root .chip.cmd{display:inline-flex;align-items:center;gap:7px;padding:7px 16px;color:#fff;border-color:var(--accent);background:rgba(108,99,255,.16);box-shadow:0 0 16px rgba(108,99,255,.22)}
+.dash-root .chip.cmd:hover{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.24);box-shadow:0 0 22px rgba(108,99,255,.3)}
 .dash-root .chip.cmd .cmd-orb-dot{width:9px;height:9px;border-radius:50%;flex:none;
-  background:radial-gradient(circle at 34% 30%,#cfa0ff 0%,#6C63FF 38%,#B25CFF 68%,#15E0C8 112%);
-  box-shadow:0 0 10px rgba(108,99,255,.85),0 0 4px rgba(178,92,255,.8)}
+  background:radial-gradient(circle at 34% 30%,#cfa0ff 0%,#6C63FF 36%,#B25CFF 66%,#15E0C8 112%);
+  box-shadow:0 0 8px rgba(108,99,255,.75),0 0 14px rgba(178,92,255,.45)}
 .dash-root .chip.danger{border-color:rgba(255,107,107,.4);color:rgba(255,107,107,.85);background:rgba(255,107,107,.05)}
 .dash-root .chip.danger:hover{border-color:var(--red);color:#fff;background:rgba(255,107,107,.16)}
 
@@ -82,8 +83,10 @@ body{background:#070a0c}
 .dash-root .p-prio{color:#ffd99a;border:1px solid var(--amber);background:rgba(245,181,68,.1)}
 
 /* stat strip — copied verbatim from dashboard.html (.summary / .stat) ── */
-.dash-root .summary{display:flex;gap:9px;flex-wrap:wrap;margin:16px 34px 0}
-.dash-root .stat{display:flex;align-items:center;gap:9px;padding:11px 18px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(16px);flex:1;min-width:140px}
+.dash-root .summary{display:flex;gap:12px;flex-wrap:wrap;margin:16px 34px 0}
+.dash-root .stat{display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:12px;border:1px solid var(--line);background:linear-gradient(180deg,var(--glass1),var(--glass2));backdrop-filter:blur(16px);flex:1;min-width:140px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.04),0 8px 28px rgba(0,0,0,.35);transition:border-color .18s,box-shadow .18s}
+.dash-root .stat:hover{border-color:rgba(108,99,255,.32);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 32px rgba(0,0,0,.4)}
 .dash-root .stat .n{font-family:var(--disp);font-size:23.7px;font-weight:600}
 .dash-root .stat .n.cyan{color:var(--cyan);text-shadow:0 0 16px rgba(21,224,200,.35)}
 .dash-root .stat .n.amber{color:var(--amber)}
@@ -97,18 +100,19 @@ body{background:#070a0c}
 .dash-root .panel::before,.dash-root .panel::after{content:"";position:absolute;width:18px;height:18px;border:0 solid rgba(108,99,255,.6);pointer-events:none;z-index:3}
 .dash-root .panel::before{top:8px;left:8px;border-top-width:1.5px;border-left-width:1.5px}
 .dash-root .panel::after{bottom:8px;right:8px;border-bottom-width:1.5px;border-right-width:1.5px}
-.dash-root .phead{display:flex;align-items:center;justify-content:space-between;padding:13px 22px;border-bottom:1px solid var(--line)}
+.dash-root .phead{display:flex;align-items:center;justify-content:space-between;padding:14px 22px 13px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,rgba(108,99,255,.05),transparent)}
 .dash-root .ptitle{display:flex;align-items:center;gap:9px;font-family:var(--disp);font-size:12.4px;letter-spacing:2.5px;color:#eef0f6;font-weight:600}
 .dash-root .ptitle .tick{width:3px;height:13px;border-radius:2px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
 .dash-root .ptag{font-family:var(--mono);font-size:10.7px;letter-spacing:1.5px;color:var(--accent);padding:2px 9px;border:1px solid rgba(108,99,255,.3);border-radius:999px;background:rgba(108,99,255,.06)}
-.dash-root .ptag.live{color:#8ff0e4;border-color:rgba(21,224,200,.3)}
+.dash-root .ptag.live{color:#8ff0e4;border-color:rgba(21,224,200,.3);box-shadow:0 0 12px rgba(21,224,200,.12)}
 .dash-root .ptag.live::before{content:"● "}
-.dash-root .pbody{padding:18px 22px}
+.dash-root .pbody{padding:20px 22px}
 
 @keyframes dblink{0%,100%{opacity:1}50%{opacity:.35}}
 
 /* ── PDLC role timeline — node/seg classes copied verbatim from dashboard.html ── */
-.dash-root .strip{display:flex;align-items:flex-start;position:relative;padding:6px 4px 2px;overflow-x:auto}
+.dash-root .strip{display:flex;align-items:flex-start;position:relative;padding:8px 4px 4px;overflow-x:auto}
 .dash-root .strip::-webkit-scrollbar{height:6px}
 .dash-root .strip::-webkit-scrollbar-thumb{background:rgba(108,99,255,.25);border-radius:3px}
 .dash-root .node{display:flex;flex-direction:column;align-items:center;gap:8px;flex:1;position:relative;min-width:74px}
@@ -137,6 +141,23 @@ body{background:#070a0c}
 /* ── lower two-column area ── */
 .dash-root .twocol{display:grid;grid-template-columns:1.25fr .85fr;gap:0;margin:16px 34px 0}
 .dash-root .twocol .panel{margin:0}
+/* ── per-persona task breakdown ── */
+.dash-root .node{cursor:pointer;transition:.15s}
+.dash-root .node:hover .nl{color:#fff}
+.dash-root .node.sel .nl{color:#fff;text-shadow:0 0 10px rgba(108,99,255,.6)}
+.dash-root .node.sel .nd{box-shadow:0 0 0 4px rgba(108,99,255,.22)}
+.dash-root .tasks{display:flex;flex-direction:column;gap:1px}
+.dash-root .task{display:flex;align-items:flex-start;gap:13px;padding:11px 6px;border-bottom:1px solid rgba(108,99,255,.06)}
+.dash-root .task:last-child{border-bottom:none}
+.dash-root .task .tic{width:20px;height:20px;border-radius:6px;flex:none;display:grid;place-items:center;font-size:11.3px;margin-top:1px;border:1px solid rgba(238,240,246,.18);color:rgba(238,240,246,.4)}
+.dash-root .task.done .tic{border-color:var(--cyan);color:var(--cyan);background:rgba(21,224,200,.1)}
+.dash-root .task.running .tic{border-color:var(--amber);color:var(--amber);background:rgba(245,181,68,.13);animation:tspin 1.6s linear infinite}
+.dash-root .task.skip .tic{opacity:.45}
+@keyframes tspin{to{transform:rotate(360deg)}}
+.dash-root .task .tlabel{font-family:var(--mono);font-size:13px;line-height:1.45;color:#eef0f6}
+.dash-root .task.done .tlabel{color:rgba(238,240,246,.6)}
+.dash-root .task.pending .tlabel{color:rgba(238,240,246,.5)}
+.dash-root .task.skip .tlabel{color:rgba(238,240,246,.38);text-decoration:line-through}
 .dash-root .twocol .panel:first-child{border-top-right-radius:0;border-bottom-right-radius:0;border-right:none}
 .dash-root .twocol .panel:last-child{border-top-left-radius:0;border-bottom-left-radius:0}
 @media (max-width:900px){.dash-root .twocol{grid-template-columns:1fr}.dash-root .twocol .panel:first-child{border-right:1px solid var(--line);border-radius:16px 16px 0 0}.dash-root .twocol .panel:last-child{border-radius:0 0 16px 16px;border-top:none}}
@@ -144,8 +165,9 @@ body{background:#070a0c}
 /* live role log */
 .dash-root .ahead{display:flex;align-items:center;gap:10px}
 .dash-root .arole{font-family:var(--disp);font-size:15.8px;letter-spacing:1px;color:#eef0f6;font-weight:600}
-.dash-root .amodel{font-family:var(--mono);font-size:10.7px;color:#bdb8ff;background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);border-radius:6px;padding:3px 9px}
-.dash-root .log{font-family:var(--mono);font-size:13.6px;background:rgba(7,10,12,.7);border:1px solid var(--line);border-radius:10px;padding:14px 16px;max-height:236px;overflow-y:auto;line-height:1.75}
+.dash-root .amodel{font-family:var(--mono);font-size:10.7px;color:#bdb8ff;background:rgba(108,99,255,.15);border:1px solid rgba(108,99,255,.3);border-radius:6px;padding:3px 9px;box-shadow:0 0 10px rgba(108,99,255,.1)}
+.dash-root .log{font-family:var(--mono);font-size:13.6px;background:rgba(7,10,12,.7);border:1px solid var(--line);border-radius:10px;padding:15px 17px;max-height:236px;overflow-y:auto;line-height:1.8;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.03)}
 .dash-root .log::-webkit-scrollbar{width:6px}
 .dash-root .log::-webkit-scrollbar-thumb{background:rgba(108,99,255,.25);border-radius:3px}
 .dash-root .ll{display:flex;gap:9px}
@@ -159,9 +181,10 @@ body{background:#070a0c}
 
 /* event timeline */
 .dash-root .tl{position:relative;padding-left:18px}
-.dash-root .tl::before{content:"";position:absolute;left:3px;top:4px;bottom:4px;width:1px;background:rgba(238,240,246,.1)}
-.dash-root .tle{position:relative;margin-bottom:15px;padding-left:14px}
-.dash-root .tld{position:absolute;left:-11px;top:5px;width:8px;height:8px;border-radius:50%}
+.dash-root .tl::before{content:"";position:absolute;left:3px;top:4px;bottom:4px;width:1px;background:linear-gradient(180deg,rgba(108,99,255,.22),rgba(238,240,246,.08) 60%,transparent)}
+.dash-root .tle{position:relative;margin-bottom:16px;padding-left:14px}
+.dash-root .tle:last-child{margin-bottom:0}
+.dash-root .tld{position:absolute;left:-11px;top:5px;width:8px;height:8px;border-radius:50%;box-shadow:0 0 7px rgba(108,99,255,.45)}
 .dash-root .tldesc{font-size:14.1px;line-height:1.4;color:#eef0f6}
 .dash-root .tlts{font-size:11.3px;color:rgba(238,240,246,.34)}
 .dash-root .tlmeta{font-size:11.3px;color:rgba(238,240,246,.34);display:block;margin-top:1px}
@@ -182,9 +205,9 @@ body{background:#070a0c}
 .dash-root .tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line)}
 .dash-root .tabs::-webkit-scrollbar{height:4px}
 .dash-root .tabs::-webkit-scrollbar-thumb{background:rgba(108,99,255,.25)}
-.dash-root .tab{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:13.6px;color:rgba(238,240,246,.5);padding:10px 14px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:color .15s;background:none;border-top:none;border-left:none;border-right:none}
-.dash-root .tab:hover{color:#eef0f6}
-.dash-root .tab.active{color:#fff;border-bottom-color:var(--accent)}
+.dash-root .tab{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:13.6px;color:rgba(238,240,246,.5);padding:11px 15px;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:color .15s,background .15s;background:none;border-top:none;border-left:none;border-right:none}
+.dash-root .tab:hover{color:#eef0f6;background:rgba(108,99,255,.05)}
+.dash-root .tab.active{color:#fff;border-bottom-color:var(--accent);box-shadow:0 2px 12px -4px var(--accent)}
 .dash-root .tab.disabled{opacity:.3;cursor:default}
 .dash-root .tab .tok{font-size:11.3px;color:#8ff0e4}
 .dash-root .abody{margin-top:16px}
@@ -193,8 +216,9 @@ body{background:#070a0c}
 .dash-root .chipsm.model{color:#bdb8ff;background:rgba(108,99,255,.15);border-color:rgba(108,99,255,.3)}
 
 /* markdown card */
-.dash-root .md{background:rgba(7,10,12,.7);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-.dash-root .mdhead{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(108,99,255,.06);border-bottom:1px solid var(--line)}
+.dash-root .md{background:rgba(7,10,12,.7);border:1px solid var(--line);border-radius:12px;overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),0 10px 30px rgba(0,0,0,.3)}
+.dash-root .mdhead{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:linear-gradient(180deg,rgba(108,99,255,.08),rgba(108,99,255,.04));border-bottom:1px solid var(--line)}
 .dash-root .mdtag{font-family:var(--disp);font-size:11.3px;letter-spacing:1.6px;color:#8ff0e4}
 .dash-root .mdmeta{font-size:11.3px;color:rgba(238,240,246,.34)}
 .dash-root .mdbody{padding:18px 20px;font-size:14.7px;line-height:1.75;color:#eef0f6}
@@ -205,7 +229,7 @@ body{background:#070a0c}
 .dash-root .mdbody li{color:rgba(238,240,246,.62);padding-left:20px;position:relative;margin-bottom:6px}
 .dash-root .mdbody li::before{content:"▸";position:absolute;left:4px;color:var(--accent)}
 .dash-root .mdbody code{font-family:var(--mono);background:rgba(108,99,255,.14);color:#bdb8ff;padding:1px 6px;border-radius:4px;font-size:13.6px}
-.dash-root .mdbody .codeblock{background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:12px 0;font-size:13.6px;line-height:1.6;color:var(--cyan);overflow-x:auto;white-space:pre}
+.dash-root .mdbody .codeblock{background:rgba(0,0,0,.4);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin:12px 0;font-size:13.6px;line-height:1.6;color:var(--cyan);overflow-x:auto;white-space:pre;box-shadow:inset 0 0 24px rgba(0,0,0,.45)}
 .dash-root .mdbody .codeblock .kw{color:var(--magenta)}
 .dash-root .mdbody .codeblock .cm{color:rgba(238,240,246,.34)}
 
@@ -308,42 +332,51 @@ body{background:#070a0c}
       </div>
       <div class="pbody">
         <div class="strip">
-          <div class="node">
+          <div class="node" data-role="po">
             <span class="nd n-done"></span><span class="nl cyan">PO</span>
             <div class="nmeta"><span class="mm">42s</span><span class="mm">sonnet-4</span><span class="mm">3.1K</span></div>
           </div>
-          <div class="node">
+          <div class="node" data-role="research">
             <span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Research</span>
             <div class="nmeta"><span class="mm">1m 18s</span><span class="mm">sonnet-4</span><span class="mm">12.4K</span></div>
           </div>
-          <div class="node">
+          <div class="node" data-role="architect">
             <span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Architect</span>
             <div class="nmeta"><span class="mm">58s</span><span class="mm">sonnet-4</span><span class="mm">9.7K</span></div>
           </div>
-          <div class="node">
+          <div class="node" data-role="planner">
             <span class="seg fdone"></span><span class="nd n-done"></span><span class="nl cyan">Planner</span>
             <div class="nmeta"><span class="mm">36s</span><span class="mm">sonnet-4</span><span class="mm">6.2K</span></div>
           </div>
-          <div class="node">
+          <div class="node" data-role="implementer">
             <span class="seg fdone"></span><span class="nd n-done"></span><span class="rew">×2</span><span class="nl cyan">Implementer</span>
             <div class="nmeta"><span class="mm">3m 41s</span><span class="mm">sonnet-4</span><span class="mm">48.9K</span></div>
           </div>
-          <div class="node">
+          <div class="node sel" data-role="reviewer">
             <span class="seg fblock"></span><span class="nd n-block"></span><span class="nl on">Reviewer</span>
             <div class="nmeta"><span class="mm live">1m 12s</span><span class="mm">merge gate</span></div>
           </div>
-          <div class="node">
+          <div class="node" data-role="tester">
             <span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">Tester</span>
           </div>
-          <div class="node">
+          <div class="node" data-role="security">
             <span class="seg fskip"></span><span class="nd n-skip"></span><span class="nl skip">Security</span>
             <div class="nmeta"><span class="mm">skipped</span></div>
           </div>
-          <div class="node">
+          <div class="node" data-role="devops">
             <span class="seg ftodo"></span><span class="nd n-todo"></span><span class="nl">DevOps</span>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- per-persona task breakdown — click a role in the timeline above -->
+    <div class="panel">
+      <div class="phead">
+        <div class="ptitle"><span class="tick"></span>TASK BREAKDOWN<span style="color:var(--accent);margin-left:8px;letter-spacing:2px" id="taskRole">REVIEWER</span></div>
+        <span class="ptag" id="taskCount">2 / 5 DONE</span>
+      </div>
+      <div class="pbody"><div class="tasks" id="taskBody"></div></div>
     </div>
 
     <!-- lower two-column: live role log | event timeline -->
@@ -514,6 +547,45 @@ curl -s localhost:8080<span class="kw">/v1/health</span> | jq .status
     panels.forEach(p => { p.hidden = (p.dataset.panel !== art); });
     const log = document.getElementById('log'); if (log) log.scrollTop = log.scrollHeight;
   }));
+
+  // ── per-persona task breakdown — click a role node to see its tasks ──
+  const TASKS = {
+    po:          { label:'PRODUCT OWNER',   items:[['done','Capture intent + acceptance criteria'],['done','Scope — in: GET /v1/health · out: auth, dashboards'],['done','Draft user story + definition-of-done']] },
+    research:    { label:'RESEARCHER',      items:[['done','Survey existing actuator/health usage in strategiz-core'],['done','Locate Mongo replica-set + Vault lease probe points'],['done','Note @RequireScope precedent on actuator routes']] },
+    architect:   { label:'ARCHITECT',       items:[['done','Place HealthController in the actuator layer'],['done','Define Optional<HealthStatus> return contract'],['done','Decide 200 healthy / 503 degraded semantics']] },
+    planner:     { label:'PLANNER',         items:[['done','Decompose into implementer tasks'],['done','Sequence: controller → probes → contract → tests'],['done','Set rework budget (max 2)']] },
+    implementer: { label:'IMPLEMENTER',     items:[['done','Add HealthController (GET /v1/health)'],['done','Wire Mongo replica-set probe'],['done','Wire Vault lease probe'],['done','Return Optional<HealthStatus> — never null'],['done','Add unit test — reworked ×2 (probe mocks)'],['pending','Update module README']] },
+    reviewer:    { label:'REVIEWER',        items:[['done','Load implementer diff (14 files, +312 −47)'],['done','Confirm constructor injection — no @Autowired'],['running','Verify @RequireScope on /v1/health — flagged for Security'],['pending','Draft review verdict'],['pending','Merge-gate decision (approve / request rework)']] },
+    tester:      { label:'TESTER',          items:[['pending','Run unit + integration suite'],['pending','Verify 200 healthy / 503 degraded paths'],['pending','Smoke the k8s readiness probe']] },
+    security:    { label:'SECURITY ANALYST',items:[['skip','Skipped — no security-sensitive surface this run']] },
+    devops:      { label:'DEVOPS',          items:[['pending','Build image'],['pending','Deploy to QA'],['pending','Verify /v1/health is live']] },
+  };
+  const TICON = { done:'✓', running:'⟳', pending:'', skip:'⊘' };
+  const taskBody = document.getElementById('taskBody');
+  const taskRole = document.getElementById('taskRole');
+  const taskCount = document.getElementById('taskCount');
+  const roleNodes = document.querySelectorAll('.strip .node[data-role]');
+  function renderTasks(role) {
+    const t = TASKS[role];
+    if (!t || !taskBody) return;
+    taskBody.replaceChildren();
+    let done = 0, total = 0;
+    t.items.forEach(([st, label]) => {
+      if (st !== 'skip') { total++; if (st === 'done') done++; }
+      const row = document.createElement('div'); row.className = 'task ' + st;
+      const ic = document.createElement('div'); ic.className = 'tic'; ic.textContent = TICON[st] || '';
+      const lb = document.createElement('div'); lb.className = 'tlabel'; lb.textContent = label;
+      row.append(ic, lb); taskBody.append(row);
+    });
+    if (taskRole) taskRole.textContent = t.label;
+    if (taskCount) taskCount.textContent = total ? (done + ' / ' + total + ' DONE') : 'SKIPPED';
+  }
+  function selectRole(role) {
+    roleNodes.forEach(n => n.classList.toggle('sel', n.dataset.role === role));
+    renderTasks(role);
+  }
+  roleNodes.forEach(n => n.addEventListener('click', () => selectRole(n.dataset.role)));
+  selectRole('reviewer'); // default to the active role
 </script>
 </body>
 </html>
