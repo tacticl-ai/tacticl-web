@@ -33,17 +33,17 @@ body{background:#070a0c}
 @keyframes oscan{0%{transform:translateY(-160px)}100%{transform:translateY(100vh)}}
 .onb-root .stage{position:relative;z-index:2}
 .onb-root .top{display:flex;align-items:center;justify-content:space-between;padding:22px 34px 10px}
-.onb-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:18px;letter-spacing:7px;font-weight:600}
+.onb-root .brand{display:flex;align-items:center;gap:13px;font-family:var(--disp);font-size:20.3px;letter-spacing:7px;font-weight:600}
 .onb-root .beacon{width:11px;height:11px;border-radius:50%;background:var(--accent);position:relative;box-shadow:0 0 14px var(--accent)}
 .onb-root .beacon::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:1.5px solid var(--accent);animation:ohalo 2.2s ease-out infinite}
 @keyframes ohalo{0%{transform:scale(.5);opacity:.9}100%{transform:scale(2.1);opacity:0}}
 .onb-root .sep{color:var(--accent)}
 .onb-root .topright{display:flex;align-items:center;gap:18px}
-.onb-root .muted{color:rgba(238,240,246,.42);font-size:11px;letter-spacing:1px}
+.onb-root .muted{color:rgba(238,240,246,.42);font-size:12.4px;letter-spacing:1px}
 .onb-root .head{padding:14px 34px 2px;display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px}
-.onb-root .h1{font-family:var(--disp);font-size:30px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
+.onb-root .h1{font-family:var(--disp);font-size:33.9px;letter-spacing:9px;font-weight:600;margin:0;line-height:1}
 .onb-root .h1 .b{background:linear-gradient(90deg,var(--accent),var(--magenta));-webkit-background-clip:text;background-clip:text;color:transparent}
-.onb-root .sub{font-size:11px;color:rgba(238,240,246,.4);letter-spacing:3px;margin-top:8px}
+.onb-root .sub{font-size:12.4px;color:rgba(238,240,246,.4);letter-spacing:3px;margin-top:8px}
 .onb-root .progress{display:flex;gap:8px;align-items:center}
 .onb-root .pseg{width:46px;height:5px;border-radius:999px;background:rgba(238,240,246,.12);transition:.25s}
 .onb-root .pseg.done{background:var(--cyan);box-shadow:0 0 8px rgba(21,224,200,.5)}
@@ -62,12 +62,12 @@ body{background:#070a0c}
 .onb-root .sitem.todo{opacity:.55}
 .onb-root .sitem:disabled{cursor:default}
 .onb-root .sitem .sdot{width:22px;height:22px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--disp);font-size:11px;font-weight:600;background:rgba(238,240,246,.1);color:rgba(238,240,246,.6);border:1px solid rgba(238,240,246,.14)}
+  font-family:var(--disp);font-size:12.4px;font-weight:600;background:rgba(238,240,246,.1);color:rgba(238,240,246,.6);border:1px solid rgba(238,240,246,.14)}
 .onb-root .sitem.active .sdot{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 0 10px var(--accent)}
 .onb-root .sitem.done .sdot{background:rgba(21,224,200,.16);color:var(--cyan);border-color:var(--cyan)}
 .onb-root .stext{display:flex;flex-direction:column;gap:3px;min-width:0}
-.onb-root .slabel{font-family:var(--disp);font-size:12px;letter-spacing:2.4px;font-weight:600}
-.onb-root .shint{font-size:9.5px;letter-spacing:.4px;color:rgba(238,240,246,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.onb-root .slabel{font-family:var(--disp);font-size:13.6px;letter-spacing:2.4px;font-weight:600}
+.onb-root .shint{font-size:10.7px;letter-spacing:.4px;color:rgba(238,240,246,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .onb-root .sitem.active .shint{color:rgba(189,184,255,.7)}
 
 /* ── panel ──────────────────────────────────────────────────────────────── */
@@ -79,8 +79,8 @@ body{background:#070a0c}
 .onb-root .panel::before{top:8px;left:8px;border-top-width:1.5px;border-left-width:1.5px}
 .onb-root .panel::after{bottom:8px;right:8px;border-bottom-width:1.5px;border-right-width:1.5px}
 .onb-root .phead{display:flex;align-items:center;gap:12px;padding:14px 22px;border-bottom:1px solid var(--line)}
-.onb-root .ptitle{font-family:var(--disp);font-size:13px;letter-spacing:3px;color:var(--accent);font-weight:600}
-.onb-root .ptag{font-size:10px;letter-spacing:1px;color:rgba(238,240,246,.4)}
+.onb-root .ptitle{font-family:var(--disp);font-size:14.7px;letter-spacing:3px;color:var(--accent);font-weight:600}
+.onb-root .ptag{font-size:11.3px;letter-spacing:1px;color:rgba(238,240,246,.4)}
 .onb-root .paction{margin-left:auto}
 .onb-root .add-pair{display:flex;gap:7px}
 .onb-root .pbody{padding:20px 22px}
@@ -88,24 +88,24 @@ body{background:#070a0c}
 /* preview (non-active steps shown for the whole-flow mockup) */
 .onb-root .panel.preview{opacity:.92}
 .onb-root .steptab{display:flex;align-items:center;gap:10px;padding:18px 34px 0}
-.onb-root .steptab .stripe{font-family:var(--disp);font-size:10px;letter-spacing:2.4px;color:rgba(238,240,246,.4)}
+.onb-root .steptab .stripe{font-family:var(--disp);font-size:11.3px;letter-spacing:2.4px;color:rgba(238,240,246,.4)}
 .onb-root .steptab .stripe b{color:var(--cyan)}
 .onb-root .steptab .rule{flex:1;height:1px;background:linear-gradient(90deg,rgba(108,99,255,.4),transparent)}
 
 /* ── blocks / fields ────────────────────────────────────────────────────── */
 .onb-root .block{padding-bottom:18px;margin-bottom:18px;border-bottom:1px solid rgba(108,99,255,.08)}
 .onb-root .block:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:2px}
-.onb-root .bhead{font-family:var(--disp);font-size:11px;letter-spacing:2.2px;color:#eef0f6;font-weight:600;margin-bottom:12px}
-.onb-root .bdesc{font-size:12px;color:rgba(238,240,246,.55);margin-bottom:18px;line-height:1.6}
+.onb-root .bhead{font-family:var(--disp);font-size:12.4px;letter-spacing:2.2px;color:#eef0f6;font-weight:600;margin-bottom:12px}
+.onb-root .bdesc{font-size:13.6px;color:rgba(238,240,246,.55);margin-bottom:18px;line-height:1.6}
 .onb-root .bdesc b{color:#cfd2e0;font-weight:600}
-.onb-root .kbd{font-family:var(--mono);font-size:11px;color:#bdb8ff;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.22);border-radius:6px;padding:1px 6px}
+.onb-root .kbd{font-family:var(--mono);font-size:12.4px;color:#bdb8ff;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.22);border-radius:6px;padding:1px 6px}
 .onb-root .fgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media (max-width:620px){.onb-root .fgrid{grid-template-columns:1fr}}
 .onb-root .field{display:flex;flex-direction:column;gap:6px}
-.onb-root .flabel{font-family:var(--disp);font-size:9.5px;letter-spacing:1.6px;color:rgba(238,240,246,.5)}
-.onb-root .fhint{font-size:10px;color:rgba(238,240,246,.36);line-height:1.4}
+.onb-root .flabel{font-family:var(--disp);font-size:10.7px;letter-spacing:1.6px;color:rgba(238,240,246,.5)}
+.onb-root .fhint{font-size:11.3px;color:rgba(238,240,246,.36);line-height:1.4}
 .onb-root .inp{width:100%;box-sizing:border-box;background:rgba(7,10,12,.55);border:1px solid rgba(108,99,255,.22);border-radius:10px;
-  color:#eef0f6;font-family:var(--mono);font-size:13px;padding:10px 12px;outline:none;transition:.16s}
+  color:#eef0f6;font-family:var(--mono);font-size:14.7px;padding:10px 12px;outline:none;transition:.16s}
 .onb-root .inp:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(108,99,255,.18)}
 .onb-root .inp::placeholder{color:rgba(238,240,246,.3)}
 
@@ -115,13 +115,13 @@ body{background:#070a0c}
 .onb-root .erow{padding:15px;border-radius:13px;border:1px solid var(--line);background:rgba(108,99,255,.04);display:flex;flex-direction:column;gap:14px;transition:.16s}
 .onb-root .erow.bad{border-color:rgba(245,181,68,.34);background:rgba(245,181,68,.05)}
 .onb-root .erow-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.onb-root .erow-n{font-family:var(--disp);font-size:10px;letter-spacing:2px;color:rgba(238,240,246,.5)}
+.onb-root .erow-n{font-family:var(--disp);font-size:11.3px;letter-spacing:2px;color:rgba(238,240,246,.5)}
 .onb-root .erow-spacer{flex:1}
 .onb-root .seg-toggle{display:flex;border:1px solid rgba(108,99,255,.24);border-radius:9px;overflow:hidden}
-.onb-root .segbtn{font-family:var(--disp);font-size:9.5px;letter-spacing:1.2px;padding:7px 11px;cursor:pointer;background:transparent;border:none;color:rgba(189,184,255,.75);transition:.16s}
+.onb-root .segbtn{font-family:var(--disp);font-size:10.7px;letter-spacing:1.2px;padding:7px 11px;cursor:pointer;background:transparent;border:none;color:rgba(189,184,255,.75);transition:.16s}
 .onb-root .segbtn:hover{background:rgba(108,99,255,.1);color:#fff}
 .onb-root .segbtn.on{background:rgba(108,99,255,.22);color:#fff;box-shadow:inset 0 0 14px rgba(108,99,255,.2)}
-.onb-root .keypeek{font-size:10.5px;color:rgba(238,240,246,.45)}
+.onb-root .keypeek{font-size:11.9px;color:rgba(238,240,246,.45)}
 
 /* ── GitHub App install CTA (latest repositories model) ─────────────────── */
 .onb-root .ghapp{border:1px solid rgba(108,99,255,.28);border-radius:14px;padding:20px 20px 18px;
@@ -132,29 +132,29 @@ body{background:#070a0c}
 .onb-root .gh-mark{width:38px;height:38px;border-radius:11px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
   background:rgba(7,10,12,.6);border:1px solid rgba(108,99,255,.3);box-shadow:0 0 16px rgba(108,99,255,.22)}
 .onb-root .gh-mark svg{width:21px;height:21px;fill:#bdb8ff}
-.onb-root .ghapp-title{font-family:var(--disp);font-size:14px;letter-spacing:2px;font-weight:600;color:#eef0f6}
-.onb-root .ghapp-req{font-family:var(--disp);font-size:8.5px;letter-spacing:1.6px;color:var(--amber);
+.onb-root .ghapp-title{font-family:var(--disp);font-size:15.8px;letter-spacing:2px;font-weight:600;color:#eef0f6}
+.onb-root .ghapp-req{font-family:var(--disp);font-size:9.6px;letter-spacing:1.6px;color:var(--amber);
   border:1px solid rgba(245,181,68,.34);background:rgba(245,181,68,.08);border-radius:999px;padding:3px 8px;margin-left:auto}
-.onb-root .ghapp-desc{font-size:11.5px;color:rgba(238,240,246,.6);line-height:1.65;margin-bottom:16px;position:relative;max-width:560px}
+.onb-root .ghapp-desc{font-size:13px;color:rgba(238,240,246,.6);line-height:1.65;margin-bottom:16px;position:relative;max-width:560px}
 .onb-root .ghapp-desc b{color:#cfd2e0;font-weight:600}
 .onb-root .ghapp-grant{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;position:relative}
-.onb-root .grant{display:flex;align-items:center;gap:7px;font-size:10px;letter-spacing:.4px;color:rgba(189,184,255,.75);
+.onb-root .grant{display:flex;align-items:center;gap:7px;font-size:11.3px;letter-spacing:.4px;color:rgba(189,184,255,.75);
   border:1px solid rgba(108,99,255,.2);background:rgba(108,99,255,.05);border-radius:8px;padding:6px 10px}
 .onb-root .grant .gck{color:var(--cyan)}
 .onb-root .ghapp-actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:relative}
-.onb-root .ghapp-status{display:flex;align-items:center;gap:8px;font-size:10px;letter-spacing:.6px;color:rgba(238,240,246,.45)}
+.onb-root .ghapp-status{display:flex;align-items:center;gap:8px;font-size:11.3px;letter-spacing:.6px;color:rgba(238,240,246,.45)}
 .onb-root .ghapp-status .sdot2{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 8px rgba(245,181,68,.6)}
 
 /* installed-org card (shown once app installs) */
 .onb-root .orgcard{display:flex;align-items:center;gap:13px;padding:13px 15px;border-radius:12px;margin-top:14px;
   border:1px solid rgba(21,224,200,.28);background:rgba(21,224,200,.06)}
 .onb-root .orgcard .oav{width:34px;height:34px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
-  font-family:var(--disp);font-weight:700;font-size:14px;color:#9af0e4;background:rgba(21,224,200,.12);border:1px solid rgba(21,224,200,.3)}
+  font-family:var(--disp);font-weight:700;font-size:15.8px;color:#9af0e4;background:rgba(21,224,200,.12);border:1px solid rgba(21,224,200,.3)}
 .onb-root .orgcard .omain{flex:1;min-width:0}
-.onb-root .orgcard .oname{font-family:var(--disp);font-size:13px;letter-spacing:1px;font-weight:600;color:#eef0f6}
-.onb-root .orgcard .osub{font-size:10px;color:rgba(238,240,246,.45);margin-top:2px}
+.onb-root .orgcard .oname{font-family:var(--disp);font-size:14.7px;letter-spacing:1px;font-weight:600;color:#eef0f6}
+.onb-root .orgcard .osub{font-size:11.3px;color:rgba(238,240,246,.45);margin-top:2px}
 
-.onb-root .or-split{display:flex;align-items:center;gap:14px;margin:22px 0 16px;color:rgba(238,240,246,.35);font-family:var(--disp);font-size:9.5px;letter-spacing:2.6px}
+.onb-root .or-split{display:flex;align-items:center;gap:14px;margin:22px 0 16px;color:rgba(238,240,246,.35);font-family:var(--disp);font-size:10.7px;letter-spacing:2.6px}
 .onb-root .or-split .l{flex:1;height:1px;background:rgba(108,99,255,.16)}
 
 /* ── visibility toggle ──────────────────────────────────────────────────── */
@@ -164,29 +164,29 @@ body{background:#070a0c}
 .onb-root .toggle .tknob::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#cfd2e0;transition:.18s}
 .onb-root .toggle.on .tknob{background:rgba(108,99,255,.5)}
 .onb-root .toggle.on .tknob::after{left:18px;background:#fff;box-shadow:0 0 8px var(--accent)}
-.onb-root .toggle .tlabel{font-family:var(--disp);font-size:10px;letter-spacing:1.6px;color:#eef0f6}
+.onb-root .toggle .tlabel{font-family:var(--disp);font-size:11.3px;letter-spacing:1.6px;color:#eef0f6}
 
 /* ── review rows ────────────────────────────────────────────────────────── */
 .onb-root .rev-line{display:flex;gap:14px;align-items:baseline}
-.onb-root .rev-k{font-family:var(--disp);font-size:10px;letter-spacing:1.6px;color:rgba(238,240,246,.45);min-width:64px}
-.onb-root .rev-v{font-size:14px;color:#eef0f6}
+.onb-root .rev-k{font-family:var(--disp);font-size:11.3px;letter-spacing:1.6px;color:rgba(238,240,246,.45);min-width:64px}
+.onb-root .rev-v{font-size:15.8px;color:#eef0f6}
 .onb-root .lrow{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:rgba(108,99,255,.04)}
 .onb-root .ldot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 .onb-root .ldot.violet{background:var(--accent);box-shadow:0 0 8px var(--accent)}
 .onb-root .ldot.cyan{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
 .onb-root .lmain{flex:1;min-width:0}
-.onb-root .lname{font-family:var(--disp);font-size:13px;font-weight:500;color:#eef0f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.onb-root .lsub{font-size:10.5px;color:rgba(238,240,246,.42);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.onb-root .dim{font-size:12px;color:rgba(238,240,246,.42)}
+.onb-root .lname{font-family:var(--disp);font-size:14.7px;font-weight:500;color:#eef0f6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.onb-root .lsub{font-size:11.9px;color:rgba(238,240,246,.42);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.onb-root .dim{font-size:13.6px;color:rgba(238,240,246,.42)}
 
 /* ── tags ───────────────────────────────────────────────────────────────── */
-.onb-root .tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-size:9.5px;letter-spacing:1.2px;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.onb-root .tag{display:inline-flex;align-items:center;gap:6px;font-family:var(--disp);font-size:10.7px;letter-spacing:1.2px;padding:5px 10px;border-radius:999px;white-space:nowrap}
 .onb-root .tag.violet{color:#bdb8ff;border:1px solid var(--accent);background:rgba(108,99,255,.13)}
 .onb-root .tag.cyan{color:#8ff0e4;border:1px solid var(--cyan);background:rgba(21,224,200,.1)}
 
 /* ── buttons ────────────────────────────────────────────────────────────── */
-.onb-root .btn{font-family:var(--disp);font-size:11px;letter-spacing:1.6px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.16s;border:1px solid transparent;white-space:nowrap}
-.onb-root .btn.sm{padding:7px 12px;font-size:10px;letter-spacing:1.2px}
+.onb-root .btn{font-family:var(--disp);font-size:12.4px;letter-spacing:1.6px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;transition:.16s;border:1px solid transparent;white-space:nowrap}
+.onb-root .btn.sm{padding:7px 12px;font-size:11.3px;letter-spacing:1.2px}
 .onb-root .btn:disabled{opacity:.4;cursor:not-allowed}
 .onb-root .btn.primary{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.2)}
 .onb-root .btn.primary:not(:disabled):hover{background:rgba(108,99,255,.34);box-shadow:0 0 18px rgba(108,99,255,.3)}
@@ -195,7 +195,7 @@ body{background:#070a0c}
 .onb-root .btn.ghost.danger{color:#ffb0b0;border-color:rgba(255,107,107,.32);background:rgba(255,107,107,.05)}
 .onb-root .btn.ghost.danger:hover{border-color:var(--red);color:#fff;background:rgba(255,107,107,.16)}
 /* the GitHub-app gradient install button = the primary CTA accent of the HUD */
-.onb-root .btn.install{color:#fff;border:none;font-size:12px;letter-spacing:1.8px;padding:13px 26px;
+.onb-root .btn.install{color:#fff;border:none;font-size:13.6px;letter-spacing:1.8px;padding:13px 26px;
   background:linear-gradient(135deg,#6C63FF,#B25CFF 55%,#15E0C8);box-shadow:0 0 22px rgba(108,99,255,.35)}
 .onb-root .btn.install:hover{box-shadow:0 0 30px rgba(108,99,255,.55),0 0 14px rgba(21,224,200,.3);transform:translateY(-1px)}
 .onb-root .btn.install svg{width:15px;height:15px;fill:#fff;vertical-align:-2px;margin-right:8px}
@@ -207,17 +207,17 @@ body{background:#070a0c}
 .onb-root .nc{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:40px 24px}
 .onb-root .ncbeacon{width:13px;height:13px;border-radius:50%;background:rgba(108,99,255,.4);position:relative;box-shadow:0 0 14px rgba(108,99,255,.5)}
 .onb-root .ncbeacon::after{content:"";position:absolute;inset:-7px;border-radius:50%;border:1.5px solid rgba(108,99,255,.5);animation:ohalo 2.4s ease-out infinite}
-.onb-root .nctitle{font-family:var(--disp);font-size:13px;letter-spacing:2.4px;color:#eef0f6;font-weight:600}
-.onb-root .ncdesc{font-size:12px;color:rgba(238,240,246,.5);max-width:420px;line-height:1.6}
-.onb-root .banner{padding:10px 14px;border-radius:10px;font-size:11.5px;margin-top:14px;letter-spacing:.3px;word-break:break-word}
+.onb-root .nctitle{font-family:var(--disp);font-size:14.7px;letter-spacing:2.4px;color:#eef0f6;font-weight:600}
+.onb-root .ncdesc{font-size:13.6px;color:rgba(238,240,246,.5);max-width:420px;line-height:1.6}
+.onb-root .banner{padding:10px 14px;border-radius:10px;font-size:13px;margin-top:14px;letter-spacing:.3px;word-break:break-word}
 .onb-root .banner.err{color:#ffb0b0;border:1px solid rgba(255,107,107,.3);background:rgba(255,107,107,.08)}
 
-.onb-root .footnote{padding:18px 34px 46px;font-size:9.5px;letter-spacing:1px;color:rgba(238,240,246,.26);text-align:center}
+.onb-root .footnote{padding:18px 34px 46px;font-size:10.7px;letter-spacing:1px;color:rgba(238,240,246,.26);text-align:center}
 
 /* ── primary nav: COMMAND central, DASHBOARD/SETTINGS ghost ──────────────── */
 .onb-root .nav{display:flex;align-items:center;gap:10px}
 .onb-root .navlink{text-decoration:none}
-.onb-root .navtab{font-family:var(--disp);font-size:11px;letter-spacing:1.6px;font-weight:600;padding:9px 16px;border-radius:10px;
+.onb-root .navtab{font-family:var(--disp);font-size:12.4px;letter-spacing:1.6px;font-weight:600;padding:9px 16px;border-radius:10px;
   cursor:pointer;transition:.16s;border:1px solid rgba(108,99,255,.3);background:rgba(108,99,255,.05);color:rgba(189,184,255,.9);white-space:nowrap}
 .onb-root .navtab:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.14)}
 .onb-root .navtab.active{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.22);box-shadow:0 0 16px rgba(108,99,255,.3)}
