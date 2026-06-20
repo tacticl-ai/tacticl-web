@@ -213,6 +213,22 @@ body{background:#070a0c}
 .onb-root .banner.err{color:#ffb0b0;border:1px solid rgba(255,107,107,.3);background:rgba(255,107,107,.08)}
 
 .onb-root .footnote{padding:18px 34px 46px;font-size:9.5px;letter-spacing:1px;color:rgba(238,240,246,.26);text-align:center}
+
+/* ── primary nav: COMMAND central, DASHBOARD/SETTINGS ghost ──────────────── */
+.onb-root .nav{display:flex;align-items:center;gap:10px}
+.onb-root .navlink{text-decoration:none}
+.onb-root .navtab{font-family:var(--disp);font-size:11px;letter-spacing:1.6px;font-weight:600;padding:9px 16px;border-radius:10px;
+  cursor:pointer;transition:.16s;border:1px solid rgba(108,99,255,.3);background:rgba(108,99,255,.05);color:rgba(189,184,255,.9);white-space:nowrap}
+.onb-root .navtab:hover{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.14)}
+.onb-root .navtab.active{border-color:var(--accent);color:#fff;background:rgba(108,99,255,.22);box-shadow:0 0 16px rgba(108,99,255,.3)}
+/* COMMAND = primary central tab */
+.onb-root .navtab.command{display:inline-flex;align-items:center;gap:9px;color:#fff;padding:10px 20px;
+  border:1px solid var(--accent);background:rgba(108,99,255,.16);box-shadow:0 0 18px rgba(108,99,255,.18)}
+.onb-root .navtab.command:hover{background:rgba(108,99,255,.24);box-shadow:0 0 24px rgba(108,99,255,.34)}
+.onb-root .navtab.command.active{background:rgba(108,99,255,.28);box-shadow:0 0 26px rgba(108,99,255,.4)}
+.onb-root .navtab.command .orb{width:9px;height:9px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%,#fff 0%,var(--accent) 38%,var(--magenta) 66%,var(--cyan) 100%);
+  box-shadow:0 0 10px rgba(108,99,255,.8),0 0 16px rgba(178,92,255,.5)}
 </style>
 </head>
 <body>
@@ -225,8 +241,11 @@ body{background:#070a0c}
     <div class="top">
       <a class="brand" href="index.html" style="text-decoration:none;color:inherit"><span class="beacon"></span>TACTICL <span class="sep">//</span> ONBOARD</a>
       <div class="topright">
-        <a class="btn ghost sm" href="dashboard.html" style="text-decoration:none">DASHBOARD</a>
-        <a class="btn ghost sm" href="settings.html" style="text-decoration:none">SETTINGS</a>
+        <nav class="nav">
+          <a class="navlink" href="dashboard.html"><span class="navtab">DASHBOARD</span></a>
+          <a class="navlink" href="command.html"><span class="navtab command"><span class="orb"></span>COMMAND</span></a>
+          <a class="navlink" href="settings.html"><span class="navtab">SETTINGS</span></a>
+        </nav>
         <span class="muted">FIRST RUN · PRODUCT SETUP · <a href="dashboard.html" style="color:#bdb8ff;text-decoration:none">SKIP TO DASHBOARD →</a></span>
       </div>
     </div>
