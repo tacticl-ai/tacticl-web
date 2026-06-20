@@ -301,28 +301,7 @@ html,body{height:100%;background:#070a0c}
     <!-- ── two-column hub: section nav + active panel ──────────────────── -->
     <div class="hub">
       <aside class="snav">
-        <button class="sitem active" data-sec="connections">
-          <span class="sdot"></span>
-          <span class="stext">
-            <span class="slabel">CONNECTIONS</span>
-            <span class="shint">Dev · messaging · social · devices</span>
-          </span>
-        </button>
-        <button class="sitem" data-sec="tokens">
-          <span class="sdot"></span>
-          <span class="stext">
-            <span class="slabel">API TOKENS</span>
-            <span class="shint">Your programmatic keys</span>
-          </span>
-        </button>
-        <button class="sitem" data-sec="billing">
-          <span class="sdot"></span>
-          <span class="stext">
-            <span class="slabel">PLAN &amp; BILLING</span>
-            <span class="shint">Tier · usage · invoices</span>
-          </span>
-        </button>
-        <button class="sitem" data-sec="profile">
+        <button class="sitem active" data-sec="profile">
           <span class="sdot"></span>
           <span class="stext">
             <span class="slabel">PROFILE</span>
@@ -343,12 +322,33 @@ html,body{height:100%;background:#070a0c}
             <span class="shint">Your registered products</span>
           </span>
         </button>
+        <button class="sitem" data-sec="connections">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">CONNECTIONS</span>
+            <span class="shint">Dev · messaging · social · devices</span>
+          </span>
+        </button>
+        <button class="sitem" data-sec="tokens">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">API TOKENS</span>
+            <span class="shint">Your programmatic keys</span>
+          </span>
+        </button>
+        <button class="sitem" data-sec="billing">
+          <span class="sdot"></span>
+          <span class="stext">
+            <span class="slabel">PLAN &amp; BILLING</span>
+            <span class="shint">Tier · usage · invoices</span>
+          </span>
+        </button>
       </aside>
 
       <div class="pane">
 
         <!-- ═══════════════ CONNECTIONS ═══════════════ -->
-        <div class="sec show" id="sec-connections">
+        <div class="sec" id="sec-connections">
           <div class="panel">
             <div class="phead">
               <div class="ptitle">CONNECTIONS</div>
@@ -732,7 +732,7 @@ html,body{height:100%;background:#070a0c}
         </div>
 
         <!-- ═══════════════ PROFILE ═══════════════ -->
-        <div class="sec" id="sec-profile">
+        <div class="sec show" id="sec-profile">
           <div class="panel">
             <div class="phead">
               <div class="ptitle">PROFILE</div>
