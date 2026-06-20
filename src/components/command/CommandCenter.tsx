@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Box, Stack, Typography } from '@mui/material';
+import { Link as RouterLink } from 'react-router-dom';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import VoiceSphere from './VoiceSphere';
+import DataSphere from './DataSphere';
 import { useVoice } from '../../voice/useVoice';
+import type { VoiceState } from './VoiceSphere';
 import { selectVoiceBackend } from '../../voice/selectVoiceBackend';
 import { VOICE_CID_KEY } from '../../voice/createLiveVoiceBackend';
 import type { CheckpointDecision } from '../../voice/protocol';
 import HudPanel from '../hud/HudPanel';
 import HudTopbar from '../hud/HudTopbar';
-import { ACCENT, VIOLET, MAGENTA, CYAN, DISP, MONO } from '../../theme/hud';
+import { ACCENT, VIOLET, MAGENTA, CYAN, CYAN_BRIGHT, DISP, MONO } from '../../theme/hud';
 
 /* Jarvis command center — a glassy holographic HUD on near-black, the voice
    sphere as the hero. Violet (#6C63FF) is the brand HUD accent throughout;
@@ -136,19 +138,32 @@ function ReopenRail({
   );
 }
 
-/** Conversation picker — list past conversations, open one, or start fresh. Sits
- *  atop the comms log. Driven by the voice store; selecting an item rehydrates the
- *  transcript and resumes that conversation's server-side memory for the next turn. */
-function ConversationPicker() {
+/** Left rail of the two-pane COMMS LOG (.conv-rail, ~200px): the CONVERSATIONS
+ *  eyebrow + "+ NEW", then the scrollable conversation list. Driven by the voice
+ *  store; selecting an item rehydrates the transcript and resumes that
+ *  conversation's server-side memory for the next turn. Font sizes raised to the
+ *  mockup (eyebrow 11.3px, + NEW 11.3px, conv-title 13.6px). */
+function ConvRail() {
   const conversations = useVoice((s) => s.conversations);
   const conversationId = useVoice((s) => s.conversationId);
   const loadConversation = useVoice((s) => s.loadConversation);
   const newConversation = useVoice((s) => s.newConversation);
 
   return (
-    <Box sx={{ mb: 1.5, pb: 1.5, borderBottom: '1px solid rgba(108,99,255,0.12)' }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-        <Typography sx={{ fontFamily: DISP, fontSize: 10, letterSpacing: 2, color: 'rgba(255,255,255,0.4)' }}>
+    <Box
+      sx={{
+        width: 200,
+        flex: 'none',
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 0,
+        p: '14px 11px 14px 14px',
+        borderRight: '1px solid rgba(108,99,255,0.14)',
+        background: 'rgba(108,99,255,0.025)',
+      }}
+    >
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1, flex: 'none' }}>
+        <Typography sx={{ fontFamily: DISP, fontSize: 11.3, letterSpacing: 2, color: 'rgba(255,255,255,0.4)' }}>
           CONVERSATIONS
         </Typography>
         <Box
@@ -171,7 +186,7 @@ function ConversationPicker() {
             border: '1px solid rgba(108,99,255,0.4)',
             color: ACCENT,
             fontFamily: DISP,
-            fontSize: 10,
+            fontSize: 11.3,
             letterSpacing: 1.5,
             background: 'rgba(108,99,255,0.06)',
             transition: 'all .15s',
@@ -184,11 +199,11 @@ function ConversationPicker() {
         </Box>
       </Stack>
       {conversations.length === 0 ? (
-        <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+        <Typography sx={{ fontFamily: MONO, fontSize: 11.9, color: 'rgba(255,255,255,0.3)', pt: 0.25 }}>
           // no saved conversations yet
         </Typography>
       ) : (
-        <Stack spacing={0.6} sx={{ maxHeight: 168, overflowY: 'auto', pr: 0.5 }}>
+        <Stack spacing={0.9} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', pt: '2px', pr: 0.5 }}>
           {conversations.map((c) => {
             const active = c.id === conversationId;
             return (
@@ -207,20 +222,21 @@ function ConversationPicker() {
                 sx={{
                   cursor: 'pointer',
                   userSelect: 'none',
-                  px: 1.2,
-                  py: 0.7,
-                  borderRadius: 1,
+                  px: 1.4,
+                  py: 1.1,
+                  borderRadius: '7px',
                   border: `1px solid ${active ? ACCENT : 'rgba(108,99,255,0.16)'}`,
                   background: active ? 'rgba(108,99,255,0.12)' : 'rgba(255,255,255,0.02)',
-                  transition: 'all .15s',
-                  '&:hover': { borderColor: 'rgba(108,99,255,0.5)' },
+                  boxShadow: active ? `inset 2px 0 0 ${ACCENT}` : 'none',
+                  transition: 'border-color .15s, background .15s',
+                  '&:hover': { borderColor: 'rgba(108,99,255,0.5)', background: active ? undefined : 'rgba(108,99,255,0.05)' },
                   outline: 'none',
                   '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
                 }}
               >
                 <Typography
                   noWrap
-                  sx={{ fontFamily: MONO, fontSize: 12, color: active ? '#fff' : 'rgba(255,255,255,0.7)' }}
+                  sx={{ fontFamily: MONO, fontSize: 13.6, color: active ? '#fff' : 'rgba(255,255,255,0.72)' }}
                 >
                   {c.title || 'New conversation'}
                 </Typography>
@@ -233,15 +249,62 @@ function ConversationPicker() {
   );
 }
 
-/** Comms-log transcript (drives off the voice store; ChatPage cards drop in later). */
+/** Header of the chat column (.chat-head): the ACTIVE conversation's title + a
+ *  status pill. The store carries no per-conversation status, so the pill is a
+ *  neutral, honest reflection of the live voice state — LIVE while a turn is in
+ *  flight, IDLE otherwise — never a fabricated pipeline status. */
+function ChatHead() {
+  const conversations = useVoice((s) => s.conversations);
+  const conversationId = useVoice((s) => s.conversationId);
+  const state = useVoice((s) => s.state);
+
+  const active = conversations.find((c) => c.id === conversationId);
+  const title = active?.title || 'New conversation';
+  const live = state !== 'idle';
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1.1}
+      sx={{ flex: 'none', px: 2, py: '13px', borderBottom: '1px solid rgba(108,99,255,0.12)' }}
+    >
+      <Typography
+        noWrap
+        sx={{ fontFamily: DISP, fontSize: 13.6, letterSpacing: '.5px', color: '#fff', flex: 1, minWidth: 0 }}
+      >
+        {title}
+      </Typography>
+      <Typography
+        sx={{
+          flex: 'none',
+          fontFamily: MONO,
+          fontSize: 10.7,
+          letterSpacing: 1,
+          textTransform: 'uppercase',
+          borderRadius: 999,
+          px: 1.1,
+          py: 0.25,
+          color: live ? ACCENT : 'rgba(255,255,255,0.4)',
+          border: `1px solid ${live ? 'rgba(108,99,255,0.3)' : 'rgba(255,255,255,0.15)'}`,
+        }}
+      >
+        {live ? 'LIVE' : 'IDLE'}
+      </Typography>
+    </Stack>
+  );
+}
+
+/** Comms-log transcript (drives off the voice store; ChatPage cards drop in later).
+ *  Bubble sizing raised to the mockup (who 11.3px, bubble 15.3px). */
 function TranscriptLog() {
   const transcript = useVoice((s) => s.transcript);
   const endRef = useRef<HTMLDivElement>(null);
   useEffect(() => endRef.current?.scrollIntoView({ behavior: 'smooth' }), [transcript]);
   return (
-    <Stack spacing={1.5}>
+    <Stack spacing={1.75} sx={{ flex: 1, minHeight: 0, overflowY: 'auto', p: 2 }}>
       {transcript.length === 0 && (
-        <Typography sx={{ fontFamily: MONO, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
+        <Typography sx={{ fontFamily: MONO, fontSize: 13.6, color: 'rgba(255,255,255,0.35)' }}>
           // awaiting input — hold the orb to speak
         </Typography>
       )}
@@ -252,21 +315,21 @@ function TranscriptLog() {
             <Typography
               sx={{
                 fontFamily: DISP,
-                fontSize: 10,
+                fontSize: 11.3,
                 letterSpacing: 2,
                 color: me ? 'rgba(255,255,255,0.4)' : ACCENT,
                 textAlign: me ? 'right' : 'left',
-                mb: 0.4,
+                mb: 0.5,
               }}
             >
               {me ? 'OPERATOR' : 'TACTICL'}
             </Typography>
             <Box
               sx={{
-                px: 1.6,
-                py: 1.1,
-                borderRadius: 1.5,
-                fontSize: 13.5,
+                px: 2,
+                py: 1.4,
+                borderRadius: '12px',
+                fontSize: 15.3,
                 lineHeight: 1.5,
                 color: 'rgba(255,255,255,0.92)',
                 border: `1px solid ${me ? 'rgba(255,255,255,0.12)' : 'rgba(108,99,255,0.3)'}`,
@@ -275,13 +338,27 @@ function TranscriptLog() {
               }}
             >
               {t.text}
-              {t.partial && <Box component="span" sx={{ color: ACCENT }}> ▋</Box>}
+              {t.partial && <Box component="span" sx={{ color: ACCENT, animation: 'pulse 1s ease-in-out infinite' }}> ▋</Box>}
             </Box>
           </Box>
         );
       })}
       <div ref={endRef} />
     </Stack>
+  );
+}
+
+/** The two-pane COMMS LOG body (.comms-split): left conversation rail + right
+ *  chat column (head + transcript). Replaces the old single-column stack. */
+function CommsLog() {
+  return (
+    <Box sx={{ display: 'flex', flex: 1, minHeight: 0, width: '100%' }}>
+      <ConvRail />
+      <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <ChatHead />
+        <TranscriptLog />
+      </Box>
+    </Box>
   );
 }
 
@@ -319,11 +396,11 @@ function CheckpointGate() {
     >
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
         <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: VIOLET, boxShadow: `0 0 10px ${VIOLET}`, animation: 'pulse 1.2s ease-in-out infinite' }} />
-        <Typography sx={{ fontFamily: DISP, fontSize: 11, letterSpacing: 2, color: VIOLET }}>
+        <Typography sx={{ fontFamily: DISP, fontSize: 12.4, letterSpacing: 2, color: VIOLET }}>
           HUMAN GATE
         </Typography>
       </Stack>
-      <Typography sx={{ fontFamily: MONO, fontSize: 12.5, color: 'rgba(255,255,255,0.92)', mb: 1.4, lineHeight: 1.4 }}>
+      <Typography sx={{ fontFamily: MONO, fontSize: 14.1, color: 'rgba(255,255,255,0.92)', mb: 1.5, lineHeight: 1.4 }}>
         {checkpoint.title}
       </Typography>
       <Box
@@ -335,14 +412,14 @@ function CheckpointGate() {
         sx={{
           width: '100%',
           resize: 'vertical',
-          mb: 1.2,
+          mb: 1.4,
           p: 1,
           borderRadius: 1,
           border: '1px solid rgba(108,99,255,0.35)',
           background: 'rgba(8,11,13,0.6)',
           color: 'rgba(255,255,255,0.9)',
           fontFamily: MONO,
-          fontSize: 12,
+          fontSize: 13.6,
           outline: 'none',
           '&:focus': { borderColor: VIOLET },
           '&::placeholder': { color: 'rgba(255,255,255,0.3)' },
@@ -368,12 +445,12 @@ function CheckpointGate() {
                 cursor: 'pointer',
                 userSelect: 'none',
                 px: 2,
-                py: 0.8,
+                py: 0.75,
                 borderRadius: 999,
                 border: `1px solid ${color}`,
                 color,
                 fontFamily: DISP,
-                fontSize: 11,
+                fontSize: 12.4,
                 letterSpacing: 2,
                 background: `${color}14`,
                 transition: 'all .15s',
@@ -391,9 +468,35 @@ function CheckpointGate() {
   );
 }
 
+/** Context eyebrow (.op-ctx) — ties the right panel to the selected conversation
+ *  ("▸ <title>"). Honest: falls back to the new-conversation label. */
+function OpContext() {
+  const conversations = useVoice((s) => s.conversations);
+  const conversationId = useVoice((s) => s.conversationId);
+  const active = conversations.find((c) => c.id === conversationId);
+  const title = active?.title || 'New conversation';
+  return (
+    <Typography
+      noWrap
+      sx={{
+        fontFamily: MONO,
+        fontSize: 11.3,
+        letterSpacing: 1,
+        textTransform: 'uppercase',
+        color: 'rgba(255,255,255,0.4)',
+        mb: 1.75,
+      }}
+    >
+      ▸ <Box component="b" sx={{ color: ACCENT, fontWeight: 600 }}>{title}</Box>
+    </Typography>
+  );
+}
+
 /** PDLC operation strip — driven purely by live HUD frames. No fabricated
  *  progress: with no live operation it shows an honest idle state, and the
- *  pipeline role strip only renders once a real role arrives. */
+ *  pipeline role strip only renders once a real role arrives. Always leads with
+ *  the op-ctx eyebrow (selected conversation), and links to the full pipeline
+ *  detail when a real runId exists. */
 function ActiveOperation() {
   const operation = useVoice((s) => s.operation);
   const checkpoint = useVoice((s) => s.checkpoint);
@@ -406,12 +509,25 @@ function ActiveOperation() {
 
   const hasOperation = Boolean(operation?.role || operation?.phase || operation?.runId);
 
-  // Idle: nothing running and no gate pending — say so honestly.
+  // Idle: nothing running and no gate pending — say so honestly (.op-idle).
   if (!hasOperation && !checkpoint) {
     return (
-      <Typography sx={{ fontFamily: MONO, fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>
-        // no active operation — start a build to see the pipeline here
-      </Typography>
+      <>
+        <OpContext />
+        <Stack
+          alignItems="center"
+          justifyContent="center"
+          spacing={1.4}
+          sx={{ textAlign: 'center', py: 5.75, px: 2, color: 'rgba(255,255,255,0.4)' }}
+        >
+          <Box sx={{ fontSize: 29.4, opacity: 0.5, filter: `drop-shadow(0 0 10px ${ACCENT}80)` }}>◇</Box>
+          <Typography sx={{ fontFamily: MONO, fontSize: 13.6, lineHeight: 1.55, maxWidth: 210 }}>
+            No live pipeline in this conversation.
+            <br />
+            Ask Tacticl to build something to spin one up.
+          </Typography>
+        </Stack>
+      </>
     );
   }
 
@@ -419,54 +535,88 @@ function ActiveOperation() {
   const tag = operation?.runId ? 'PDLC-RUN' : 'PDLC';
 
   return (
-    <Stack spacing={2}>
-      {(title || tag) && (
-        <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-          <Typography sx={{ fontFamily: DISP, fontSize: 13, color: '#fff', letterSpacing: 1 }}>
-            {title || 'operation'}
-          </Typography>
-          <Typography sx={{ fontFamily: MONO, fontSize: 10, color: ACCENT }}>{tag}</Typography>
-        </Stack>
-      )}
-      {activeIdx >= 0 && (
-        <Stack spacing={1}>
-          {PDLC_ROLES.map((r, i) => {
-            const done = i < activeIdx;
-            const active = i === activeIdx;
-            return (
-              <Stack key={r} direction="row" alignItems="center" spacing={1.5}>
-                <Box
-                  sx={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    flexShrink: 0,
-                    bgcolor: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.15)',
-                    boxShadow: active ? `0 0 10px ${VIOLET}` : done ? `0 0 8px ${CYAN}` : 'none',
-                    ...(active && { animation: 'pulse 1.4s ease-in-out infinite' }),
-                  }}
-                />
-                <Typography sx={{ fontFamily: MONO, fontSize: 12, color: done || active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)', flex: 1 }}>
-                  {r}
-                </Typography>
-                <Typography sx={{ fontFamily: MONO, fontSize: 10, color: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.25)' }}>
-                  {done ? 'DONE' : active ? 'RUNNING' : 'QUEUED'}
-                </Typography>
-              </Stack>
-            );
-          })}
-        </Stack>
-      )}
-      {checkpoint ? (
-        <CheckpointGate />
-      ) : operation?.note ? (
-        <Box sx={{ mt: 1, p: 1.4, border: '1px dashed rgba(108,99,255,0.4)', borderRadius: 1.5 }}>
-          <Typography sx={{ fontFamily: MONO, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-            {operation.note}
-          </Typography>
-        </Box>
-      ) : null}
-    </Stack>
+    <>
+      <OpContext />
+      <Stack spacing={2}>
+        {(title || tag) && (
+          <Stack direction="row" justifyContent="space-between" alignItems="baseline">
+            <Typography sx={{ fontFamily: DISP, fontSize: 14.7, color: '#fff', letterSpacing: 1 }}>
+              {title || 'operation'}
+            </Typography>
+            <Typography sx={{ fontFamily: MONO, fontSize: 11.3, color: ACCENT }}>{tag}</Typography>
+          </Stack>
+        )}
+        {activeIdx >= 0 && (
+          <Stack spacing={1.4}>
+            {PDLC_ROLES.map((r, i) => {
+              const done = i < activeIdx;
+              const active = i === activeIdx;
+              return (
+                <Stack key={r} direction="row" alignItems="center" spacing={1.5}>
+                  <Box
+                    sx={{
+                      width: 8,
+                      height: 8,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      bgcolor: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.15)',
+                      boxShadow: active ? `0 0 10px ${VIOLET}` : done ? `0 0 8px ${CYAN}` : 'none',
+                      ...(active && { animation: 'pulse 1.4s ease-in-out infinite' }),
+                    }}
+                  />
+                  <Typography sx={{ fontFamily: MONO, fontSize: 13.6, color: done || active ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)', flex: 1 }}>
+                    {r}
+                  </Typography>
+                  <Typography sx={{ fontFamily: MONO, fontSize: 11.3, letterSpacing: 1, color: done ? CYAN : active ? VIOLET : 'rgba(255,255,255,0.25)' }}>
+                    {done ? 'DONE' : active ? 'RUNNING' : 'QUEUED'}
+                  </Typography>
+                </Stack>
+              );
+            })}
+          </Stack>
+        )}
+        {checkpoint ? (
+          <CheckpointGate />
+        ) : operation?.note ? (
+          <Box sx={{ mt: 1, p: 1.4, border: '1px dashed rgba(108,99,255,0.4)', borderRadius: 1.5 }}>
+            <Typography sx={{ fontFamily: MONO, fontSize: 11.9, color: 'rgba(255,255,255,0.55)' }}>
+              {operation.note}
+            </Typography>
+          </Box>
+        ) : null}
+        {/* OPEN PIPELINE → — only when a real run exists to deep-link into (.op-open) */}
+        {operation?.runId && (
+          <Box
+            component={RouterLink}
+            to={`/sparks/${operation.runId}`}
+            sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.75,
+              alignSelf: 'flex-start',
+              mt: 1,
+              cursor: 'pointer',
+              fontFamily: DISP,
+              fontSize: 11.3,
+              letterSpacing: 1.5,
+              color: CYAN_BRIGHT,
+              textDecoration: 'none',
+              border: '1px solid rgba(21,224,200,0.3)',
+              borderRadius: '6px',
+              px: 1.6,
+              py: 1,
+              background: 'rgba(21,224,200,0.05)',
+              transition: 'border-color .15s, background .15s',
+              '&:hover': { borderColor: CYAN_BRIGHT, background: 'rgba(21,224,200,0.12)' },
+              outline: 'none',
+              '&:focus-visible': { boxShadow: `0 0 0 2px ${CYAN_BRIGHT}` },
+            }}
+          >
+            OPEN PIPELINE →
+          </Box>
+        )}
+      </Stack>
+    </>
   );
 }
 
@@ -519,7 +669,7 @@ function TextComposer() {
           boxShadow: 'inset 0 0 30px rgba(108,99,255,0.05), 0 8px 40px rgba(0,0,0,0.5)',
         }}
       >
-        <Typography sx={{ fontFamily: MONO, fontSize: 14, color: ACCENT, pb: 1.1, flexShrink: 0 }}>
+        <Typography sx={{ fontFamily: MONO, fontSize: 15.8, color: ACCENT, pb: 1.1, flexShrink: 0 }}>
           &gt;
         </Typography>
         <Box
@@ -534,7 +684,7 @@ function TextComposer() {
             }
           }}
           rows={1}
-          placeholder="Type a command — Enter to send, Shift+Enter for a new line"
+          placeholder="Speak or type a command — Enter to send, Shift+Enter for a new line"
           aria-label="Command input"
           sx={{
             flex: 1,
@@ -545,7 +695,7 @@ function TextComposer() {
             background: 'transparent',
             color: 'rgba(255,255,255,0.92)',
             fontFamily: MONO,
-            fontSize: 13.5,
+            fontSize: 15.3,
             lineHeight: 1.5,
             outline: 'none',
             '&::placeholder': { color: 'rgba(255,255,255,0.32)' },
@@ -567,12 +717,12 @@ function TextComposer() {
             flexShrink: 0,
             cursor: canSend ? 'pointer' : 'default',
             userSelect: 'none',
-            px: 2.4,
+            px: 2.5,
             py: 1.1,
             borderRadius: 2,
             border: `1px solid ${canSend ? ACCENT : 'rgba(108,99,255,0.2)'}`,
             fontFamily: DISP,
-            fontSize: 12,
+            fontSize: 13.6,
             letterSpacing: 2,
             color: canSend ? ACCENT : 'rgba(108,99,255,0.3)',
             background: canSend ? 'rgba(108,99,255,0.12)' : 'transparent',
@@ -590,9 +740,65 @@ function TextComposer() {
   );
 }
 
+/** Live status strip (.status-strip) under the orb/state-label — four leds
+ *  (LISTENING · THINKING · SPEAKING · IDLE); the one matching the live `state`
+ *  is lit. The mockup labels the idle slot "IDLE" (the state-label reads READY). */
+const STATUS_STEPS: { key: VoiceState; label: string }[] = [
+  { key: 'listening', label: 'LISTENING' },
+  { key: 'thinking', label: 'THINKING' },
+  { key: 'speaking', label: 'SPEAKING' },
+  { key: 'idle', label: 'IDLE' },
+];
+
+function StatusStrip({ state }: { state: VoiceState }) {
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={2.25}
+      sx={{
+        mt: '2px',
+        px: 2.25,
+        py: '7px',
+        borderRadius: 999,
+        border: '1px solid rgba(108,99,255,0.2)',
+        background: 'rgba(12,16,20,0.55)',
+        backdropFilter: 'blur(10px)',
+      }}
+    >
+      {STATUS_STEPS.map((s) => {
+        const on = s.key === state;
+        return (
+          <Stack key={s.key} direction="row" alignItems="center" spacing={0.9}>
+            <Box
+              sx={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: on ? ACCENT : '#6E6A8F',
+                boxShadow: on ? `0 0 9px ${ACCENT}` : 'none',
+                ...(on && { animation: 'pulse 1.4s ease-in-out infinite' }),
+              }}
+            />
+            <Typography
+              sx={{
+                fontFamily: MONO,
+                fontSize: 11.9,
+                letterSpacing: 1,
+                color: on ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
+              }}
+            >
+              {s.label}
+            </Typography>
+          </Stack>
+        );
+      })}
+    </Stack>
+  );
+}
+
 export default function CommandCenter() {
   const state = useVoice((s) => s.state);
-  const level = useVoice((s) => s.level);
   const setBackend = useVoice((s) => s.setBackend);
   const startListening = useVoice((s) => s.startListening);
   const stopListening = useVoice((s) => s.stopListening);
@@ -642,10 +848,12 @@ export default function CommandCenter() {
 
   // The grid reflows on what's open: a collapsed side becomes a slim rail track,
   // an open side gets a full panel column. Both closed → orb owns the stage.
+  // Mockup grid ratio is 1.6fr (comms) · 1.2fr (orb) · 1fr (operation). Keep the
+  // collapse rails: a collapsed side drops to a slim fixed track.
   const RAIL = '52px';
   const gridTemplateColumns = {
     xs: '1fr',
-    lg: `${leftOpen ? '1fr' : RAIL} 1.3fr ${rightOpen ? '1fr' : RAIL}`,
+    lg: `${leftOpen ? '1.6fr' : RAIL} 1.2fr ${rightOpen ? '1fr' : RAIL}`,
   };
 
   return (
@@ -704,9 +912,9 @@ export default function CommandCenter() {
             side="left"
             onCollapse={toggleLeft}
             sx={{ display: { xs: 'none', lg: 'flex' } }}
+            contentSx={{ p: 0, overflow: 'hidden', display: 'flex' }}
           >
-            <ConversationPicker />
-            <TranscriptLog />
+            <CommsLog />
           </HudPanel>
         ) : (
           <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
@@ -714,10 +922,10 @@ export default function CommandCenter() {
           </Box>
         )}
 
-        {/* hero */}
-        <Stack alignItems="center" justifyContent="center" spacing={2}>
-          <VoiceSphere state={state} level={level} size={380} />
-          <Typography sx={{ fontFamily: DISP, fontSize: 22, letterSpacing: 8, color: state === 'thinking' ? MAGENTA : ACCENT, textShadow: `0 0 20px ${state === 'thinking' ? MAGENTA : ACCENT}55` }}>
+        {/* hero — data-sphere orb is the hero, fills the center column responsively */}
+        <Stack alignItems="center" justifyContent="center" spacing={2.25} sx={{ minWidth: 0 }}>
+          <DataSphere state={state} />
+          <Typography sx={{ fontFamily: DISP, fontSize: 24.9, letterSpacing: 8, color: state === 'thinking' ? MAGENTA : ACCENT, textShadow: `0 0 20px ${state === 'thinking' ? MAGENTA : ACCENT}66` }}>
             {copy.label}
           </Typography>
           <Box
@@ -735,11 +943,11 @@ export default function CommandCenter() {
               cursor: 'pointer',
               userSelect: 'none',
               px: 4,
-              py: 1.3,
+              py: 1.4,
               borderRadius: 999,
               border: `1px solid ${ACCENT}`,
               fontFamily: DISP,
-              fontSize: 13,
+              fontSize: 14.7,
               letterSpacing: 3,
               color: ACCENT,
               background: state === 'listening' ? 'rgba(108,99,255,0.18)' : 'rgba(108,99,255,0.04)',
@@ -752,6 +960,8 @@ export default function CommandCenter() {
           >
             {copy.hint.toUpperCase()}
           </Box>
+          {/* slim live-status strip */}
+          <StatusStrip state={state} />
         </Stack>
 
         {rightOpen ? (

@@ -1,0 +1,335 @@
+/* ══════════════ DATA-SPHERE+ ORB (variant B, ds- prefixed) ══════════════
+   Ported VERBATIM from docs/mockups/command.html (~lines 378-703).
+   Holographic data-sphere with a breathing white-hot core, big bloom, and
+   voice-state reactivity. All classes prefixed `ds-` to avoid collision with
+   other HUD components. State classes (ds-state-*) are toggled by the React
+   component onto .ds-orb (heart/bloom/wire) AND .ds-stage (rings/bloom siblings).
+
+   HUD tokens are scoped locally here (DataSphere is rendered inside the MUI
+   tree, not under the mockup's :root), mirroring src/theme/hud.ts:
+   ACCENT/VIOLET = #6C63FF, MAGENTA #B25CFF, CYAN #03DAC6, CYAN2 #15E0C8.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* responsive size: fit the center column without overflowing side panels.
+   Base state-reactive knob defaults live here so children inherit them even
+   before/without a ds-state-* class. */
+.ds-stage {
+  --violet: #6C63FF;
+  --magenta: #B25CFF;
+  --cyan: #03DAC6;
+  --cyan2: #15E0C8;
+  --ds-accent: var(--violet);
+  --ds-bloom-scale: 1;
+  --ds-bloom-opacity: .9;
+  --ds-core-bright: .85;
+  --ds-core-scale: 1;
+  position: relative; z-index: 3;
+  width: var(--ds-size, clamp(220px, min(100%, 40vmin), 420px));
+  aspect-ratio: 1 / 1;
+  display: grid; place-items: center;
+  perspective: 1100px;
+}
+
+/* outer bloom halo (sibling of .ds-orb, reacts via .ds-stage state class) */
+.ds-bloom {
+  position: absolute; inset: -34%; border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%,
+      rgba(178,92,255,.46) 0%,
+      rgba(108,99,255,.34) 26%,
+      rgba(21,224,200,.16) 52%,
+      transparent 72%),
+    radial-gradient(circle at 42% 38%, rgba(108,99,255,.30), transparent 56%),
+    radial-gradient(circle at 64% 66%, rgba(21,224,200,.22), transparent 58%);
+  filter: blur(46px);
+  opacity: var(--ds-bloom-opacity);
+  transform: scale(var(--ds-bloom-scale));
+  animation: dsBloomPulse 6.5s ease-in-out infinite;
+  mix-blend-mode: screen; pointer-events: none;
+  transition: opacity .9s ease, transform .9s ease, filter .9s ease;
+}
+@keyframes dsBloomPulse {
+  0%,100% { opacity: calc(var(--ds-bloom-opacity) * .92); transform: scale(calc(var(--ds-bloom-scale) * .98)); }
+  50%     { opacity: var(--ds-bloom-opacity);             transform: scale(calc(var(--ds-bloom-scale) * 1.05)); }
+}
+
+/* secondary cyan corona ring riding just outside the silhouette */
+.ds-corona {
+  position: absolute; inset: -14%; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%,
+    transparent 50%,
+    rgba(21,224,200,.24) 61%,
+    rgba(21,224,200,.06) 73%,
+    transparent 82%);
+  filter: blur(9px); mix-blend-mode: screen;
+  opacity: calc(var(--ds-bloom-opacity) * .9);
+  animation: dsCoronaSpin 26s linear infinite;
+  pointer-events: none; transition: opacity .9s ease;
+}
+@keyframes dsCoronaSpin { to { transform: rotate(360deg); } }
+
+/* the rotating 3D rig */
+.ds-orb {
+  position: relative; width: 100%; height: 100%; border-radius: 50%;
+  transform-style: preserve-3d; isolation: isolate;
+  transition: filter 1s ease;
+}
+
+/* glass core sphere — depth gradients + fresnel + specular */
+.ds-core {
+  position: absolute; inset: 7%; border-radius: 50%;
+  background:
+    radial-gradient(circle at 36% 30%, rgba(160,170,255,.30), rgba(70,64,170,.10) 38%, transparent 60%),
+    radial-gradient(circle at 50% 50%, rgba(20,16,48,.55), rgba(8,6,24,.86) 72%),
+    conic-gradient(from 210deg at 50% 50%,
+      rgba(108,99,255,.20), rgba(21,224,200,.16), rgba(178,92,255,.18), rgba(108,99,255,.20));
+  box-shadow:
+    inset 0 0 60px rgba(8,6,26,.9),
+    inset -16px -20px 70px rgba(2,2,10,.85),
+    inset 14px 16px 60px rgba(124,116,255,.18),
+    0 0 80px rgba(108,99,255,.35),
+    0 0 140px rgba(21,224,200,.16);
+  overflow: hidden;
+}
+.ds-core::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, transparent 60%, rgba(124,116,255,.0) 70%, rgba(124,160,255,.55) 92%, rgba(21,224,200,.35) 100%);
+  mix-blend-mode: screen;
+}
+.ds-core::after {
+  content: ""; position: absolute;
+  width: 34%; height: 24%; left: 24%; top: 16%; border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, rgba(255,255,255,.85), rgba(190,210,255,.35) 36%, transparent 70%);
+  filter: blur(5px); mix-blend-mode: screen;
+  animation: dsGlintDrift 7s ease-in-out infinite;
+}
+@keyframes dsGlintDrift {
+  0%,100% { transform: translate(0,0) scale(1); opacity: .9; }
+  50%     { transform: translate(8px,6px) scale(1.08); opacity: 1; }
+}
+
+/* breathing white-hot nucleus — the sphere's heartbeat */
+.ds-nucleus {
+  position: absolute; width: 52%; height: 52%; left: 24%; top: 24%; border-radius: 50%;
+  background: radial-gradient(circle at 50% 48%,
+    #ffffff 0%, #ffffff 13%,
+    rgba(255,238,255,.95) 23%,
+    rgba(196,160,255,.82) 42%,
+    rgba(140,90,255,.42) 60%,
+    transparent 76%);
+  filter: blur(4px); mix-blend-mode: screen;
+  box-shadow: 0 0 64px rgba(255,255,255,.5);
+  opacity: var(--ds-core-bright);
+  transform: scale(var(--ds-core-scale));
+  animation: dsNucleusBreath 4.2s ease-in-out infinite;
+  z-index: 2; pointer-events: none;
+  transition: opacity 1s ease, transform 1s ease, filter 1s ease;
+}
+@keyframes dsNucleusBreath {
+  0%,100% { transform: scale(calc(var(--ds-core-scale) * .9));  opacity: calc(var(--ds-core-bright) * .92); filter: blur(4px); }
+  45%     { transform: scale(calc(var(--ds-core-scale) * 1.12)); opacity: var(--ds-core-bright);             filter: blur(2px); }
+  60%     { transform: scale(calc(var(--ds-core-scale) * 1.03)); opacity: var(--ds-core-bright); }
+}
+
+/* inner hot ring flickering around the nucleus */
+.ds-hotring {
+  position: absolute; width: 66%; height: 66%; left: 17%; top: 17%; border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%,
+    transparent 54%,
+    rgba(216,178,255,.34) 64%,
+    rgba(178,92,255,.0) 75%);
+  filter: blur(6px); mix-blend-mode: screen;
+  opacity: calc(var(--ds-core-bright) * .85);
+  animation: dsHotFlicker 3.3s ease-in-out infinite;
+  z-index: 2; pointer-events: none; transition: opacity 1s ease;
+}
+@keyframes dsHotFlicker {
+  0%,100% { opacity: calc(var(--ds-core-bright) * .58); transform: scale(1); }
+  33%     { opacity: calc(var(--ds-core-bright) * .9);  transform: scale(1.04) rotate(4deg); }
+  66%     { opacity: calc(var(--ds-core-bright) * .66); transform: scale(.98) rotate(-3deg); }
+}
+
+/* holographic scanline shimmer clipped to the sphere */
+.ds-holo-scan {
+  position: absolute; inset: 7%; border-radius: 50%; overflow: hidden;
+  pointer-events: none; mix-blend-mode: screen; z-index: 4;
+}
+.ds-holo-scan::before {
+  content: ""; position: absolute; left: -10%; right: -10%; height: 200%; top: -50%;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    rgba(21,224,200,.0) 5px,
+    rgba(124,160,255,.10) 6px,
+    rgba(21,224,200,.16) 7px,
+    transparent 8px,
+    transparent 13px);
+  animation: dsHoloScroll 5s linear infinite; opacity: .7;
+}
+.ds-holo-scan::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(115deg, transparent 38%, rgba(180,210,255,.16) 50%, transparent 62%);
+  animation: dsHoloShimmer 4.2s ease-in-out infinite;
+}
+@keyframes dsHoloScroll { 0% { transform: translateY(0); } 100% { transform: translateY(13px); } }
+@keyframes dsHoloShimmer { 0%,100% { transform: translateX(-30%); opacity: .4; } 50% { transform: translateX(30%); opacity: .9; } }
+
+/* the SVG wireframe globe — spins */
+.ds-globe-wrap {
+  position: absolute; inset: 7%;
+  transform-style: preserve-3d;
+  animation: dsSpinGlobe 26s linear infinite;
+  z-index: 3;
+}
+@keyframes dsSpinGlobe {
+  0%   { transform: rotateZ(0deg); }
+  100% { transform: rotateZ(360deg); }
+}
+.ds-globe-wrap svg { width: 100%; height: 100%; overflow: visible; display: block; }
+
+/* traveling data nodes pulse */
+.ds-node { transform-box: fill-box; transform-origin: center; }
+
+/* orbiting rings rig (separate, in front, 3D tilts) */
+.ds-rings {
+  position: absolute; inset: -4%;
+  transform-style: preserve-3d; z-index: 6; pointer-events: none;
+}
+.ds-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 1.4px solid rgba(124,160,255,.32);
+  box-shadow: 0 0 18px rgba(108,99,255,.25), inset 0 0 22px rgba(108,99,255,.10);
+  transform-style: preserve-3d;
+}
+.ds-ring.r1 {
+  transform: rotateX(74deg) rotateZ(0deg);
+  border-color: rgba(108,99,255,.42);
+  animation: dsRingSpin1 11s linear infinite;
+}
+.ds-ring.r2 {
+  inset: 6%;
+  transform: rotateX(60deg) rotateY(38deg);
+  border-color: rgba(21,224,200,.40);
+  box-shadow: 0 0 18px rgba(21,224,200,.28), inset 0 0 22px rgba(21,224,200,.10);
+  animation: dsRingSpin2 8.5s linear infinite;
+}
+.ds-ring.r3 {
+  inset: -3%;
+  transform: rotateX(112deg) rotateY(-26deg);
+  border-color: rgba(178,92,255,.40);
+  box-shadow: 0 0 18px rgba(178,92,255,.26), inset 0 0 22px rgba(178,92,255,.10);
+  animation: dsRingSpin3 14s linear infinite;
+}
+@keyframes dsRingSpin1 { from { transform: rotateX(74deg) rotateZ(0); } to { transform: rotateX(74deg) rotateZ(360deg); } }
+@keyframes dsRingSpin2 { from { transform: rotateX(60deg) rotateY(38deg) rotateZ(0); } to { transform: rotateX(60deg) rotateY(38deg) rotateZ(360deg); } }
+@keyframes dsRingSpin3 { from { transform: rotateX(112deg) rotateY(-26deg) rotateZ(0); } to { transform: rotateX(112deg) rotateY(-26deg) rotateZ(-360deg); } }
+
+/* comet node travels along each ring */
+.ds-comet {
+  position: absolute; top: 50%; left: 50%;
+  width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fff, var(--cyan2) 45%, transparent 72%);
+  box-shadow: 0 0 14px 3px rgba(21,224,200,.85), 0 0 30px 8px rgba(21,224,200,.45);
+}
+.ds-comet::after {
+  content: ""; position: absolute; top: 50%; left: 50%;
+  width: 64px; height: 5px; margin-top: -2.5px;
+  transform-origin: left center; transform: translateX(0) rotate(0deg);
+  background: linear-gradient(to right, rgba(21,224,200,.9), rgba(21,224,200,0));
+  filter: blur(1.5px); border-radius: 3px;
+}
+.r1 .ds-comet { left: 100%; background: radial-gradient(circle at 40% 40%, #fff, var(--violet) 45%, transparent 72%); box-shadow: 0 0 14px 3px rgba(108,99,255,.85),0 0 30px 8px rgba(108,99,255,.45); }
+.r1 .ds-comet::after { background: linear-gradient(to right, rgba(108,99,255,.9), rgba(108,99,255,0)); transform: translateX(-64px) rotate(180deg); }
+.r2 .ds-comet { left: 100%; }
+.r2 .ds-comet::after { transform: translateX(-64px) rotate(180deg); }
+.r3 .ds-comet { left: 0%; background: radial-gradient(circle at 40% 40%, #fff, var(--magenta) 45%, transparent 72%); box-shadow: 0 0 14px 3px rgba(178,92,255,.85),0 0 30px 8px rgba(178,92,255,.45); }
+.r3 .ds-comet::after { background: linear-gradient(to right, rgba(178,92,255,.9), rgba(178,92,255,0)); }
+
+/* cardinal HUD ticks around orb */
+.ds-hud-ring {
+  position: absolute; inset: -10%; z-index: 5; pointer-events: none;
+  animation: dsHudCounter 60s linear infinite;
+}
+@keyframes dsHudCounter { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+.ds-hud-ring svg { width: 100%; height: 100%; overflow: visible; }
+
+/* depth fog overlay in front (lower hemisphere darkens) */
+.ds-depth-fog {
+  position: absolute; inset: 0; border-radius: 50%; z-index: 5; pointer-events: none;
+  background: radial-gradient(ellipse 120% 90% at 50% 118%, rgba(4,3,12,.6), transparent 52%);
+  mix-blend-mode: multiply;
+}
+
+/* ── STATE-REACTIVE BEHAVIOUR ──
+   The React component toggles .ds-state-* on .ds-orb (heart/bloom/wire) and
+   .ds-stage (rings/bloom siblings). Defaults below = LISTENING. */
+.ds-orb.ds-state-listening {
+  --ds-accent: var(--violet);
+  --ds-bloom-scale: 1; --ds-bloom-opacity: .9;
+  --ds-core-bright: .85; --ds-core-scale: 1;
+}
+.ds-orb.ds-state-thinking {
+  --ds-accent: var(--magenta);
+  --ds-bloom-scale: 1.04; --ds-bloom-opacity: .96;
+  --ds-core-bright: 1; --ds-core-scale: 1.06;
+}
+.ds-orb.ds-state-thinking .ds-arc { animation-duration: 1.3s; }
+.ds-orb.ds-state-thinking .ds-packet { animation-duration: 2.4s; }
+.ds-orb.ds-state-thinking .ds-wire-stroke { stroke: #caa0ff; }
+.ds-orb.ds-state-thinking .ds-node-pulse { animation-duration: 1.4s; }
+
+.ds-orb.ds-state-speaking {
+  --ds-accent: var(--cyan);
+  --ds-bloom-scale: 1.16; --ds-bloom-opacity: 1;
+  --ds-core-bright: 1; --ds-core-scale: 1.16;
+}
+.ds-orb.ds-state-speaking .ds-nucleus {
+  background: radial-gradient(circle at 50% 48%,
+    #ffffff 0%, #ffffff 20%,
+    rgba(235,245,255,.98) 32%,
+    rgba(150,210,255,.7) 52%,
+    rgba(21,224,200,.32) 66%,
+    transparent 80%);
+}
+.ds-orb.ds-state-speaking .ds-arc { animation-duration: 1.8s; }
+.ds-orb.ds-state-speaking .ds-packet { animation-duration: 3s; }
+.ds-orb.ds-state-speaking .ds-node-pulse { animation-duration: 1.9s; }
+
+.ds-orb.ds-state-idle {
+  --ds-accent: var(--violet);
+  --ds-bloom-scale: .84; --ds-bloom-opacity: .58;
+  --ds-core-bright: .5; --ds-core-scale: .9;
+}
+.ds-orb.ds-state-idle .ds-arc { animation-duration: 5.2s; }
+.ds-orb.ds-state-idle .ds-packet { animation-duration: 7s; }
+.ds-orb.ds-state-idle .ds-node-pulse { animation-duration: 4.6s; }
+.ds-orb.ds-state-idle .ds-globe-wrap { animation-duration: 46s; }
+.ds-orb.ds-state-idle .ds-holo-scan { opacity: .4; }
+
+.ds-orb.ds-state-thinking .ds-globe-wrap { animation-duration: 18s; }
+.ds-orb.ds-state-speaking .ds-globe-wrap { animation-duration: 20s; }
+.ds-orb.ds-state-thinking .ds-ring,
+.ds-orb.ds-state-thinking .ds-ring.r1 { animation-duration: 8.5s; }
+.ds-orb.ds-state-speaking .ds-ring.r1 { animation-duration: 6.5s; }
+.ds-orb.ds-state-speaking .ds-ring.r2 { animation-duration: 5.5s; }
+.ds-orb.ds-state-speaking .ds-ring.r3 { animation-duration: 9s; }
+.ds-orb.ds-state-idle .ds-ring.r1 { animation-duration: 16s; }
+.ds-orb.ds-state-idle .ds-ring.r2 { animation-duration: 14s; }
+.ds-orb.ds-state-idle .ds-ring.r3 { animation-duration: 20s; }
+
+/* rings/bloom/corona are siblings of .ds-orb under .ds-stage — react via .ds-stage class */
+.ds-stage.ds-state-thinking .ds-ring.r1 { animation-duration: 8.5s; }
+.ds-stage.ds-state-thinking .ds-ring.r2 { animation-duration: 6.8s; }
+.ds-stage.ds-state-thinking .ds-ring.r3 { animation-duration: 11s; }
+.ds-stage.ds-state-speaking .ds-ring.r1 { animation-duration: 6.5s; }
+.ds-stage.ds-state-speaking .ds-ring.r2 { animation-duration: 5.5s; }
+.ds-stage.ds-state-speaking .ds-ring.r3 { animation-duration: 9s; }
+.ds-stage.ds-state-idle .ds-ring.r1 { animation-duration: 16s; }
+.ds-stage.ds-state-idle .ds-ring.r2 { animation-duration: 14s; }
+.ds-stage.ds-state-idle .ds-ring.r3 { animation-duration: 20s; }
+.ds-stage.ds-state-thinking .ds-bloom { --ds-bloom-scale: 1.04; --ds-bloom-opacity: .96; }
+.ds-stage.ds-state-speaking .ds-bloom { --ds-bloom-scale: 1.16; --ds-bloom-opacity: 1; }
+.ds-stage.ds-state-idle .ds-bloom { --ds-bloom-scale: .84; --ds-bloom-opacity: .58; }
+.ds-stage.ds-state-thinking .ds-corona { opacity: .9; }
+.ds-stage.ds-state-speaking .ds-corona { opacity: 1; }
+.ds-stage.ds-state-idle .ds-corona { opacity: .4; }
