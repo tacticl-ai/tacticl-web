@@ -20,7 +20,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { settingsApi } from '../api/settings';
 import type { UserConfig } from '../api/settings';
 import { useProducts } from '../hooks/useProducts';
-import { useProfile } from '../hooks/useProfile';
+import { useProfile, useUpdateProfile } from '../hooks/useProfile';
+import { useSettingsRepos, useAttachRepo, useRevokeSettingsRepo } from '../hooks/useRepos';
+import { useApiTokens, useCreateApiToken, useRevokeApiToken } from '../hooks/useTokens';
 import { useAuth } from '../hooks/useAuth';
 import { useHydrateProductStore } from '../stores/productStore';
 import {
@@ -38,16 +40,17 @@ import {
   getPlatformsByCategory,
   getConnectionForPlatform,
 } from '../config/platformConfig';
-import type { Connection, Product } from '../api/types';
+import type { Connection, Product, SettingsRepo, CreatedApiToken } from '../api/types';
 import HudTopbar from '../components/hud/HudTopbar';
 
-type SectionId = 'profile' | 'preferences' | 'products' | 'connections' | 'billing';
+type SectionId = 'profile' | 'preferences' | 'products' | 'connections' | 'tokens' | 'billing';
 
 const SECTIONS: { id: SectionId; label: string; hint: string }[] = [
   { id: 'profile', label: 'PROFILE', hint: 'Name · email · avatar' },
   { id: 'preferences', label: 'PREFERENCES', hint: 'Limits · domains · sparks' },
   { id: 'products', label: 'PRODUCTS', hint: 'Your registered products' },
   { id: 'connections', label: 'CONNECTIONS', hint: 'Dev · social · media' },
+  { id: 'tokens', label: 'API TOKENS', hint: 'Programmatic access keys' },
   { id: 'billing', label: 'PLAN & BILLING', hint: 'Tier · usage · invoices' },
 ];
 
@@ -119,6 +122,7 @@ export default function SettingsHubPage() {
             {section === 'preferences' && <PreferencesSection />}
             {section === 'products' && <ProductsSection />}
             {section === 'connections' && <ConnectionsSection />}
+            {section === 'tokens' && <ApiTokensSection />}
             {section === 'billing' && <BillingSection />}
           </div>
         </div>
@@ -130,10 +134,43 @@ export default function SettingsHubPage() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// PROFILE — read-only name/email/avatar from /v1/users/me (no write yet)
+// PROFILE — editable displayName + avatarUrl, saved via PUT /v1/users/me.
+// Email stays read-only (managed by the auth portal).
 // ═══════════════════════════════════════════════════════════════════════════════
 function ProfileSection() {
   const { profile, loading } = useProfile();
+  const update = useUpdateProfile();
+
+  const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
+
+  /* eslint-disable react-hooks/set-state-in-effect -- snapshot the server profile into editable local state when it (re)loads */
+  useEffect(() => {
+    if (profile) {
+      setDisplayName(profile.displayName ?? '');
+      setAvatarUrl(profile.avatarUrl ?? '');
+    }
+  }, [profile]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const dirty =
+    !!profile &&
+    (displayName !== (profile.displayName ?? '') || avatarUrl !== (profile.avatarUrl ?? ''));
+
+  const save = () => {
+    if (!dirty) return;
+    update.mutate({
+      displayName: displayName.trim(),
+      avatarUrl: avatarUrl.trim() ? avatarUrl.trim() : null,
+    });
+  };
+
+  const reset = () => {
+    setDisplayName(profile?.displayName ?? '');
+    setAvatarUrl(profile?.avatarUrl ?? '');
+  };
+
+  const previewInitial = (displayName?.[0] ?? '·').toUpperCase();
 
   return (
     <Panel title="PROFILE" tag="YOUR ACCOUNT">
@@ -145,14 +182,10 @@ function ProfileSection() {
             <div className="bhead">IDENTITY</div>
             <div className="lrow">
               <span className="lavatar">
-                {profile?.avatarUrl ? (
-                  <img src={profile.avatarUrl} alt="" />
-                ) : (
-                  (profile?.displayName?.[0] ?? '·').toUpperCase()
-                )}
+                {avatarUrl ? <img src={avatarUrl} alt="" /> : previewInitial}
               </span>
               <div className="lmain">
-                <div className="lname">{profile?.displayName || 'Your name'}</div>
+                <div className="lname">{displayName || 'Your name'}</div>
                 <div className="lsub">{profile?.email || 'No email on file'}</div>
               </div>
             </div>
@@ -161,21 +194,50 @@ function ProfileSection() {
           <div className="block">
             <div className="bhead">DETAILS</div>
             <div className="fgrid">
-              <Field label="DISPLAY NAME">
-                <input className="inp" type="text" value={profile?.displayName ?? ''} readOnly disabled />
+              <Field label="DISPLAY NAME" hint="How your name appears across Tacticl">
+                <input
+                  className="inp"
+                  type="text"
+                  placeholder="Your name"
+                  maxLength={120}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
+                />
               </Field>
-              <Field label="EMAIL" hint="Used for sign-in and billing receipts">
+              <Field label="EMAIL" hint="Managed by the auth portal — read-only here">
                 <input className="inp" type="email" value={profile?.email ?? ''} readOnly disabled />
               </Field>
             </div>
+            <div style={{ height: 16 }} />
+            <Field label="AVATAR URL" hint="Link to an image; leave blank to use your initial">
+              <input
+                className="inp"
+                type="url"
+                placeholder="https://…/avatar.png"
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+              />
+            </Field>
           </div>
 
           <div className="block">
             <div className="bhead">ACCOUNT</div>
             <div className="bdesc">
-              Name, avatar, password and security are managed through the auth portal at auth.tacticl.ai.
-              Editing your profile here is coming soon.
+              Password and security are managed through the auth portal at auth.tacticl.ai.
             </div>
+          </div>
+
+          {update.isError && <div className="banner err">Failed to save profile. Please try again.</div>}
+
+          <div className="savebar">
+            {dirty && (
+              <button className="btn ghost" disabled={update.isPending} onClick={reset}>
+                DISCARD
+              </button>
+            )}
+            <button className="btn primary" disabled={!dirty || update.isPending} onClick={save}>
+              {update.isPending ? 'SAVING…' : 'SAVE CHANGES'}
+            </button>
           </div>
         </>
       )}
@@ -525,11 +587,92 @@ function ConnectionsSection() {
                   })}
                 </div>
               )}
+
+              {/* Developer area also surfaces the user's remembered repos
+                  (attach by URL → POST /v1/repos, revoke ✕ → DELETE /v1/repos/{id}). */}
+              {category === 'developer' && <DeveloperRepos accent={accent} />}
             </div>
           );
         })
       )}
     </Panel>
+  );
+}
+
+// ── Remembered repos (attach by URL / revoke) within the Developer group ─────
+function DeveloperRepos({ accent }: { accent: string }) {
+  const { data: repos, isLoading, isError } = useSettingsRepos();
+  const attach = useAttachRepo();
+  const revoke = useRevokeSettingsRepo();
+
+  const [url, setUrl] = useState('');
+  const list = (repos ?? []) as SettingsRepo[];
+
+  const doAttach = () => {
+    const repoUrl = url.trim();
+    if (!repoUrl) return;
+    attach.mutate(
+      { repoUrl },
+      {
+        onSuccess: () => setUrl(''),
+      },
+    );
+  };
+
+  return (
+    <div className="repos">
+      <div className="reposhead" style={{ color: accent }}>REMEMBERED REPOS</div>
+      <div className="bdesc">
+        Repos Tacticl can work in for this account. Attach one by URL, or revoke access with ✕.
+      </div>
+
+      <div className="row-inline">
+        <input
+          className="inp"
+          placeholder="https://github.com/owner/repo"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && doAttach()}
+        />
+        <button className="btn ghost sm" onClick={doAttach} disabled={!url.trim() || attach.isPending}>
+          {attach.isPending ? 'ATTACHING…' : 'ATTACH'}
+        </button>
+      </div>
+
+      {attach.isError && <div className="banner err">Couldn't attach that repo. Check the URL and try again.</div>}
+
+      {isLoading ? (
+        <div className="empty">Loading repos…</div>
+      ) : isError ? (
+        <div className="empty err">Repos could not be loaded.</div>
+      ) : list.length === 0 ? (
+        <div className="dim" style={{ marginTop: 12 }}>No repos attached yet.</div>
+      ) : (
+        <div className="rows" style={{ marginTop: 12 }}>
+          {list.map((r) => {
+            const title = r.owner && r.name ? `${r.owner}/${r.name}` : r.repoUrl;
+            return (
+              <div className="lrow" key={r.id}>
+                <span className="ldot cyan" />
+                <div className="lmain">
+                  <div className="lname">{title}</div>
+                  <div className="lsub">{r.repoUrl}</div>
+                </div>
+                {r.source && <span className="tag cyan">{String(r.source)}</span>}
+                <button
+                  className="repox"
+                  aria-label={`Revoke ${title}`}
+                  disabled={revoke.isPending}
+                  onClick={() => revoke.mutate(r.id)}
+                >
+                  ✕
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -603,6 +746,128 @@ function ChannelCard({
         )}
       </div>
     </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// API TOKENS — personal programmatic-access keys.
+//   list   GET    /v1/tokens  → [{ id, name, maskedToken, createdAt, lastUsedAt? }]
+//   create POST   /v1/tokens  → { id, name, token, createdAt }  (plaintext ONCE)
+//   revoke DELETE /v1/tokens/{id} → 204
+// ═══════════════════════════════════════════════════════════════════════════════
+function ApiTokensSection() {
+  const { data: tokens, isLoading, isError } = useApiTokens();
+  const create = useCreateApiToken();
+  const revoke = useRevokeApiToken();
+
+  const [name, setName] = useState('');
+  // The plaintext token is shown exactly once, right after creation.
+  const [created, setCreated] = useState<CreatedApiToken | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const list = tokens ?? [];
+
+  const doCreate = () => {
+    const tokenName = name.trim();
+    if (!tokenName) return;
+    create.mutate(
+      { name: tokenName },
+      {
+        onSuccess: (res) => {
+          setCreated(res);
+          setCopied(false);
+          setName('');
+        },
+      },
+    );
+  };
+
+  const copy = () => {
+    if (!created) return;
+    navigator.clipboard?.writeText(created.token).then(
+      () => setCopied(true),
+      () => setCopied(false),
+    );
+  };
+
+  return (
+    <Panel title="API TOKENS" tag="PROGRAMMATIC ACCESS">
+      <div className="bdesc">
+        Personal access tokens authenticate scripts and integrations against the Tacticl API.
+        Treat them like passwords — anyone with a token can act as you.
+      </div>
+
+      {/* one-time plaintext reveal */}
+      {created && (
+        <div className="block">
+          <div className="bhead">NEW TOKEN · {created.name}</div>
+          <div className="banner amber">
+            ⚠ Copy this token now — you won't be able to see it again. Store it somewhere safe.
+          </div>
+          <div className="row-inline">
+            <input className="inp tokrev" type="text" value={created.token} readOnly onFocus={(e) => e.currentTarget.select()} />
+            <button className="btn primary sm" onClick={copy}>{copied ? 'COPIED ✓' : 'COPY'}</button>
+          </div>
+          <div className="savebar">
+            <button className="btn ghost sm" onClick={() => setCreated(null)}>DONE</button>
+          </div>
+        </div>
+      )}
+
+      {/* create */}
+      <div className="block">
+        <div className="bhead">CREATE TOKEN</div>
+        <div className="row-inline">
+          <input
+            className="inp"
+            placeholder="Token name, e.g. CI deploy bot"
+            maxLength={120}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && doCreate()}
+          />
+          <button className="btn primary sm" onClick={doCreate} disabled={!name.trim() || create.isPending}>
+            {create.isPending ? 'CREATING…' : '+ CREATE'}
+          </button>
+        </div>
+        {create.isError && <div className="banner err">Failed to create token. Please try again.</div>}
+      </div>
+
+      {/* list (masked) */}
+      <div className="block">
+        <div className="bhead">YOUR TOKENS</div>
+        {isLoading ? (
+          <div className="empty">Loading tokens…</div>
+        ) : isError ? (
+          <div className="empty err">Tokens could not be loaded.</div>
+        ) : list.length === 0 ? (
+          <div className="dim">No tokens yet. Create one above to get started.</div>
+        ) : (
+          <div className="rows">
+            {list.map((t) => (
+              <div className="lrow" key={t.id}>
+                <span className="ldot violet" />
+                <div className="lmain">
+                  <div className="lname">{t.name}</div>
+                  <div className="lsub">
+                    <code className="mask">{t.maskedToken}</code> · created {relTime(t.createdAt)}
+                    {t.lastUsedAt ? ` · last used ${relTime(t.lastUsedAt)}` : ' · never used'}
+                  </div>
+                </div>
+                <button
+                  className="repox"
+                  aria-label={`Revoke ${t.name}`}
+                  disabled={revoke.isPending}
+                  onClick={() => revoke.mutate(t.id)}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </Panel>
   );
 }
 
@@ -848,6 +1113,18 @@ const CSS = `
 .set-root .banner{padding:10px 14px;border-radius:10px;font-size:11.5px;margin:0 0 14px;letter-spacing:.3px}
 .set-root .banner.err{color:#ffb0b0;border:1px solid rgba(255,107,107,.3);background:rgba(255,107,107,.08)}
 .set-root .banner.cyan{color:#8ff0e4;border:1px solid rgba(21,224,200,.25);background:rgba(21,224,200,.06)}
+.set-root .banner.amber{color:#ffd99a;border:1px solid rgba(245,181,68,.32);background:rgba(245,181,68,.08)}
+
+/* ── remembered repos + token rows (revoke ✕, masked token, reveal) ──────── */
+.set-root .repos{margin-top:18px;padding-top:16px;border-top:1px solid rgba(108,99,255,.1)}
+.set-root .reposhead{font-family:var(--disp);font-size:11px;letter-spacing:2.2px;font-weight:600;margin-bottom:10px}
+.set-root .repox{flex-shrink:0;background:none;border:1px solid rgba(255,107,107,.32);color:#ffb0b0;cursor:pointer;
+  width:26px;height:26px;border-radius:8px;font-size:12px;line-height:1;transition:.16s}
+.set-root .repox:hover:not(:disabled){border-color:var(--red);background:rgba(255,107,107,.16);color:#fff}
+.set-root .repox:disabled{opacity:.4;cursor:not-allowed}
+.set-root .tokrev{font-family:var(--mono);font-size:12.5px;letter-spacing:.4px}
+.set-root .mask{font-family:var(--mono);font-size:10.5px;color:rgba(189,184,255,.85);background:rgba(108,99,255,.1);
+  padding:1px 6px;border-radius:6px}
 .set-root .soonbox{border:1px dashed rgba(238,240,246,.16);border-radius:14px;padding:26px 24px;text-align:center;
   font-size:12px;color:rgba(238,240,246,.42);background:rgba(108,99,255,.03)}
 

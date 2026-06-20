@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { profileApi } from '../api/profile';
+import type { UpdateProfileRequest, UserProfileResponse } from '../api/types';
 import { useAuthStore } from '../stores/auth-store';
 
 export function useProfile() {
@@ -14,4 +15,16 @@ export function useProfile() {
   });
 
   return { profile, loading };
+}
+
+/** P5 PUT /v1/users/me — saves displayName/avatarUrl and refreshes the profile query. */
+export function useUpdateProfile() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => profileApi.update(data),
+    onSuccess: (updated: UserProfileResponse) => {
+      qc.setQueryData(['profile'], updated);
+      qc.invalidateQueries({ queryKey: ['profile'] });
+    },
+  });
 }

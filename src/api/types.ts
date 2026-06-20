@@ -556,6 +556,61 @@ export interface UserProfileResponse {
   avatarUrl: string | null;
 }
 
+/** P5 PUT /v1/users/me — both fields optional (partial update). */
+export interface UpdateProfileRequest {
+  displayName?: string;
+  avatarUrl?: string | null;
+}
+
+// ─── Settings · Repos (P5) ───────────────────────────────
+// Per-user repo memory surfaced in Settings → Connections → Developer.
+// Distinct from the legacy provider-scoped RepoGrant (chat-driven grant flow).
+
+export type RepoMemoryKind = 'USER' | 'ORG' | 'UNKNOWN';
+export type RepoMemorySource = 'ATTACHED' | 'PROVISIONED' | 'USED';
+
+/** GET /v1/repos item / POST /v1/repos response — matches backend RepoDto. */
+export interface SettingsRepo {
+  id: string;
+  repoUrl: string;
+  owner: string | null;
+  name: string | null;
+  source: RepoMemorySource | string | null;
+  kind: RepoMemoryKind | string | null;
+}
+
+/** POST /v1/repos body. */
+export interface AttachRepoRequest {
+  repoUrl: string;
+  accessLevel?: RepoAccessLevel;
+}
+
+// ─── Settings · API Tokens (P5) ──────────────────────────
+// Personal API tokens for programmatic access. Distinct from the legacy
+// BYOK provider AgentToken (Anthropic/OpenAI keys with usage limits).
+
+/** GET /v1/tokens item — the plaintext is never returned here, only a mask. */
+export interface ApiTokenSummary {
+  id: string;
+  name: string;
+  maskedToken: string;
+  createdAt: string;
+  lastUsedAt?: string | null;
+}
+
+/** POST /v1/tokens body. */
+export interface CreateApiTokenRequest {
+  name: string;
+}
+
+/** POST /v1/tokens response — `token` (plaintext) is returned exactly once. */
+export interface CreatedApiToken {
+  id: string;
+  name: string;
+  token: string;
+  createdAt: string;
+}
+
 // ─── Product (onboarding) ────────────────────────────────
 
 export type ProductChannelType = 'DISCORD' | 'TELEGRAM' | 'WEB' | 'VOICE';
