@@ -860,7 +860,18 @@ export default function CommandCenter() {
         {/* hero — the data-sphere orb IS the hero. Hold the orb itself to speak;
             its own colour/motion state conveys listening/thinking/speaking, so no
             label or status strip is needed. The bottom command bar stays for typing. */}
-        <Stack alignItems="center" justifyContent="center" sx={{ minWidth: 0 }}>
+        <Stack
+          alignItems="center"
+          justifyContent="center"
+          sx={{
+            minWidth: 0,
+            // The command bar is pinned below the grid, so centering inside the
+            // grid alone leaves the orb optically high. Nudge it down by ~half the
+            // command-bar height so it sits at the true vertical middle of the
+            // viewport. Desktop only (single-column mobile doesn't need it).
+            transform: { lg: 'translateY(38px)' },
+          }}
+        >
           <Box
             role="button"
             tabIndex={0}
