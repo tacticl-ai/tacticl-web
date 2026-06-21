@@ -5,13 +5,12 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DataSphere from './DataSphere';
 import { useVoice } from '../../voice/useVoice';
-import type { VoiceState } from './VoiceSphere';
 import { selectVoiceBackend } from '../../voice/selectVoiceBackend';
 import { VOICE_CID_KEY } from '../../voice/createLiveVoiceBackend';
 import type { CheckpointDecision } from '../../voice/protocol';
 import HudPanel from '../hud/HudPanel';
 import HudTopbar from '../hud/HudTopbar';
-import { ACCENT, VIOLET, MAGENTA, CYAN, CYAN_BRIGHT, DISP, MONO } from '../../theme/hud';
+import { ACCENT, VIOLET, CYAN, CYAN_BRIGHT, DISP, MONO } from '../../theme/hud';
 
 /* Jarvis command center — a glassy holographic HUD on near-black, the voice
    sphere as the hero. Violet (#6C63FF) is the brand HUD accent throughout;
@@ -19,12 +18,6 @@ import { ACCENT, VIOLET, MAGENTA, CYAN, CYAN_BRIGHT, DISP, MONO } from '../../th
    indicator). The existing chat + Sparks/PDLC views drop into the framed
    panels. HUD tokens + HudPanel now live in src/theme/hud.ts + src/components/hud. */
 
-const STATE_COPY: Record<string, { label: string; hint: string }> = {
-  idle: { label: 'READY', hint: 'Hold to speak' },
-  listening: { label: 'LISTENING', hint: 'Release to send' },
-  thinking: { label: 'THINKING', hint: 'Working it through…' },
-  speaking: { label: 'SPEAKING', hint: 'Tacticl is responding' },
-};
 
 const LEFT_PANEL_KEY = 'tacticl.command.leftPanel';
 const RIGHT_PANEL_KEY = 'tacticl.command.rightPanel';
@@ -740,63 +733,6 @@ function TextComposer() {
   );
 }
 
-/** Live status strip (.status-strip) under the orb/state-label — four leds
- *  (LISTENING · THINKING · SPEAKING · IDLE); the one matching the live `state`
- *  is lit. The mockup labels the idle slot "IDLE" (the state-label reads READY). */
-const STATUS_STEPS: { key: VoiceState; label: string }[] = [
-  { key: 'listening', label: 'LISTENING' },
-  { key: 'thinking', label: 'THINKING' },
-  { key: 'speaking', label: 'SPEAKING' },
-  { key: 'idle', label: 'IDLE' },
-];
-
-function StatusStrip({ state }: { state: VoiceState }) {
-  return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      spacing={2.25}
-      sx={{
-        mt: '2px',
-        px: 2.25,
-        py: '7px',
-        borderRadius: 999,
-        border: '1px solid rgba(108,99,255,0.2)',
-        background: 'rgba(12,16,20,0.55)',
-        backdropFilter: 'blur(10px)',
-      }}
-    >
-      {STATUS_STEPS.map((s) => {
-        const on = s.key === state;
-        return (
-          <Stack key={s.key} direction="row" alignItems="center" spacing={0.9}>
-            <Box
-              sx={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: on ? ACCENT : '#6E6A8F',
-                boxShadow: on ? `0 0 9px ${ACCENT}` : 'none',
-                ...(on && { animation: 'pulse 1.4s ease-in-out infinite' }),
-              }}
-            />
-            <Typography
-              sx={{
-                fontFamily: MONO,
-                fontSize: 11.9,
-                letterSpacing: 1,
-                color: on ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.4)',
-              }}
-            >
-              {s.label}
-            </Typography>
-          </Stack>
-        );
-      })}
-    </Stack>
-  );
-}
-
 export default function CommandCenter() {
   const state = useVoice((s) => s.state);
   const setBackend = useVoice((s) => s.setBackend);
@@ -844,7 +780,6 @@ export default function CommandCenter() {
     return () => window.removeEventListener('keydown', onKey);
   }, [toggleLeft, toggleRight]);
 
-  const copy = STATE_COPY[state];
 
   // The grid reflows on what's open: a collapsed side becomes a slim rail track,
   // an open side gets a full panel column. Both closed → orb owns the stage.
@@ -922,16 +857,15 @@ export default function CommandCenter() {
           </Box>
         )}
 
-        {/* hero — data-sphere orb is the hero, fills the center column responsively */}
-        <Stack alignItems="center" justifyContent="center" spacing={2.25} sx={{ minWidth: 0 }}>
-          <DataSphere state={state} />
-          <Typography sx={{ fontFamily: DISP, fontSize: 24.9, letterSpacing: 8, color: state === 'thinking' ? MAGENTA : ACCENT, textShadow: `0 0 20px ${state === 'thinking' ? MAGENTA : ACCENT}66` }}>
-            {copy.label}
-          </Typography>
+        {/* hero — the data-sphere orb IS the hero. Hold the orb itself to speak;
+            its own colour/motion state conveys listening/thinking/speaking, so no
+            label or status strip is needed. The bottom command bar stays for typing. */}
+        <Stack alignItems="center" justifyContent="center" sx={{ minWidth: 0 }}>
           <Box
             role="button"
             tabIndex={0}
-            aria-label="Push to talk"
+            aria-label="Hold to speak"
+            title="Hold to speak"
             onMouseDown={startListening}
             onMouseUp={stopListening}
             onMouseLeave={() => state === 'listening' && stopListening()}
@@ -942,26 +876,16 @@ export default function CommandCenter() {
             sx={{
               cursor: 'pointer',
               userSelect: 'none',
-              px: 4,
-              py: 1.4,
-              borderRadius: 999,
-              border: `1px solid ${ACCENT}`,
-              fontFamily: DISP,
-              fontSize: 14.7,
-              letterSpacing: 3,
-              color: ACCENT,
-              background: state === 'listening' ? 'rgba(108,99,255,0.18)' : 'rgba(108,99,255,0.04)',
-              boxShadow: state === 'listening' ? `0 0 24px ${ACCENT}66` : 'none',
-              transition: 'all .15s',
-              '&:hover': { background: 'rgba(108,99,255,0.12)' },
+              display: 'grid',
+              placeItems: 'center',
+              width: '100%',
+              borderRadius: '50%',
               outline: 'none',
               '&:focus-visible': { boxShadow: `0 0 0 2px ${ACCENT}` },
             }}
           >
-            {copy.hint.toUpperCase()}
+            <DataSphere state={state} />
           </Box>
-          {/* slim live-status strip */}
-          <StatusStrip state={state} />
         </Stack>
 
         {rightOpen ? (
