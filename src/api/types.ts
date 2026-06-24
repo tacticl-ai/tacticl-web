@@ -282,6 +282,40 @@ export interface Connection {
   tokenRefreshNeeded: boolean;
   tokenExpiresAt?: string;
   createdAt: string;
+  // GitHub App org grant (single-org per user) — only present on the GITHUB
+  // connection row once the user has installed the Tacticl GitHub App.
+  orgLogin?: string | null;
+  installationId?: number | null;
+}
+
+// ─── GitHub Org Grant · Repos in scope ───────────────────
+// GET /v1/connections/github/repos — the repos visible to the user's linked
+// GitHub org via the GitHub App installation grant. Empty when no app/install.
+
+/** GET /v1/connections/github/repos item — matches backend GithubRepoDto. */
+export interface GithubRepo {
+  owner: string;
+  name: string;
+  fullName: string;
+  repoUrl: string;
+  /** GitHub's repo.language — may be null. */
+  language: string | null;
+  defaultBranch: string;
+  /** True when repoUrl === the user's Product.defaultRepoUrl. */
+  isDefault: boolean;
+}
+
+/** GET /v1/connections/github/install/url response. */
+export interface GithubInstallUrlResponse {
+  /** GitHub App install URL; null/empty when the app is unconfigured. */
+  url: string | null;
+}
+
+/** POST /v1/connections/github/install/callback body. */
+export interface GithubInstallCallbackRequest {
+  installationId: number | string;
+  setupAction: string;
+  orgLogin?: string;
 }
 
 export type PostState = 'DRAFT' | 'QUEUED' | 'PUBLISHING' | 'PUBLISHED' | 'CANCELLED' | 'FAILED';

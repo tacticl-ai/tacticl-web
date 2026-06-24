@@ -30,6 +30,9 @@ import {
   useConnectPlatform,
   useDisconnectPlatform,
   useHandleOAuthCallback,
+  useGithubRepos,
+  useInstallGithubApp,
+  useHandleGithubInstallCallback,
   validateOAuthState,
 } from '../hooks/useConnections';
 import {
@@ -40,7 +43,7 @@ import {
   getPlatformsByCategory,
   getConnectionForPlatform,
 } from '../config/platformConfig';
-import type { Connection, Product, SettingsRepo, CreatedApiToken } from '../api/types';
+import type { Connection, GithubRepo, Product, SettingsRepo, CreatedApiToken } from '../api/types';
 import HudTopbar from '../components/hud/HudTopbar';
 
 type SectionId = 'profile' | 'preferences' | 'products' | 'connections' | 'tokens' | 'billing';
@@ -480,14 +483,33 @@ function ConnectionsSection() {
   const connectPlatform = useConnectPlatform();
   const disconnectPlatform = useDisconnectPlatform();
   const handleOAuthCallback = useHandleOAuthCallback();
+  const installGithubApp = useInstallGithubApp();
+  const handleGithubInstall = useHandleGithubInstallCallback();
   const [searchParams, setSearchParams] = useSearchParams();
   const [oauthError, setOauthError] = useState<string | null>(null);
 
   const list = useMemo(() => (connections ?? []) as Connection[], [connections]);
 
-  // OAuth callback handling — identical contract to LinksPage, but the
-  // redirectUri now points back at /settings so the popup → tab returns here.
+  // OAuth + GitHub App install return handling. Both contracts return the user
+  // to /settings; we branch on the query params present.
   useEffect(() => {
+    // ── GitHub App install return: ?installation_id=…&setup_action=install ──
+    const installationId = searchParams.get('installation_id');
+    const setupAction = searchParams.get('setup_action');
+    if (installationId && setupAction) {
+      const orgLogin = searchParams.get('orgLogin') || undefined;
+      handleGithubInstall.mutate(
+        { installationId, setupAction, orgLogin },
+        {
+          onError: () => setOauthError('Failed to finalize GitHub org grant. Please try again.'),
+          onSettled: () => setSearchParams({}),
+        },
+      );
+      return;
+    }
+
+    // ── OAuth callback handling — identical contract to LinksPage, but the
+    // redirectUri now points back at /settings so the popup → tab returns here.
     const code = searchParams.get('code');
     const platform = searchParams.get('platform');
     const state = searchParams.get('state');
@@ -514,6 +536,12 @@ function ConnectionsSection() {
   const handleConnect = (platformKey: string) => {
     const redirectUri = window.location.origin + '/settings';
     connectPlatform.mutate({ platform: platformKey, redirectUri });
+  };
+
+  const handleInstallGithub = () => {
+    installGithubApp.mutate(undefined, {
+      onError: () => setOauthError('GitHub org grant is not available yet. Please try again later.'),
+    });
   };
 
   return (
@@ -572,6 +600,21 @@ function ConnectionsSection() {
                 <div className="cgrid">
                   {plats.map((platform) => {
                     const connection = getConnectionForPlatform(list, platform.key);
+                    // GitHub is an ORG GRANT (GitHub App install), not an OAuth
+                    // popup — render the org-grant card instead of a ChannelCard.
+                    if (platform.key === 'github') {
+                      return (
+                        <GithubOrgCard
+                          key={platform.key}
+                          accent={accent}
+                          connection={connection}
+                          installing={installGithubApp.isPending || handleGithubInstall.isPending}
+                          disconnecting={disconnectPlatform.isPending}
+                          onInstall={handleInstallGithub}
+                          onDisconnect={(id) => disconnectPlatform.mutate(id)}
+                        />
+                      );
+                    }
                     return (
                       <ChannelCard
                         key={platform.key}
@@ -588,14 +631,134 @@ function ConnectionsSection() {
                 </div>
               )}
 
-              {/* Developer area also surfaces the user's remembered repos
-                  (attach by URL → POST /v1/repos, revoke ✕ → DELETE /v1/repos/{id}). */}
-              {category === 'developer' && <DeveloperRepos accent={accent} />}
+              {/* Developer area surfaces the GitHub org grant's repos-in-scope
+                  (read-only, from the App installation) AND the user's
+                  remembered repos (attach by URL → POST /v1/repos). */}
+              {category === 'developer' && (
+                <>
+                  <GithubOrgScope accent={accent} orgLogin={getConnectionForPlatform(list, 'github')?.orgLogin ?? null} />
+                  <DeveloperRepos accent={accent} />
+                </>
+              )}
             </div>
           );
         })
       )}
     </Panel>
+  );
+}
+
+// ── GitHub Org grant card — install/disconnect the GitHub App for one org ────
+// Mirrors ChannelCard layout, but the action is the GitHub App INSTALL flow
+// (install URL → GitHub → returns to /settings) rather than the OAuth popup.
+interface GithubOrgCardProps {
+  accent: string;
+  connection?: Connection;
+  installing: boolean;
+  disconnecting: boolean;
+  onInstall: () => void;
+  onDisconnect: (id: string) => void;
+}
+
+function GithubOrgCard({
+  accent,
+  connection,
+  installing,
+  disconnecting,
+  onInstall,
+  onDisconnect,
+}: GithubOrgCardProps) {
+  const { data: repos } = useGithubRepos();
+  const isLinked = !!connection && !!connection.orgLogin;
+  const repoCount = (repos ?? []).length;
+
+  return (
+    <div className={`ccard${isLinked ? ' on' : ''}`} style={{ '--ca': accent } as React.CSSProperties}>
+      <span className="cstripe" />
+      <div className="ccardtop">
+        <span className="clogo" style={{ background: '#222' }}>⌥</span>
+        <div className="cmeta">
+          <div className="cpname">GitHub Org</div>
+          <div className="cphandle">
+            {isLinked
+              ? `${connection!.orgLogin} · ${repoCount} repo${repoCount === 1 ? '' : 's'}`
+              : 'no org linked'}
+          </div>
+        </div>
+      </div>
+
+      <div className="cstatusrow">
+        {isLinked ? (
+          <span className="ctag linked"><span className="tdot" />LINKED</span>
+        ) : (
+          <span className="ctag idle"><span className="tdot" />AVAILABLE</span>
+        )}
+      </div>
+
+      <div className="ccardact">
+        {isLinked ? (
+          <button
+            className="cbtn dis"
+            disabled={disconnecting}
+            onClick={() => connection && onDisconnect(connection.id)}
+          >
+            {disconnecting ? 'DISCONNECTING…' : 'DISCONNECT'}
+          </button>
+        ) : (
+          <button className="cbtn con" disabled={installing} onClick={onInstall}>
+            {installing ? 'OPENING…' : 'CONNECT GITHUB ORG →'}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Repos in scope — read-only list from the GitHub App org grant ────────────
+// GET /v1/connections/github/repos. Each repo shows a language chip + a DEFAULT
+// badge (repoUrl === Product.defaultRepoUrl). Coexists with REMEMBERED REPOS.
+function GithubOrgScope({ accent, orgLogin }: { accent: string; orgLogin: string | null }) {
+  const { data: repos, isLoading, isError } = useGithubRepos();
+  const list = (repos ?? []) as GithubRepo[];
+
+  return (
+    <div className="repos">
+      <div className="reposhead" style={{ color: accent }}>REPOS IN SCOPE</div>
+      <div className="bdesc">
+        {orgLogin
+          ? <>Repos Tacticl can execute PDLC sparks through, via <strong>{orgLogin}</strong>'s app grant.</>
+          : 'Repos Tacticl can execute PDLC sparks through — they come with your GitHub org grant.'}
+      </div>
+
+      {isLoading ? (
+        <div className="empty">Loading repos in scope…</div>
+      ) : isError ? (
+        <div className="empty err">Repos in scope could not be loaded.</div>
+      ) : list.length === 0 ? (
+        <div className="dim" style={{ marginTop: 12 }}>
+          Connect your GitHub org to see repos in scope.
+        </div>
+      ) : (
+        <>
+          <div className="crepos-meta" style={{ color: accent }}>
+            {list.length} GRANTED{orgLogin ? ` · via ${orgLogin} org grant` : ''}
+          </div>
+          <div className="rows" style={{ marginTop: 12 }}>
+            {list.map((r) => (
+              <div className="lrow" key={r.fullName}>
+                <span className="ldot cyan" />
+                <div className="lmain">
+                  <div className="lname">{r.fullName}</div>
+                  <div className="lsub">{r.repoUrl}</div>
+                </div>
+                {r.language && <span className="tag cyan">{r.language}</span>}
+                {r.isDefault && <span className="tag violet">DEFAULT</span>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
   );
 }
 
@@ -1118,6 +1281,7 @@ const CSS = `
 /* ── remembered repos + token rows (revoke ✕, masked token, reveal) ──────── */
 .set-root .repos{margin-top:18px;padding-top:16px;border-top:1px solid rgba(108,99,255,.1)}
 .set-root .reposhead{font-family:var(--disp);font-size:11px;letter-spacing:2.2px;font-weight:600;margin-bottom:10px}
+.set-root .crepos-meta{font-family:var(--disp);font-size:10px;letter-spacing:1.4px;margin-top:6px;opacity:.85}
 .set-root .repox{flex-shrink:0;background:none;border:1px solid rgba(255,107,107,.32);color:#ffb0b0;cursor:pointer;
   width:26px;height:26px;border-radius:8px;font-size:12px;line-height:1;transition:.16s}
 .set-root .repox:hover:not(:disabled){border-color:var(--red);background:rgba(255,107,107,.16);color:#fff}
