@@ -81,11 +81,11 @@ export default function TacticTimeline({ tactics, checkpoints, onInsertCheckpoin
                       position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                       width: 22, height: 22, borderRadius: '50%',
                       border: '2px solid',
-                      borderColor: cp.userDecision === 'APPROVED' ? '#34D399' : cp.userDecision === 'REJECTED' ? '#F87171' : '#FBBF24',
+                      borderColor: cp.userDecision === 'APPROVED' ? '#34D399' : cp.userDecision === 'CANCEL' ? '#F87171' : '#FBBF24',
                       bgcolor: 'background.paper',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 9, fontWeight: 700, zIndex: 2, cursor: 'pointer',
-                      color: cp.userDecision === 'APPROVED' ? '#34D399' : cp.userDecision === 'REJECTED' ? '#F87171' : '#FBBF24',
+                      color: cp.userDecision === 'APPROVED' ? '#34D399' : cp.userDecision === 'CANCEL' ? '#F87171' : '#FBBF24',
                       ...(!cp.userDecision && {
                         animation: 'cpPulse 2s ease-in-out infinite',
                         '@keyframes cpPulse': {
@@ -94,7 +94,7 @@ export default function TacticTimeline({ tactics, checkpoints, onInsertCheckpoin
                         },
                       }),
                     }}>
-                      {cp.userDecision === 'APPROVED' ? '\u2713' : cp.userDecision === 'REJECTED' ? '\u2715' : '\u23F8'}
+                      {cp.userDecision === 'APPROVED' ? '\u2713' : cp.userDecision === 'CANCEL' ? '\u2715' : '\u23F8'}
                     </Box>
                   </Tooltip>
                 )}

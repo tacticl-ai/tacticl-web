@@ -25,7 +25,7 @@ export default function CheckpointApproval({ checkpoint, onDecided }: Checkpoint
   const [feedback, setFeedback] = useState('');
   const decideCheckpoint = useDecideCheckpoint();
 
-  const handleDecide = (decision: 'APPROVED' | 'REJECTED') => {
+  const handleDecide = (decision: 'APPROVED' | 'CANCEL') => {
     decideCheckpoint.mutate(
       {
         id: checkpoint.id,
@@ -147,7 +147,7 @@ export default function CheckpointApproval({ checkpoint, onDecided }: Checkpoint
             color="error"
             size="small"
             startIcon={<CancelIcon />}
-            onClick={() => handleDecide('REJECTED')}
+            onClick={() => handleDecide('CANCEL')}
             disabled={decideCheckpoint.isPending}
           >
             Reject

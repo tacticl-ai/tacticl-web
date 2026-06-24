@@ -16,6 +16,7 @@
 import { useMemo, useRef, useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import HudTopbar from '../components/hud/HudTopbar';
+import ArtifactMarkdown from '../components/sparks/pdlc/ArtifactMarkdown';
 import { useSpark, useCancelSpark } from '../hooks/useSparks';
 import {
   usePipelineRun,
@@ -461,29 +462,23 @@ function ArtifactBody({ sparkId, role }: { sparkId: string; role: PdlcRole }) {
   const { data: artifact, isLoading, isError } = useRoleArtifact(sparkId, role);
   if (isLoading) return <div className="muted-small">Loading artifact…</div>;
   if (isError || !artifact) return <div className="muted-small">No artifact available for {ROLE_FULL[role]}.</div>;
+  // Prefer the artifact's real markdown body. For legacy structured-only artifacts
+  // (no markdown), render the JSON inside a fenced code block so it flows through the
+  // shared ArtifactMarkdown renderer — the raw <pre> JSON-path dump is gone.
   const markdown = extractMarkdown(artifact.content ?? {});
+  const body = markdown ?? '```json\n' + JSON.stringify(artifact.content ?? {}, null, 2) + '\n```';
   return (
     <div className="abody">
       <div className="ameta">
         {artifact.content?.model != null && <span className="chipsm model">{String(artifact.content.model)}</span>}
         <span className="chipsm">{artifact.artifactType} · v{artifact.artifactVersion}</span>
       </div>
-      <div className="md">
-        <div className="mdhead">
-          <span className="mdtag">{ROLE_FULL[role]} · v{artifact.artifactVersion}</span>
-          <span className="mdmeta">{artifact.artifactType}</span>
-        </div>
-        <div className="mdbody">
-          {markdown
-            ? <pre className="md-pre">{markdown}</pre>
-            : <pre className="md-pre">{JSON.stringify(artifact.content, null, 2)}</pre>}
-        </div>
-      </div>
+      <ArtifactMarkdown markdown={body} tag={`${ROLE_FULL[role]} · v${artifact.artifactVersion}`} />
     </div>
   );
 }
 
-function ArtifactTabsPanel({ sparkId, run, sequence }: { sparkId: string; run: PipelineRun; sequence: PdlcRole[] }) {
+function ArtifactTabsPanel({ sparkId, run, sequence, onOpenViewer }: { sparkId: string; run: PipelineRun; sequence: PdlcRole[]; onOpenViewer: () => void }) {
   const enabledRoles = sequence.filter((r) => {
     const res = run.roleResults?.[r];
     return res && (res.status === 'COMPLETED' || res.artifactId != null);
@@ -492,7 +487,13 @@ function ArtifactTabsPanel({ sparkId, run, sequence }: { sparkId: string; run: P
   const active = tab && enabledRoles.includes(tab) ? tab : (enabledRoles[enabledRoles.length - 1] ?? null);
   return (
     <>
-      <div className="eyebrow">ROLE ARTIFACTS</div>
+      <div className="eyebrow">
+        ROLE ARTIFACTS
+        <a className="viewer-link" onClick={onOpenViewer} role="button" tabIndex={0}
+           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenViewer(); } }}>
+          OPEN ARTIFACTS VIEWER →
+        </a>
+      </div>
       <div className="panel">
         <div className="pbody">
           <div className="tabs">
@@ -674,7 +675,7 @@ export default function SparkDetailPage() {
             </div>
           </div>
 
-          <ArtifactTabsPanel sparkId={spark.id} run={run} sequence={sequence} />
+          <ArtifactTabsPanel sparkId={spark.id} run={run} sequence={sequence} onOpenViewer={() => navigate(`/sparks/${spark.id}/artifacts`)} />
         </>
       )}
     </Shell>
@@ -865,6 +866,9 @@ const CSS = `
 
 .dash-root .eyebrow{padding:18px 34px 0;font-family:var(--disp);font-size:11.3px;letter-spacing:2.5px;color:rgba(238,240,246,.4);display:flex;align-items:center;gap:9px}
 .dash-root .eyebrow::before{content:"";width:7px;height:7px;background:var(--accent);box-shadow:0 0 10px var(--accent);clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%)}
+.dash-root .viewer-link{margin-left:auto;font-family:var(--disp);font-size:11.3px;letter-spacing:1.6px;color:#cfa0ff;cursor:pointer;text-decoration:none;border:1px solid rgba(108,99,255,.4);border-radius:8px;padding:6px 13px;background:rgba(108,99,255,.06);transition:.16s;outline:none}
+.dash-root .viewer-link:hover{color:#fff;background:rgba(108,99,255,.16);border-color:var(--accent)}
+.dash-root .viewer-link:focus-visible{box-shadow:0 0 0 2px var(--accent)}
 .dash-root .foot{text-align:center;color:rgba(238,240,246,.3);font-size:11.3px;letter-spacing:2px;margin:34px 0 8px;font-family:var(--disp);word-break:break-all;padding:0 34px}
 
 .dash-root .muted-small{font-size:12.5px;color:rgba(238,240,246,.5);font-family:var(--mono)}

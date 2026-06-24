@@ -8,6 +8,7 @@ import LandingPage from './pages/LandingPage';
 import PricingPage from './pages/PricingPage';
 import DashboardPage from './pages/DashboardPage';
 import SparkDetailPage from './pages/SparkDetailPage';
+import ArtifactsPage from './pages/ArtifactsPage';
 import SettingsHubPage from './pages/SettingsHubPage';
 import OnboardPage from './pages/OnboardPage';
 import TelegramLinkPage from './pages/TelegramLinkPage';
@@ -77,6 +78,8 @@ function AppInner() {
 
         {/* Pipeline detail drill-in (from Dashboard rows) + telegram link — standalone, auth-gated. */}
         <Route path="/sparks/:id" element={<ProtectedRoute><SparkDetailPage /></ProtectedRoute>} />
+        {/* Standalone PDLC artifact viewer — two-pane rail + rich markdown + folded merge gate. */}
+        <Route path="/sparks/:id/artifacts" element={<ProtectedRoute><ArtifactsPage /></ProtectedRoute>} />
         <Route path="/telegram/link" element={<ProtectedRoute><TelegramLinkPage /></ProtectedRoute>} />
 
         {/* Retired legacy routes → redirect into the consolidated surfaces. */}

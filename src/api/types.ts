@@ -27,7 +27,10 @@ export type RepoAccessLevel = 'READ' | 'WRITE' | 'ADMIN';
 
 export type TokenProvider = 'ANTHROPIC' | 'GITHUB' | 'OPENAI';
 
-export type CheckpointDecision = 'APPROVED' | 'REJECTED' | 'MODIFIED';
+// Mirrors the Java CheckpointDecision enum {APPROVED, REWORK, CANCEL} — the
+// pipeline controller does CheckpointDecision.valueOf(decision), so any other
+// literal 400s. APPROVED → merge; REWORK → GRANT_REWORK; CANCEL → REJECT.
+export type CheckpointDecision = 'APPROVED' | 'REWORK' | 'CANCEL';
 
 export type FallbackPolicy = 'ANY_AVAILABLE' | 'QUEUE' | 'REJECT';
 
@@ -521,28 +524,74 @@ export interface RoleArtifact {
   createdAt: string;
 }
 
-/** One entry in the pipeline's artifact index (GET .../pipeline/artifacts). */
+/** Per-artifact lifecycle status in the manifest. */
+export type ArtifactStatus = 'done' | 'active' | 'pending';
+
+/**
+ * One entry in the pipeline's artifact manifest
+ * (GET /v1/sparks/{sparkId}/pipeline/artifacts).
+ *
+ * The manifest is the UNION of the canonical PDLC role skeleton (so the rail can
+ * render roles that have not committed yet — `present:false`) enriched/overridden
+ * by the committed `.tacticl/pdlc/{runId}/manifest.json` entries. Matches the
+ * backend `ArtifactManifestEntryDto` 10-field shape exactly.
+ */
 export interface ArtifactListItem {
-  /** Stable artifact name / slug used to fetch its content. */
+  /** Artifact file stem, no `.md` — the key for the content endpoint (e.g. "product-brief"). */
   name: string;
-  role: PdlcRole;
-  /** Human title, e.g. "Product Requirements", "Change summary". */
+  /** PdlcRole enum name (e.g. "PO"); null only for committed entries whose agent is not a known role. */
+  role: PdlcRole | null;
+  /** Human-readable rail label (e.g. "Product Brief"). */
   title: string;
-  artifactType: string;
-  artifactVersion: number;
-  createdAt: string;
+  /** Repo path (e.g. ".tacticl/pdlc/{runId}/product-brief.md"); null until committed. */
+  path: string | null;
+  /** Lifecycle status driving the rail's status dot. */
+  status: ArtifactStatus;
+  /** Version label (e.g. "v1"/"v2"; v1 default, +1 per rework). */
+  version: string;
+  /** True when real markdown content exists / was committed to the manifest. */
+  present: boolean;
+  /** Manifest type hint (e.g. "markdown"); "" when not committed. */
+  type: string;
+  /** Manifest agent string as committed; "" when not committed. */
+  agent: string;
+  /** Manifest summary blurb; "" when not committed. */
+  summary: string;
 }
 
 /** Rendered artifact body (GET .../pipeline/artifacts/{name}/content). */
 export interface ArtifactContentResponse {
+  /** File stem without `.md` (e.g. "product-brief"). */
   name: string;
-  /** Markdown body. May be empty/absent for legacy JSON-only artifacts. */
+  /** Decoded UTF-8 markdown body. May be empty when not yet committed. */
   markdown: string;
+  /** GitHub blob SHA at the resolved ref. */
   sha: string;
 }
 
+/**
+ * Canonical PDLC role → artifact file-stem map. Single source of truth on the
+ * client for which stem each role's content lives under; mirrors the backend
+ * `PdlcArtifactCatalog`. The manifest itself carries the authoritative `name`
+ * per entry — this is only used for fallbacks / static grouping.
+ */
+export const ROLE_ARTIFACT_MAP: Record<PdlcRole, string> = {
+  PO: 'product-brief',
+  RESEARCHER: 'research',
+  ARCHITECT: 'architecture',
+  DESIGNER: 'design',
+  PLANNER: 'plan',
+  IMPLEMENTER: 'change-summary',
+  TESTER: 'test-report',
+  SECURITY_ANALYST: 'security-report',
+  REVIEWER: 'review',
+  TECHNICAL_WRITER: 'docs',
+  DEVOPS: 'devops',
+  RETRO_ANALYST: 'retro',
+};
+
 export interface CheckpointResolution {
-  decision: 'APPROVED' | 'REJECTED' | 'MODIFIED';
+  decision: CheckpointDecision;
   feedback: string | null;
 }
 

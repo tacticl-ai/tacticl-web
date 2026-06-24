@@ -169,7 +169,7 @@ export default function CheckpointBanner({ sparkId, checkpoint }: CheckpointBann
             variant="outlined"
             size="small"
             startIcon={<ReplayIcon />}
-            onClick={() => handleDecision('MODIFIED')}
+            onClick={() => handleDecision('REWORK')}
             disabled={resolveCheckpoint.isPending}
             sx={{
               color: '#FF9800',
@@ -186,7 +186,7 @@ export default function CheckpointBanner({ sparkId, checkpoint }: CheckpointBann
             variant="outlined"
             size="small"
             startIcon={<CancelIcon />}
-            onClick={() => handleDecision('REJECTED')}
+            onClick={() => handleDecision('CANCEL')}
             disabled={resolveCheckpoint.isPending}
             sx={{
               color: '#CF6679',
