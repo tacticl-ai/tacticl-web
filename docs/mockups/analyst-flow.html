@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TACTICL // ANALYST — screen confirm</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#6C63FF; --violet:#6C63FF; --magenta:#B25CFF;
+    --cyan:#03DAC6; --cyan2:#15E0C8; --err:#FF6B6B; --warn:#F5B14C; --idle:#6E6A8F;
+    --txt:#E6E3F5; --muted:#A39FC4; --bg:#080b0d;
+    --disp:'Chakra Petch',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    font-family:var(--mono); color:var(--txt); background:var(--bg);
+    -webkit-font-smoothing:antialiased;
+    background-image:
+      radial-gradient(1200px 800px at 50% 0%, rgba(108,99,255,.12), transparent 60%),
+      radial-gradient(900px 700px at 90% 30%, rgba(3,218,198,.05), transparent 60%);
+    background-attachment:fixed;
+  }
+  .grid-bg{position:fixed; inset:0; pointer-events:none; opacity:.45; z-index:0;
+    background-image:linear-gradient(rgba(108,99,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(108,99,255,.05) 1px,transparent 1px);
+    background-size:48px 48px; -webkit-mask-image:radial-gradient(ellipse at 50% 20%,black 30%,transparent 80%); mask-image:radial-gradient(ellipse at 50% 20%,black 30%,transparent 80%);}
+
+  /* sticky HUD bar */
+  .bar{position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between;
+    gap:16px; flex-wrap:wrap; padding:16px 28px; background:rgba(8,11,13,.82); backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(108,99,255,.16);}
+  .brand{display:flex; align-items:center; gap:11px}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#d8b6ff,var(--accent) 42%,var(--magenta) 70%);box-shadow:0 0 12px var(--accent)}
+  .brand .word{font-family:var(--disp); font-size:19px; letter-spacing:6px; font-weight:600}
+  .brand .slash{color:var(--accent)}
+  .tenant{display:flex;align-items:center;gap:8px;background:rgba(108,99,255,.06);border:1px solid rgba(108,99,255,.24);border-radius:8px;padding:6px 11px;font-size:13px;color:var(--txt)}
+  .tenant .d{width:7px;height:7px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--magenta));box-shadow:0 0 8px rgba(108,99,255,.7)}
+  .tenant .car{color:rgba(255,255,255,.4)}
+  .barmeta{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .link{color:var(--cyan2);font-size:12px;text-shadow:0 0 10px rgba(21,224,200,.4)}
+  .chips{display:flex;gap:7px;flex-wrap:wrap}
+  .chip{padding:5px 13px;border-radius:999px;border:1px solid rgba(108,99,255,.32);font-family:var(--disp);font-size:11px;letter-spacing:2px;color:rgba(108,99,255,.9);background:rgba(108,99,255,.05);text-decoration:none}
+  .chip.on{color:#fff;border-color:var(--accent);background:rgba(108,99,255,.18);box-shadow:0 0 14px rgba(108,99,255,.22)}
+
+  .intro{max-width:1120px;margin:26px auto 6px;padding:0 28px}
+  .intro h1{font-family:var(--disp);font-size:22px;letter-spacing:3px;margin:0 0 8px;color:#fff}
+  .intro p{color:var(--muted);font-size:13.5px;line-height:1.65;margin:6px 0;max-width:900px}
+  .intro .arch{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .pill{font-size:11px;letter-spacing:1px;padding:4px 10px;border-radius:999px;border:1px solid rgba(108,99,255,.3);color:var(--muted);background:rgba(108,99,255,.05)}
+  .pill b{color:var(--cyan2);font-weight:600}
+
+  /* screen frame */
+  .screens{max-width:1120px;margin:10px auto 80px;padding:0 28px;position:relative;z-index:1}
+  .screen{margin-top:34px}
+  .sh{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .sh .no{font-family:var(--disp);font-size:12px;letter-spacing:2px;color:var(--accent);border:1px solid rgba(108,99,255,.35);border-radius:6px;padding:3px 9px;background:rgba(108,99,255,.07)}
+  .sh .nm{font-family:var(--disp);font-size:16px;letter-spacing:1.5px;color:#fff}
+  .sh .why{font-size:12.5px;color:var(--muted)}
+  .sh .tag{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+  .t{font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:var(--muted)}
+  .t.an{color:var(--accent);border-color:rgba(108,99,255,.4);background:rgba(108,99,255,.07)}
+  .t.arb{color:var(--cyan2);border-color:rgba(21,224,200,.35);background:rgba(21,224,200,.06)}
+  .t.ten{color:var(--magenta);border-color:rgba(178,92,255,.35);background:rgba(178,92,255,.06)}
+
+  .frame{position:relative;border-radius:12px;border:1px solid rgba(108,99,255,.22);
+    background:linear-gradient(180deg,rgba(20,26,30,.6),rgba(12,16,20,.6));backdrop-filter:blur(10px);
+    box-shadow:inset 0 0 40px rgba(108,99,255,.04),0 10px 40px rgba(0,0,0,.5);overflow:hidden}
+  .frame::before,.frame::after{content:'';position:absolute;width:14px;height:14px;border-color:rgba(108,99,255,.5);border-style:solid;pointer-events:none}
+  .frame::before{top:8px;left:8px;border-width:1px 0 0 1px}
+  .frame::after{bottom:8px;right:8px;border-width:0 1px 1px 0}
+
+  /* generic mini-panel bits */
+  .p-head{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-bottom:1px solid rgba(108,99,255,.12)}
+  .p-title{display:flex;align-items:center;gap:8px;font-family:var(--disp);font-size:12px;letter-spacing:2px;color:var(--txt);font-weight:600}
+  .p-title .tick{width:3px;height:12px;border-radius:2px;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .p-tag{font-size:10px;letter-spacing:1.5px;color:var(--accent);border:1px solid rgba(108,99,255,.3);border-radius:999px;padding:2px 8px;background:rgba(108,99,255,.06)}
+  .p-tag.live{color:var(--cyan2);border-color:rgba(21,224,200,.3)}
+  .p-tag.live::before{content:'● '}
+  .p-tag.gate{color:var(--warn);border-color:rgba(245,177,76,.4)}
+
+  /* ANALYST screen */
+  .cmd{display:grid;grid-template-columns:1.5fr 1.1fr 1fr;min-height:430px}
+  .col{display:flex;flex-direction:column;min-height:0;border-right:1px solid rgba(108,99,255,.1)}
+  .col:last-child{border-right:none}
+  .rail{display:flex;flex-direction:column;gap:7px;padding:12px}
+  .rail .eyebrow{font-family:var(--disp);font-size:10.5px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:2px}
+  .conv{padding:8px 10px;border-radius:7px;border:1px solid rgba(108,99,255,.14);background:rgba(255,255,255,.02)}
+  .conv.active{border-color:var(--accent);background:rgba(108,99,255,.12);box-shadow:inset 2px 0 0 var(--accent)}
+  .conv .r{display:flex;align-items:center;gap:7px}
+  .cdot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--idle)}
+  .cdot.run{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .cdot.gate{background:var(--warn);box-shadow:0 0 8px var(--warn)}
+  .cdot.done{background:var(--cyan)}
+  .ctitle{font-size:12.5px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .csnip{margin-top:3px;font-size:11px;color:rgba(255,255,255,.4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .chat{display:flex;flex-direction:column}
+  .chat .ch-head{padding:11px 14px;border-bottom:1px solid rgba(108,99,255,.12);display:flex;align-items:center;gap:8px}
+  .who-an{font-family:var(--disp);font-size:12px;letter-spacing:1px;color:var(--accent)}
+  .ch-status{margin-left:auto;font-size:10px;letter-spacing:1px;text-transform:uppercase;border:1px solid rgba(108,99,255,.3);border-radius:999px;padding:2px 8px;color:var(--accent)}
+  .ch-status.gate{color:var(--warn);border-color:rgba(245,177,76,.4)}
+  .tr{padding:14px;display:flex;flex-direction:column;gap:12px}
+  .turn{max-width:90%}
+  .turn.me{align-self:flex-end}
+  .turn .who{font-family:var(--disp);font-size:10.5px;letter-spacing:2px;margin-bottom:4px}
+  .turn.me .who{color:rgba(255,255,255,.4);text-align:right}
+  .turn.them .who{color:var(--accent)}
+  .bub{padding:9px 13px;border-radius:11px;font-size:13.5px;line-height:1.5;color:rgba(255,255,255,.92)}
+  .turn.me .bub{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04)}
+  .turn.them .bub{border:1px solid rgba(108,99,255,.3);background:rgba(108,99,255,.07)}
+  .route{margin-top:2px;align-self:flex-start;max-width:90%;border:1px dashed rgba(21,224,200,.4);background:rgba(21,224,200,.05);border-radius:10px;padding:9px 12px}
+  .route .rt{font-family:var(--disp);font-size:10px;letter-spacing:2px;color:var(--cyan2);margin-bottom:4px}
+  .route .rl{font-size:12.5px;color:rgba(255,255,255,.85);line-height:1.5}
+  .route b{color:var(--cyan2)}
+  /* right column: orb + pipeline */
+  .rc{display:flex;flex-direction:column;gap:14px;padding:14px;align-items:center}
+  .orb{position:relative;width:150px;height:150px;display:grid;place-items:center;margin:6px 0 2px}
+  .orb .bloom{position:absolute;inset:-30%;border-radius:50%;filter:blur(34px);opacity:.9;mix-blend-mode:screen;
+    background:radial-gradient(circle at 50% 50%,rgba(178,92,255,.5) 0%,rgba(108,99,255,.36) 30%,rgba(21,224,200,.14) 55%,transparent 72%);
+    animation:breath 6s ease-in-out infinite}
+  .orb .core{position:absolute;inset:14%;border-radius:50%;overflow:hidden;
+    background:radial-gradient(circle at 36% 30%,rgba(160,170,255,.3),rgba(70,64,170,.1) 38%,transparent 60%),radial-gradient(circle at 50% 50%,rgba(20,16,48,.6),rgba(8,6,24,.88) 72%);
+    box-shadow:inset 0 0 50px rgba(8,6,26,.9),inset -12px -16px 50px rgba(2,2,10,.85),0 0 60px rgba(108,99,255,.32),0 0 120px rgba(21,224,200,.14)}
+  .orb .nuc{position:absolute;width:46%;height:46%;left:27%;top:27%;border-radius:50%;filter:blur(3px);mix-blend-mode:screen;
+    background:radial-gradient(circle at 50% 48%,#fff 0%,#fff 14%,rgba(196,160,255,.82) 44%,rgba(140,90,255,.4) 62%,transparent 78%);
+    box-shadow:0 0 50px rgba(255,255,255,.5);animation:breath 4.2s ease-in-out infinite}
+  .orb .ring{position:absolute;inset:0;border-radius:50%;border:1.3px solid rgba(124,160,255,.34);animation:spin 12s linear infinite}
+  .orb .ring.r2{inset:8%;border-color:rgba(21,224,200,.4);animation-duration:9s;animation-direction:reverse}
+  @keyframes breath{0%,100%{transform:scale(.94);opacity:.85}50%{transform:scale(1.06);opacity:1}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .orb-state{font-family:var(--disp);font-size:11px;letter-spacing:4px;color:var(--accent);text-shadow:0 0 14px rgba(108,99,255,.4)}
+  .roles{width:100%;display:flex;flex-direction:column;gap:9px}
+  .role{display:flex;align-items:center;gap:10px}
+  .role .led{width:8px;height:8px;border-radius:50%;flex:none;background:rgba(255,255,255,.15)}
+  .role.done .led{background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+  .role.active .led{background:var(--violet);box-shadow:0 0 10px var(--violet);animation:breath 1.4s ease-in-out infinite}
+  .role .nm{font-size:12.5px;flex:1;color:rgba(255,255,255,.42)}
+  .role.done .nm,.role.active .nm{color:rgba(255,255,255,.9)}
+  .role .st{font-size:10.5px;letter-spacing:1px;color:rgba(255,255,255,.25)}
+  .role.done .st{color:var(--cyan)}
+  .role.active .st{color:var(--violet)}
+  .role.skip .nm{color:rgba(255,255,255,.25);text-decoration:line-through}
+  .role.skip .st{color:rgba(255,255,255,.25)}
+  .gate{width:100%;margin-top:2px;padding:11px;border-radius:11px;border:1px solid var(--violet);background:rgba(108,99,255,.08);box-shadow:0 0 20px rgba(108,99,255,.16)}
+  .gate .gh{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+  .gate .gh .led{width:8px;height:8px;border-radius:50%;background:var(--violet);box-shadow:0 0 10px var(--violet);animation:breath 1.2s ease-in-out infinite}
+  .gate .gh .l{font-family:var(--disp);font-size:11px;letter-spacing:2px;color:var(--violet)}
+  .gate .gt{font-size:12.5px;color:rgba(255,255,255,.9);margin-bottom:9px;line-height:1.4}
+  .gate .ga{display:flex;gap:7px;flex-wrap:wrap}
+  .gb{font-family:var(--disp);font-size:11px;letter-spacing:2px;padding:5px 13px;border-radius:999px}
+  .gb.ok{border:1px solid var(--cyan);color:var(--cyan);background:rgba(3,218,198,.08)}
+  .gb.ch{border:1px solid var(--violet);color:var(--violet);background:rgba(108,99,255,.08)}
+  .gb.no{border:1px solid var(--err);color:var(--err);background:rgba(255,107,107,.08)}
+  .composer{display:flex;align-items:center;gap:9px;margin:0 14px 14px;padding:8px 8px 8px 14px;border-radius:14px;border:1px solid rgba(108,99,255,.28);background:rgba(12,16,20,.7)}
+  .composer .pr{color:var(--accent);font-size:14px}
+  .composer .ip{flex:1;color:rgba(255,255,255,.4);font-size:13px}
+  .composer .snd{font-family:var(--disp);font-size:12px;letter-spacing:2px;color:var(--accent);border:1px solid var(--accent);background:rgba(108,99,255,.12);border-radius:10px;padding:7px 15px}
+
+  /* dashboard grid */
+  .dash{padding:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .card{border-radius:10px;border:1px solid rgba(108,99,255,.18);background:rgba(255,255,255,.02);padding:13px}
+  .card .top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .card .nm{font-family:var(--disp);font-size:13px;letter-spacing:.5px;color:#fff;flex:1}
+  .badge{font-size:9.5px;letter-spacing:1px;padding:2px 8px;border-radius:999px;border:1px solid rgba(108,99,255,.3);color:var(--accent);background:rgba(108,99,255,.06)}
+  .badge.run{color:var(--accent)} .badge.gate{color:var(--warn);border-color:rgba(245,177,76,.4)} .badge.done{color:var(--cyan);border-color:rgba(3,218,198,.4)}
+  .card .desc{font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:11px;min-height:34px}
+  .bar-mini{height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}
+  .bar-mini i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--cyan2))}
+  .card .meta{margin-top:8px;display:flex;justify-content:space-between;font-size:10.5px;color:rgba(255,255,255,.4)}
+
+  /* pipeline DAG */
+  .dag{padding:18px;display:flex;flex-direction:column;gap:0}
+  .phase{display:flex;align-items:center;gap:14px;padding:11px 0}
+  .phase .idx{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;border:1px solid rgba(108,99,255,.3);font-size:11px;color:var(--muted)}
+  .phase.done .idx{border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 10px rgba(3,218,198,.25)}
+  .phase.active .idx{border-color:var(--violet);color:#fff;background:rgba(108,99,255,.2);box-shadow:0 0 12px rgba(108,99,255,.4)}
+  .phase.gate .idx{border-color:var(--warn);color:var(--warn)}
+  .phase.skip{opacity:.4}
+  .phase .body{flex:1}
+  .phase .nm{font-family:var(--disp);font-size:13.5px;letter-spacing:.5px;color:#fff}
+  .phase.skip .nm{text-decoration:line-through;color:var(--muted)}
+  .phase .sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .phase .rt{font-size:10px;letter-spacing:1px;color:var(--muted);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:2px 8px}
+  .phase.gate .rt{color:var(--warn);border-color:rgba(245,177,76,.4)}
+  .connector{width:26px;display:flex;justify-content:center}
+  .connector i{width:1px;height:16px;background:rgba(108,99,255,.3)}
+
+  /* two-column generic (settings / onboard) */
+  .cols2{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .side{border-right:1px solid rgba(108,99,255,.1);padding:16px}
+  .side:last-child{border-right:none}
+  .row{display:flex;align-items:center;gap:11px;padding:11px;border-radius:9px;border:1px solid rgba(108,99,255,.14);background:rgba(255,255,255,.02);margin-bottom:9px}
+  .row .ic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;flex:none;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.24);font-size:14px}
+  .row .g{flex:1}
+  .row .nm{font-size:13px;color:#fff}
+  .row .sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .row .state{font-size:10px;letter-spacing:1px;padding:3px 9px;border-radius:999px;border:1px solid rgba(3,218,198,.4);color:var(--cyan);background:rgba(3,218,198,.06)}
+  .row .state.off{color:var(--muted);border-color:rgba(255,255,255,.14)}
+  .side h4{font-family:var(--disp);font-size:11px;letter-spacing:2px;color:var(--muted);margin:0 0 12px;font-weight:600}
+  .step{display:flex;gap:12px;margin-bottom:16px}
+  .step .n{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:11px;border:1px solid var(--accent);color:var(--accent);background:rgba(108,99,255,.1)}
+  .step.done .n{background:var(--cyan);color:#04110f;border-color:var(--cyan)}
+  .step .t{font-size:13px;color:#fff}
+  .step .d{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .btn{display:inline-block;margin-top:6px;font-family:var(--disp);font-size:11px;letter-spacing:2px;padding:8px 16px;border-radius:8px;border:1px solid var(--accent);color:var(--accent);background:rgba(108,99,255,.1)}
+
+  .foot{max-width:1120px;margin:0 auto 60px;padding:0 28px;color:var(--muted);font-size:12px;line-height:1.7}
+  .foot b{color:var(--txt)}
+  @media (max-width:900px){.cmd{grid-template-columns:1fr}.col{border-right:none;border-bottom:1px solid rgba(108,99,255,.1)}.dash{grid-template-columns:1fr 1fr}.cols2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="grid-bg"></div>
+
+<header class="bar">
+  <div class="brand"><span class="dot"></span><span class="word">TACTICL <span class="slash">//</span> ANALYST</span></div>
+  <div class="tenant"><span class="d"></span><span>Acme Corp</span><span class="car">▾</span></div>
+  <div class="barmeta">
+    <span class="link">◈ ARBITER LINK ACTIVE</span>
+    <div class="chips">
+      <span class="chip on">COMMAND</span>
+      <span class="chip">DASHBOARD</span>
+      <span class="chip">SETTINGS</span>
+    </div>
+  </div>
+</header>
+
+<section class="intro">
+  <h1>SCREEN CONFIRM — tacticl monorepo</h1>
+  <p>One all‑TypeScript monorepo (<b style="color:var(--txt)">apps/web · apps/mobile · apps/api</b>). The <b style="color:var(--accent)">Analyst</b> is the single agent you talk to — it deciphers what you need, decides <b style="color:var(--cyan2)">full‑vs‑fix</b>, and drives the pipeline. The backend never calls Claude directly; every LLM/agent need goes to the <b style="color:var(--cyan2)">arbiter</b>. Auth is supplied by cidadel. Each product is an isolated <b style="color:var(--magenta)">tenant</b>.</p>
+  <div class="arch">
+    <span class="pill">apps/web ← today's tacticl‑web</span>
+    <span class="pill">apps/api → <b>arbiter</b> (LLM)</span>
+    <span class="pill">apps/mobile (Expo)</span>
+    <span class="pill">auth = <b>cidadel</b></span>
+    <span class="pill">Analyst = <b>persistent container</b> per conversation, on Temporal</span>
+    <span class="pill">shared libs → <b>cidadel</b></span>
+  </div>
+</section>
+
+<div class="screens">
+
+  <!-- 1 ANALYST -->
+  <div class="screen">
+    <div class="sh">
+      <span class="no">01</span><span class="nm">ANALYST — Command Center</span>
+      <span class="why">chat + voice orb · deciphers the ask · decides full‑vs‑fix · the front door</span>
+      <span class="tag"><span class="t an">Analyst</span><span class="t arb">→ arbiter</span><span class="t ten">per‑tenant</span></span>
+    </div>
+    <div class="frame">
+      <div class="cmd">
+        <!-- comms -->
+        <div class="col chat">
+          <div class="ch-head"><span class="who-an">ANALYST</span><span>· Acme Corp</span><span class="ch-status gate">GATE</span></div>
+          <div class="tr">
+            <div class="turn me"><div class="who">YOU</div><div class="bub">the login page is throwing a 500 when the token's expired — can you fix it</div></div>
+            <div class="turn them"><div class="who">ANALYST</div><div class="bub">Got it. Which repo — <b>acme/web</b>? And should expired tokens bounce to re‑auth, or just show a clean error?</div></div>
+            <div class="turn me"><div class="who">YOU</div><div class="bub">acme/web, bounce them to re‑auth</div></div>
+            <div class="turn them"><div class="who">ANALYST</div><div class="bub">Clear. Scoped it: catch the expired‑token case on the login route and redirect to sign‑in. This is a targeted fix, not a redesign.</div></div>
+            <div class="route"><div class="rt">ROUTING DECISION</div><div class="rl">→ <b>FIX pipeline</b> · skip Product Owner (I have the requirements) · enter at <b>Planner</b> → Implementer → Reviewer/Security/Tester</div></div>
+          </div>
+          <div class="composer"><span class="pr">❯</span><span class="ip">Type to the Analyst…</span><span class="snd">SEND</span></div>
+        </div>
+        <!-- rail -->
+        <div class="col rail">
+          <div class="eyebrow">CONVERSATIONS</div>
+          <div class="conv active"><div class="r"><span class="cdot gate"></span><span class="ctitle">login 500 on expired token</span></div><div class="csnip">Analyst · awaiting your approval</div></div>
+          <div class="conv"><div class="r"><span class="cdot run"></span><span class="ctitle">add a /health endpoint</span></div><div class="csnip">Implementer working…</div></div>
+          <div class="conv"><div class="r"><span class="cdot done"></span><span class="ctitle">dark‑mode toggle</span></div><div class="csnip">merged · PR #214</div></div>
+          <div class="conv"><div class="r"><span class="cdot"></span><span class="ctitle">rename billing service</span></div><div class="csnip">draft</div></div>
+        </div>
+        <!-- orb + pipeline -->
+        <div class="col rc">
+          <div class="orb"><div class="bloom"></div><div class="ring"></div><div class="ring r2"></div><div class="core"></div><div class="nuc"></div></div>
+          <div class="orb-state">THINKING</div>
+          <div class="roles">
+            <div class="role skip"><span class="led"></span><span class="nm">Product Owner</span><span class="st">SKIPPED</span></div>
+            <div class="role done"><span class="led"></span><span class="nm">Planner</span><span class="st">DONE</span></div>
+            <div class="role active"><span class="led"></span><span class="nm">Implementer</span><span class="st">RUNNING</span></div>
+            <div class="role"><span class="led"></span><span class="nm">Reviewer · Security · Tester</span><span class="st">QUEUED</span></div>
+          </div>
+          <div class="gate">
+            <div class="gh"><span class="led"></span><span class="l">HUMAN GATE</span></div>
+            <div class="gt">Fix ready on <b>pdlc/fix/login-500</b> — PR #217. Merge?</div>
+            <div class="ga"><span class="gb ok">APPROVE</span><span class="gb ch">CHANGES</span><span class="gb no">REJECT</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2 DASHBOARD -->
+  <div class="screen">
+    <div class="sh">
+      <span class="no">02</span><span class="nm">DASHBOARD</span>
+      <span class="why">every build for this tenant — running, waiting on you, done</span>
+      <span class="tag"><span class="t ten">per‑tenant</span><span class="t arb">live via /ws/user</span></span>
+    </div>
+    <div class="frame">
+      <div class="p-head"><div class="p-title"><span class="tick"></span>PIPELINES · ACME CORP</div><span class="p-tag live">LIVE</span></div>
+      <div class="dash">
+        <div class="card"><div class="top"><span class="cdot gate"></span><span class="nm">login 500 fix</span><span class="badge gate">GATE</span></div><div class="desc">Expired‑token redirect to re‑auth. Waiting on your merge approval.</div><div class="bar-mini"><i style="width:80%"></i></div><div class="meta"><span>fix · acme/web</span><span>PR #217</span></div></div>
+        <div class="card"><div class="top"><span class="cdot run"></span><span class="nm">/health endpoint</span><span class="badge run">RUNNING</span></div><div class="desc">Implementer writing the handler + test. No design change.</div><div class="bar-mini"><i style="width:55%"></i></div><div class="meta"><span>fix · acme/api</span><span>3 roles</span></div></div>
+        <div class="card"><div class="top"><span class="cdot"></span><span class="nm">billing rebuild</span><span class="badge run">RUNNING</span></div><div class="desc">Full build — PO→Architect→Designer→Planner→… running the whole lineup.</div><div class="bar-mini"><i style="width:30%"></i></div><div class="meta"><span>full · acme/billing</span><span>11 roles</span></div></div>
+        <div class="card"><div class="top"><span class="cdot done"></span><span class="nm">dark‑mode toggle</span><span class="badge done">MERGED</span></div><div class="desc">Shipped. Squash‑merged after your approval.</div><div class="bar-mini"><i style="width:100%"></i></div><div class="meta"><span>fix · acme/web</span><span>PR #214</span></div></div>
+        <div class="card"><div class="top"><span class="cdot done"></span><span class="nm">export CSV</span><span class="badge done">MERGED</span></div><div class="desc">Small feature, entered at Architect.</div><div class="bar-mini"><i style="width:100%"></i></div><div class="meta"><span>feature · acme/api</span><span>PR #209</span></div></div>
+        <div class="card"><div class="top"><span class="cdot"></span><span class="nm">rename billing svc</span><span class="badge">DRAFT</span></div><div class="desc">Still talking to the Analyst — not scoped yet.</div><div class="bar-mini"><i style="width:8%"></i></div><div class="meta"><span>—</span><span>draft</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 PIPELINE DETAIL -->
+  <div class="screen">
+    <div class="sh">
+      <span class="no">03</span><span class="nm">PIPELINE — Spark detail</span>
+      <span class="why">the roles for THIS build · gates · artifacts · full runs all, fix skips PO</span>
+      <span class="tag"><span class="t arb">Temporal workflow</span><span class="t an">Analyst‑scoped</span></span>
+    </div>
+    <div class="frame">
+      <div class="p-head"><div class="p-title"><span class="tick"></span>billing rebuild · FULL</div><span class="p-tag">acme/billing</span></div>
+      <div class="dag">
+        <div class="phase done"><span class="idx">✓</span><div class="body"><div class="nm">Product Owner</div><div class="sub">requirements brief from the Analyst's conversation</div></div><span class="rt">GATE ✓</span></div>
+        <div class="connector"><i></i></div>
+        <div class="phase done"><span class="idx">✓</span><div class="body"><div class="nm">Architect</div><div class="sub">service boundaries, data model</div></div></div>
+        <div class="connector"><i></i></div>
+        <div class="phase active"><span class="idx">3</span><div class="body"><div class="nm">Designer</div><div class="sub">UI states for the billing screens</div></div><span class="rt">running</span></div>
+        <div class="connector"><i></i></div>
+        <div class="phase gate"><span class="idx">◆</span><div class="body"><div class="nm">Planner</div><div class="sub">task plan — pauses for your review</div></div><span class="rt">GATE</span></div>
+        <div class="connector"><i></i></div>
+        <div class="phase"><span class="idx">5</span><div class="body"><div class="nm">Implementer → Reviewer → Security → Tester</div><div class="sub">the build combo · no gate between them</div></div></div>
+        <div class="connector"><i></i></div>
+        <div class="phase"><span class="idx">6</span><div class="body"><div class="nm">Delivery summary</div><div class="sub">final human gate before merge</div></div><span class="rt">GATE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4 CONNECTIONS / SETTINGS -->
+  <div class="screen">
+    <div class="sh">
+      <span class="no">04</span><span class="nm">SETTINGS — Connections</span>
+      <span class="why">GitHub org + repos in scope · tenant config · auth by cidadel</span>
+      <span class="tag"><span class="t ten">per‑tenant</span><span class="t">cidadel auth</span></span>
+    </div>
+    <div class="frame">
+      <div class="cols2">
+        <div class="side">
+          <h4>DEVELOPER</h4>
+          <div class="row"><span class="ic">⌥</span><div class="g"><div class="nm">GitHub — Acme Corp</div><div class="sub">org connected · 6 repos in scope</div></div><span class="state">CONNECTED</span></div>
+          <div class="row"><span class="ic">◈</span><div class="g"><div class="nm">acme/web · acme/api · acme/billing</div><div class="sub">+3 more · builds run here</div></div><span class="state">IN SCOPE</span></div>
+        </div>
+        <div class="side">
+          <h4>TENANT</h4>
+          <div class="row"><span class="ic">◇</span><div class="g"><div class="nm">Discord — #acme-build</div><div class="sub">chat surface → Analyst</div></div><span class="state">LIVE</span></div>
+          <div class="row"><span class="ic">☏</span><div class="g"><div class="nm">Telegram</div><div class="sub">not linked</div></div><span class="state off">OFF</span></div>
+          <div class="row"><span class="ic">$</span><div class="g"><div class="nm">Plan — Team</div><div class="sub">billing via cidadel · gates paid builds</div></div><span class="state">ACTIVE</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 ONBOARDING -->
+  <div class="screen">
+    <div class="sh">
+      <span class="no">05</span><span class="nm">ONBOARDING</span>
+      <span class="why">first run — connect your own GitHub org, then talk to the Analyst</span>
+      <span class="tag"><span class="t">cidadel auth</span><span class="t ten">creates a tenant</span></span>
+    </div>
+    <div class="frame">
+      <div style="padding:22px 20px">
+        <div class="step done"><span class="n">✓</span><div><div class="t" style="border:none;padding:0;color:#fff;font-size:13px">Sign in</div><div class="d">Handled by cidadel (auth.tacticl.ai) — shared across every product.</div></div></div>
+        <div class="step"><span class="n">2</span><div><div class="t" style="border:none;padding:0;color:#fff;font-size:13px">Connect your GitHub org</div><div class="d">Install the tacticl GitHub App on your org and pick the repos the Analyst may build in. Repos live in <b style="color:var(--txt)">your</b> org, not ours.</div><span class="btn">INSTALL GITHUB APP</span></div></div>
+        <div class="step"><span class="n">3</span><div><div class="t" style="border:none;padding:0;color:#fff;font-size:13px">Talk to the Analyst</div><div class="d">Say what you want built or fixed. It figures out the rest and drives the pipeline.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 VOICE -->
+  <div class="screen">
+    <div class="sh">
+      <span class="no">06</span><span class="nm">VOICE</span>
+      <span class="why">same Analyst, spoken · the orb reacts · mobile + web</span>
+      <span class="tag"><span class="t an">Analyst</span><span class="t arb">/v1/voice/stream</span></span>
+    </div>
+    <div class="frame">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:34px 20px">
+        <div class="orb" style="width:190px;height:190px"><div class="bloom"></div><div class="ring"></div><div class="ring r2"></div><div class="core"></div><div class="nuc"></div></div>
+        <div class="orb-state" style="color:var(--cyan2)">SPEAKING</div>
+        <div style="max-width:520px;text-align:center;font-size:14px;line-height:1.6;color:rgba(255,255,255,.85)">“The login fix is ready on a branch and I opened PR #217 — want me to merge it?”</div>
+        <div style="display:flex;gap:16px;font-size:11px;letter-spacing:1px;color:var(--muted)">
+          <span>◉ Deepgram STT</span><span>◈ Analyst · arbiter</span><span>♪ ElevenLabs / local TTS</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  <p><b>What's core (this mockup):</b> Analyst / command · dashboard · pipeline detail · settings + GitHub connections · onboarding · voice.</p>
+  <p><b>Deferred / dropped from the old Java product:</b> the device‑agent (pair a laptop as a worker) · social‑media posting · BYOK provider tokens · reusable templates. Say the word if any of those are actually core to you and I'll pull them into Phase 1.</p>
+  <p><b>Under the hood:</b> apps/api is CRUD + realtime + arbiter client. The Analyst is a persistent container per conversation, coordinated by Temporal, speaking as the Analyst persona (never "Product Manager"). Full build = every role; fix = skip Product Owner, enter at Architect or Planner based on what the Analyst learned.</p>
+</div>
+
+</body>
+</html>
