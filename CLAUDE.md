@@ -20,6 +20,29 @@ At the start of every session, read `/Users/cuztomizer/Documents/GitHub/tacticl-
 
 Web dashboard for Tacticl — the personal AI assistant that remotes into all your devices. This is a React SPA that provides a web interface for managing Sparks (AI tasks), connected devices, social media, and the agent chat interface. Deployed on Firebase Hosting, talks to tacticl-core (Java/Cloud Run) backend via REST + WebSocket.
 
+## Commit as you go
+
+This is a standing instruction, so don't wait to be asked: commit your own
+finished work as you go. Commit each finished piece when it's done, and at the
+latest before ending your turn. A machine crash (2026-09-26) orphaned work that
+several parallel sessions had left uncommitted.
+
+- **Commit only the paths you changed:** `git add -- <paths> && git commit -m '…' -- <paths>`.
+  Never `git add -A` or `git commit -a`. Several sessions often share this
+  checkout, and the other changes are theirs.
+- **One commit per logical change**, with a real message, straight to `main`
+  (solo developer). Then push. This repo has no GitHub Actions workflows or deploy-on-push config, and deploys run by hand, so a push never deploys anything.
+- Leave something uncommitted only if the user said so, it's broken or
+  mid-verification, or it isn't yours, and say which.
+- Never keep the only copy of work in `/tmp` or a scratchpad (wiped on reboot),
+  and land worktree branches on `main`.
+- Uncommitted changes you find at session start may belong to a crashed or
+  still-running session. Don't commit them as yours, and don't discard them,
+  without checking.
+- On the author's machine, a `commit-guard` hook (`~/.claude/hooks/`) enforces
+  this. At the end of a turn it lists your uncommitted files once, and Claude
+  Code labels that block "Stop hook error". Commit the listed paths.
+
 ## Tech Stack
 
 - React 19, TypeScript 5.9, Vite 7.3
